@@ -24,6 +24,7 @@ export default function ClientsPage() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [sortAsc, setSortAsc] = useState<boolean | null>(null);
+  const [query, setQuery] = useState("");
 
   async function load() {
     const { data } = await supabase
@@ -39,13 +40,20 @@ export default function ClientsPage() {
   }, []);
 
   const rows = useMemo(() => {
-    if (sortAsc === null) return clients;
-    return [...clients].sort((a, b) =>
-      sortAsc
-        ? a.name.localeCompare(b.name)
-        : b.name.localeCompare(a.name),
+    const q = query.trim().toLowerCase();
+    let list = clients;
+    if (q) {
+      list = clients.filter((c) =>
+        [c.name, c.primary_contact, c.email, c.phone]
+          .filter(Boolean)
+          .some((v) => (v as string).toLowerCase().includes(q)),
+      );
+    }
+    if (sortAsc === null) return list;
+    return [...list].sort((a, b) =>
+      sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
     );
-  }, [clients, sortAsc]);
+  }, [clients, sortAsc, query]);
 
   async function patch(id: string, changes: Partial<Client>) {
     setClients((prev) =>
@@ -104,9 +112,18 @@ export default function ClientsPage() {
     <div>
       <div className="page-head">
         <h1 className="page-title">Clients</h1>
-        <button className="btn" onClick={() => setOpen(true)} type="button">
-          + Add Client
-        </button>
+        <div className="head-controls">
+          <input
+            className="activity-search"
+            type="search"
+            placeholder="Search clients…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <button className="btn" onClick={() => setOpen(true)} type="button">
+            + Add Client
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -129,19 +146,15 @@ export default function ClientsPage() {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Status</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((c) => (
                 <tr key={c.id}>
                   <td className="strong-cell">
-                    <InlineText
-                      value={c.name}
-                      onSave={(v) => {
-                        if (v) patch(c.id, { name: v });
-                      }}
-                    />
+                    <Link href={`/dashboard/clients/${c.id}`} className="row-link">
+                      {c.name}
+                    </Link>
                   </td>
                   <td>
                     <InlineText
@@ -175,14 +188,6 @@ export default function ClientsPage() {
                       ]}
                       onSave={(v) => patch(c.id, { status: v })}
                     />
-                  </td>
-                  <td className="actions-cell">
-                    <Link
-                      href={`/dashboard/clients/${c.id}`}
-                      className="link-btn"
-                    >
-                      Open ›
-                    </Link>
                   </td>
                 </tr>
               ))}

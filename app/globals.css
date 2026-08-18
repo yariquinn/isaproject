@@ -1201,6 +1201,47 @@ section.block.alt {
   color: var(--dash-muted);
 }
 
+/* Page header controls + matter filters */
+.head-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.matter-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.seg button {
+  background: var(--dash-surface);
+  border: none;
+  color: var(--dash-muted);
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-right: 1px solid var(--dash-border);
+}
+.seg button:last-child {
+  border-right: none;
+}
+.seg button.active {
+  background: var(--navy);
+  color: #fff;
+}
+:root[data-theme="dark"] .seg button.active {
+  background: var(--accent);
+}
+
 /* Inline edit fields */
 .inline-view {
   cursor: text;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ATTORNEYS, PRACTICE_AREAS, type Client, type Matter } from "@/lib/types";
-import { InlineNumber, InlineSelect, InlineText } from "../Inline";
+import { InlineNumber, InlineSelect } from "../Inline";
 import { usePortal } from "../PortalProvider";
 
 const EMPTY = {
@@ -25,6 +25,11 @@ export default function MattersPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [sortAsc, setSortAsc] = useState<boolean | null>(null);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"active" | "closed" | "all">(
+    "active",
+  );
+  const [areaFilter, setAreaFilter] = useState<string>("all");
 
   async function load() {
     const [{ data: m }, { data: c }] = await Promise.all([
@@ -44,11 +49,32 @@ export default function MattersPage() {
   }, []);
 
   const rows = useMemo(() => {
-    if (sortAsc === null) return matters;
-    return [...matters].sort((a, b) =>
+    const q = query.trim().toLowerCase();
+    const nameOf = (id: string | null) =>
+      clients.find((c) => c.id === id)?.name ?? "";
+    let list = matters.filter((m) => {
+      if (statusFilter === "active" && m.status === "closed") return false;
+      if (statusFilter === "closed" && m.status !== "closed") return false;
+      if (areaFilter !== "all" && m.practice_area !== areaFilter) return false;
+      if (q) {
+        const hay = [
+          m.name,
+          nameOf(m.client_id),
+          m.practice_area,
+          m.assigned_to,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    if (sortAsc === null) return list;
+    return [...list].sort((a, b) =>
       sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
     );
-  }, [matters, sortAsc]);
+  }, [matters, clients, sortAsc, query, statusFilter, areaFilter]);
 
   const clientOptions = useMemo(
     () => [
@@ -107,15 +133,60 @@ export default function MattersPage() {
     <div>
       <div className="page-head">
         <h1 className="page-title">Matters</h1>
-        <button className="btn" onClick={() => setOpen(true)} type="button">
-          + Add Matter
-        </button>
+        <div className="head-controls">
+          <input
+            className="activity-search"
+            type="search"
+            placeholder="Search all matters…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <button className="btn" onClick={() => setOpen(true)} type="button">
+            + Add Matter
+          </button>
+        </div>
+      </div>
+
+      <div className="matter-filters">
+        <div className="seg">
+          {(["active", "closed", "all"] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={statusFilter === s ? "active" : undefined}
+              onClick={() => setStatusFilter(s)}
+            >
+              {s === "active" ? "Active" : s === "closed" ? "Closed" : "All"}
+            </button>
+          ))}
+        </div>
+        <div className="filter-row" style={{ margin: 0 }}>
+          <button
+            type="button"
+            className={`filter-chip${areaFilter === "all" ? " active" : ""}`}
+            onClick={() => setAreaFilter("all")}
+          >
+            All areas
+          </button>
+          {PRACTICE_AREAS.map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={`filter-chip${areaFilter === p ? " active" : ""}`}
+              onClick={() => setAreaFilter(p)}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
         <p className="muted-line">Loading…</p>
       ) : matters.length === 0 ? (
         <p className="muted-line">No matters yet.</p>
+      ) : rows.length === 0 ? (
+        <p className="muted-line">No matters match these filters.</p>
       ) : (
         <div className="table-wrap">
           <table className="data-table">
@@ -132,19 +203,15 @@ export default function MattersPage() {
                 <th>Assigned To</th>
                 <th>Rate</th>
                 <th>Status</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
               {rows.map((m) => (
                 <tr key={m.id}>
                   <td className="strong-cell">
-                    <InlineText
-                      value={m.name}
-                      onSave={(v) => {
-                        if (v) patch(m.id, { name: v });
-                      }}
-                    />
+                    <Link href={`/dashboard/matters/${m.id}`} className="row-link">
+                      {m.name}
+                    </Link>
                   </td>
                   <td>
                     <InlineSelect
@@ -188,14 +255,6 @@ export default function MattersPage() {
                       ]}
                       onSave={(v) => patch(m.id, { status: v })}
                     />
-                  </td>
-                  <td className="actions-cell">
-                    <Link
-                      href={`/dashboard/matters/${m.id}`}
-                      className="link-btn"
-                    >
-                      Open ›
-                    </Link>
                   </td>
                 </tr>
               ))}
