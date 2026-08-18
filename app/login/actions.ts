@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AUTH_COOKIE, getAccessCode } from "@/lib/auth";
+import { AUTH_COOKIE, getAccessCode, isAllowedName } from "@/lib/auth";
 
 export type LoginState = { error: string | null };
 
@@ -15,6 +15,9 @@ export async function loginAction(
 
   if (!name) return { error: "Please enter your full name." };
   if (code !== getAccessCode()) return { error: "Invalid access code." };
+  if (!isAllowedName(name)) {
+    return { error: "This name is not authorized to access the portal." };
+  }
 
   cookies().set(AUTH_COOKIE, encodeURIComponent(name), {
     httpOnly: true,
