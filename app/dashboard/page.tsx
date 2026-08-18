@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ActivityItem } from "@/lib/types";
+import { usePortal } from "./PortalProvider";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -15,21 +16,44 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
-const KIND_LABEL: Record<string, string> = {
-  client_added: "Client",
-  matter_created: "Matter",
-  timer_started: "Timer",
-  timer_paused: "Timer",
-  time_logged: "Time",
-  document_added: "Document",
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+// Map each activity kind to a filter category + label + color class.
+const KIND_META: Record<
+  string,
+  { group: "client" | "matter" | "time"; label: string }
+> = {
+  client_added: { group: "client", label: "Client" },
+  matter_created: { group: "matter", label: "Matter" },
+  timer_started: { group: "time", label: "Time" },
+  timer_paused: { group: "time", label: "Time" },
+  time_logged: { group: "time", label: "Time" },
 };
 
+const FILTERS = [
+  { key: "all", label: "All" },
+  { key: "client", label: "Clients" },
+  { key: "matter", label: "Matters" },
+  { key: "time", label: "Time" },
+] as const;
+
 export default function Overview() {
+  const { userName } = usePortal();
+  const firstName = userName.split(" ")[0] || userName;
+
   const [clients, setClients] = useState(0);
   const [matters, setMatters] = useState(0);
   const [loggedSeconds, setLoggedSeconds] = useState(0);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [filter, setFilter] = useState<string>("all");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -45,7 +69,7 @@ export default function Overview() {
             .from("activity_log")
             .select("*")
             .order("created_at", { ascending: false })
-            .limit(12),
+            .limit(100),
         ]);
       setClients(clientsRes.count ?? 0);
       setMatters(mattersRes.count ?? 0);
@@ -60,11 +84,35 @@ export default function Overview() {
     })();
   }, []);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return activity.filter((a) => {
+      const meta = KIND_META[a.kind];
+      const group = meta?.group ?? "time";
+      if (filter !== "all" && group !== filter) return false;
+      if (q && !a.description.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [activity, filter, query]);
+
   const hours = (loggedSeconds / 3600).toFixed(1);
+  const dateLine = new Date()
+    .toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    })
+    .toUpperCase();
 
   return (
     <div>
-      <h1 className="page-title">Overview</h1>
+      <div className="greeting">
+        <span className="greeting-date">{dateLine}</span>
+        <h1 className="greeting-title">
+          {greeting()}, <strong>{firstName}</strong>
+        </h1>
+      </div>
 
       <div className="stat-row">
         <div className="stat">
@@ -82,22 +130,48 @@ export default function Overview() {
       </div>
 
       <div className="panel">
-        <h2 className="panel-title">Recent Activity</h2>
+        <div className="panel-head">
+          <h2 className="panel-title">Recent Activity</h2>
+          <input
+            className="activity-search"
+            type="search"
+            placeholder="Search activity…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="filter-row">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              className={`filter-chip${filter === f.key ? " active" : ""}`}
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <p className="muted-line">Loading…</p>
-        ) : activity.length === 0 ? (
-          <p className="muted-line">No activity yet.</p>
+        ) : filtered.length === 0 ? (
+          <p className="muted-line">No matching activity.</p>
         ) : (
           <ul className="activity-list">
-            {activity.map((a) => (
-              <li key={a.id}>
-                <span className={`act-tag act-${a.kind}`}>
-                  {KIND_LABEL[a.kind] || "Activity"}
-                </span>
-                <span className="act-desc">{a.description}</span>
-                <span className="act-time">{timeAgo(a.created_at)}</span>
-              </li>
-            ))}
+            {filtered.map((a) => {
+              const meta = KIND_META[a.kind] ?? { group: "time", label: "Time" };
+              return (
+                <li key={a.id}>
+                  <span className={`act-tag tag-${meta.group}`}>
+                    {meta.label}
+                  </span>
+                  <span className="act-desc">{a.description}</span>
+                  <span className="act-time">{timeAgo(a.created_at)}</span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

@@ -19,6 +19,7 @@ export type Matter = {
   open_date: string;
   description: string | null;
   hourly_rate: number | null;
+  assigned_to: string | null;
   created_at: string;
 };
 
@@ -54,6 +55,8 @@ export const PRACTICE_AREAS = [
   "Business Law",
   "Family Estates",
 ] as const;
+
+export const ATTORNEYS = ["Isa Abdur-Rahman", "Yari Corsino"] as const;
 
 export const ACTIVITY_TYPES = [
   "Email",

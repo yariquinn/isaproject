@@ -11,6 +11,7 @@ export default function SiteHeader() {
         <nav className="nav">
           <Link href="/">Home</Link>
           <Link href="/attorney-bio">Attorney Bio</Link>
+          <Link href="/blog">Blog</Link>
           <Link href="/contact">Contact</Link>
           <Link href="/login" className="nav-login">
             Attorney Login

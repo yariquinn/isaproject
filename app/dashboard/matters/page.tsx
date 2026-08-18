@@ -1,22 +1,27 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { PRACTICE_AREAS, type Client, type Matter } from "@/lib/types";
+import { ATTORNEYS, PRACTICE_AREAS, type Client, type Matter } from "@/lib/types";
+
+const EMPTY = {
+  name: "",
+  client_id: "",
+  practice_area: PRACTICE_AREAS[0] as string,
+  assigned_to: ATTORNEYS[0] as string,
+  description: "",
+  hourly_rate: "",
+};
 
 export default function MattersPage() {
   const [matters, setMatters] = useState<Matter[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    client_id: "",
-    practice_area: PRACTICE_AREAS[0] as string,
-    description: "",
-    hourly_rate: "",
-  });
+  const [form, setForm] = useState(EMPTY);
 
   async function load() {
     const [{ data: m }, { data: c }] = await Promise.all([
@@ -38,37 +43,64 @@ export default function MattersPage() {
   const clientName = (id: string | null) =>
     clients.find((c) => c.id === id)?.name ?? "—";
 
+  function openAdd() {
+    setForm(EMPTY);
+    setEditingId(null);
+    setOpen(true);
+  }
+
+  function openEdit(m: Matter) {
+    setForm({
+      name: m.name,
+      client_id: m.client_id ?? "",
+      practice_area: m.practice_area ?? PRACTICE_AREAS[0],
+      assigned_to: m.assigned_to ?? ATTORNEYS[0],
+      description: m.description ?? "",
+      hourly_rate: m.hourly_rate != null ? String(m.hourly_rate) : "",
+    });
+    setEditingId(m.id);
+    setOpen(true);
+  }
+
   async function save() {
     if (!form.name.trim()) return;
     setSaving(true);
-    await supabase.from("matters").insert({
+    const payload = {
       name: form.name.trim(),
       client_id: form.client_id || null,
       practice_area: form.practice_area,
+      assigned_to: form.assigned_to || null,
       description: form.description.trim() || null,
       hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
-    });
-    await supabase.from("activity_log").insert({
-      kind: "matter_created",
-      description: `Matter opened: ${form.name.trim()}`,
-    });
-    setForm({
-      name: "",
-      client_id: "",
-      practice_area: PRACTICE_AREAS[0],
-      description: "",
-      hourly_rate: "",
-    });
-    setAdding(false);
+    };
+    if (editingId) {
+      await supabase.from("matters").update(payload).eq("id", editingId);
+    } else {
+      await supabase.from("matters").insert(payload);
+      await supabase.from("activity_log").insert({
+        kind: "matter_created",
+        description: `Matter opened: ${payload.name}`,
+      });
+    }
+    setForm(EMPTY);
+    setEditingId(null);
+    setOpen(false);
     setSaving(false);
     load();
+  }
+
+  async function updateStatus(m: Matter, status: string) {
+    setMatters((prev) =>
+      prev.map((x) => (x.id === m.id ? { ...x, status } : x)),
+    );
+    await supabase.from("matters").update({ status }).eq("id", m.id);
   }
 
   return (
     <div>
       <div className="page-head">
         <h1 className="page-title">Matters</h1>
-        <button className="btn" onClick={() => setAdding(true)} type="button">
+        <button className="btn" onClick={openAdd} type="button">
           + Add Matter
         </button>
       </div>
@@ -85,19 +117,42 @@ export default function MattersPage() {
                 <th>Matter</th>
                 <th>Client</th>
                 <th>Practice Area</th>
+                <th>Assigned To</th>
                 <th>Rate</th>
                 <th>Status</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {matters.map((m) => (
                 <tr key={m.id}>
-                  <td className="strong-cell">{m.name}</td>
+                  <td className="strong-cell">
+                    <Link href={`/dashboard/matters/${m.id}`} className="row-link">
+                      {m.name}
+                    </Link>
+                  </td>
                   <td>{clientName(m.client_id)}</td>
                   <td>{m.practice_area || "—"}</td>
+                  <td>{m.assigned_to || "—"}</td>
                   <td>{m.hourly_rate ? `$${m.hourly_rate}/hr` : "—"}</td>
                   <td>
-                    <span className={`pill pill-${m.status}`}>{m.status}</span>
+                    <select
+                      className={`inline-status pill-${m.status}`}
+                      value={m.status}
+                      onChange={(e) => updateStatus(m, e.target.value)}
+                    >
+                      <option value="open">open</option>
+                      <option value="closed">closed</option>
+                    </select>
+                  </td>
+                  <td className="actions-cell">
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() => openEdit(m)}
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -106,10 +161,10 @@ export default function MattersPage() {
         </div>
       )}
 
-      {adding && (
-        <div className="modal-backdrop" onClick={() => setAdding(false)}>
+      {open && (
+        <div className="modal-backdrop" onClick={() => setOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Add Matter</h3>
+            <h3>{editingId ? "Edit Matter" : "Add Matter"}</h3>
             <label>
               Matter Name
               <input
@@ -149,6 +204,21 @@ export default function MattersPage() {
               </select>
             </label>
             <label>
+              Assigned To
+              <input
+                list="attorney-list"
+                value={form.assigned_to}
+                onChange={(e) =>
+                  setForm({ ...form, assigned_to: e.target.value })
+                }
+              />
+              <datalist id="attorney-list">
+                {ATTORNEYS.map((a) => (
+                  <option key={a} value={a} />
+                ))}
+              </datalist>
+            </label>
+            <label>
               Hourly Rate (USD)
               <input
                 type="number"
@@ -172,7 +242,7 @@ export default function MattersPage() {
               <button
                 type="button"
                 className="ghost"
-                onClick={() => setAdding(false)}
+                onClick={() => setOpen(false)}
               >
                 Cancel
               </button>
@@ -182,7 +252,7 @@ export default function MattersPage() {
                 onClick={save}
                 disabled={saving || !form.name.trim()}
               >
-                {saving ? "Saving…" : "Save Matter"}
+                {saving ? "Saving…" : editingId ? "Save Changes" : "Save Matter"}
               </button>
             </div>
           </div>
