@@ -122,6 +122,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 <tr>
                   <th>Date</th>
                   <th>Activity</th>
+                  <th>Description</th>
                   <th>Lawyer</th>
                   <th>Duration</th>
                 </tr>
@@ -131,6 +132,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   <tr key={e.id}>
                     <td>{new Date(e.logged_at).toLocaleDateString()}</td>
                     <td>{e.activity || "—"}</td>
+                    <td>{e.note || "—"}</td>
                     <td>{e.lawyer}</td>
                     <td>{fmtHm(e.duration_seconds)}</td>
                   </tr>

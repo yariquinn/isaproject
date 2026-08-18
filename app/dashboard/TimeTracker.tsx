@@ -122,7 +122,11 @@ export default function TimeTracker() {
     await load();
   }
 
-  async function submitLog(fields: { activity: string; lawyer: string }) {
+  async function submitLog(fields: {
+    activity: string;
+    lawyer: string;
+    note: string;
+  }) {
     if (!logTarget) return;
     const { timer, seconds } = logTarget;
 
@@ -131,6 +135,7 @@ export default function TimeTracker() {
       activity: fields.activity,
       lawyer: fields.lawyer || "Isa",
       duration_seconds: seconds,
+      note: fields.note.trim() || null,
     });
     await logActivity(
       "time_logged",
@@ -293,10 +298,11 @@ function LogModal({
   defaultLawyer: string;
   seconds: number;
   onCancel: () => void;
-  onSubmit: (f: { activity: string; lawyer: string }) => void;
+  onSubmit: (f: { activity: string; lawyer: string; note: string }) => void;
 }) {
   const [activity, setActivity] = useState<string>(ACTIVITY_TYPES[0]);
   const [lawyer, setLawyer] = useState(defaultLawyer);
+  const [note, setNote] = useState("");
 
   return (
     <div className="modal-backdrop" onClick={onCancel}>
@@ -319,6 +325,15 @@ function LogModal({
           Lawyer
           <input value={lawyer} onChange={(e) => setLawyer(e.target.value)} />
         </label>
+        <label>
+          Description
+          <textarea
+            rows={3}
+            placeholder="What did you work on for the client?"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </label>
         <div className="modal-actions">
           <button type="button" className="ghost" onClick={onCancel}>
             Cancel
@@ -326,7 +341,7 @@ function LogModal({
           <button
             type="button"
             className="btn"
-            onClick={() => onSubmit({ activity, lawyer })}
+            onClick={() => onSubmit({ activity, lawyer, note })}
           >
             Save entry
           </button>
