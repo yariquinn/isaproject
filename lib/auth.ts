@@ -9,7 +9,7 @@ export function getAccessCode(): string {
 
 // Only these people may enter the backend (matched case-insensitively, with
 // surrounding whitespace ignored), in addition to the access code.
-export const ALLOWED_NAMES = ["Yari Corsino"];
+export const ALLOWED_NAMES = ["Yari Corsino", "Isa Abdur-Rahman"];
 
 export function isAllowedName(name: string): boolean {
   const normalized = name.trim().toLowerCase();
