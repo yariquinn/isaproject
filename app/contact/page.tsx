@@ -1,3 +1,5 @@
+import ContactForm from "./ContactForm";
+
 export const metadata = {
   title: "Contact – The Law Office of Isa Abdur-Rahman, PLLC",
 };
@@ -34,6 +36,19 @@ export default function Contact() {
               <div className="label">Email</div>
               <a href="mailto:info@rahman-esq.com">info@rahman-esq.com</a>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="block alt">
+        <div className="container">
+          <h2 className="section-title">Send a Message</h2>
+          <p className="section-sub">
+            Share a few details about your matter and we&rsquo;ll follow up with
+            you directly.
+          </p>
+          <div className="form-wrap">
+            <ContactForm />
           </div>
         </div>
       </section>
