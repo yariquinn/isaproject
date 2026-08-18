@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client } from "@/lib/types";
+import { InlineSelect, InlineText } from "../Inline";
+import { usePortal } from "../PortalProvider";
 
 const EMPTY = {
   name: "",
@@ -15,12 +17,13 @@ const EMPTY = {
 };
 
 export default function ClientsPage() {
+  const { userName } = usePortal();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [sortAsc, setSortAsc] = useState<boolean | null>(null);
 
   async function load() {
     const { data } = await supabase
@@ -35,64 +38,73 @@ export default function ClientsPage() {
     load();
   }, []);
 
-  function openAdd() {
-    setForm(EMPTY);
-    setEditingId(null);
-    setOpen(true);
+  const rows = useMemo(() => {
+    if (sortAsc === null) return clients;
+    return [...clients].sort((a, b) =>
+      sortAsc
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name),
+    );
+  }, [clients, sortAsc]);
+
+  async function patch(id: string, changes: Partial<Client>) {
+    setClients((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...changes } : c)),
+    );
+    await supabase.from("clients").update(changes).eq("id", id);
   }
 
-  function openEdit(c: Client) {
-    setForm({
-      name: c.name,
-      primary_contact: c.primary_contact ?? "",
-      email: c.email ?? "",
-      phone: c.phone ?? "",
-      address: c.address ?? "",
-      notes: c.notes ?? "",
+  // Update a contact field and record the old → new change in the activity feed.
+  async function updateContact(
+    client: Client,
+    field: "email" | "phone" | "primary_contact",
+    label: string,
+    rawValue: string,
+  ) {
+    const oldVal = client[field];
+    const newVal = rawValue.trim() || null;
+    if (newVal === oldVal) return;
+    await patch(client.id, { [field]: newVal } as Partial<Client>);
+    await supabase.from("activity_log").insert({
+      kind: "client_updated",
+      client_id: client.id,
+      description: `${userName} updated ${client.name}'s ${label} from ${
+        oldVal || "—"
+      } to ${newVal || "—"}`,
     });
-    setEditingId(c.id);
-    setOpen(true);
   }
 
-  async function save() {
+  async function addClient() {
     if (!form.name.trim()) return;
     setSaving(true);
-    const payload = {
-      name: form.name.trim(),
-      primary_contact: form.primary_contact.trim() || null,
-      email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
-      address: form.address.trim() || null,
-      notes: form.notes.trim() || null,
-    };
-    if (editingId) {
-      await supabase.from("clients").update(payload).eq("id", editingId);
-    } else {
-      await supabase.from("clients").insert(payload);
-      await supabase.from("activity_log").insert({
-        kind: "client_added",
-        description: `Client added: ${payload.name}`,
-      });
-    }
+    const { data: created } = await supabase
+      .from("clients")
+      .insert({
+        name: form.name.trim(),
+        primary_contact: form.primary_contact.trim() || null,
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        address: form.address.trim() || null,
+        notes: form.notes.trim() || null,
+      })
+      .select("id")
+      .single();
+    await supabase.from("activity_log").insert({
+      kind: "client_added",
+      client_id: created?.id ?? null,
+      description: `${userName} added client ${form.name.trim()}`,
+    });
     setForm(EMPTY);
-    setEditingId(null);
     setOpen(false);
     setSaving(false);
     load();
-  }
-
-  async function updateStatus(c: Client, status: string) {
-    setClients((prev) =>
-      prev.map((x) => (x.id === c.id ? { ...x, status } : x)),
-    );
-    await supabase.from("clients").update({ status }).eq("id", c.id);
   }
 
   return (
     <div>
       <div className="page-head">
         <h1 className="page-title">Clients</h1>
-        <button className="btn" onClick={openAdd} type="button">
+        <button className="btn" onClick={() => setOpen(true)} type="button">
           + Add Client
         </button>
       </div>
@@ -106,7 +118,13 @@ export default function ClientsPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Name</th>
+                <th
+                  className="sortable"
+                  onClick={() => setSortAsc((s) => (s === true ? false : true))}
+                >
+                  Name{" "}
+                  {sortAsc === null ? "↕" : sortAsc ? "↑" : "↓"}
+                </th>
                 <th>Contact</th>
                 <th>Email</th>
                 <th>Phone</th>
@@ -115,34 +133,56 @@ export default function ClientsPage() {
               </tr>
             </thead>
             <tbody>
-              {clients.map((c) => (
+              {rows.map((c) => (
                 <tr key={c.id}>
                   <td className="strong-cell">
-                    <Link href={`/dashboard/clients/${c.id}`} className="row-link">
-                      {c.name}
-                    </Link>
+                    <InlineText
+                      value={c.name}
+                      onSave={(v) => {
+                        if (v) patch(c.id, { name: v });
+                      }}
+                    />
                   </td>
-                  <td>{c.primary_contact || "—"}</td>
-                  <td>{c.email || "—"}</td>
-                  <td>{c.phone || "—"}</td>
                   <td>
-                    <select
-                      className={`inline-status pill-${c.status}`}
+                    <InlineText
+                      value={c.primary_contact}
+                      onSave={(v) =>
+                        updateContact(c, "primary_contact", "primary contact", v)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <InlineText
+                      value={c.email}
+                      type="email"
+                      onSave={(v) => updateContact(c, "email", "email", v)}
+                    />
+                  </td>
+                  <td>
+                    <InlineText
+                      value={c.phone}
+                      type="tel"
+                      onSave={(v) => updateContact(c, "phone", "phone number", v)}
+                    />
+                  </td>
+                  <td>
+                    <InlineSelect
                       value={c.status}
-                      onChange={(e) => updateStatus(c, e.target.value)}
-                    >
-                      <option value="active">active</option>
-                      <option value="inactive">inactive</option>
-                    </select>
+                      className={`pill-${c.status}`}
+                      options={[
+                        { value: "active", label: "active" },
+                        { value: "inactive", label: "inactive" },
+                      ]}
+                      onSave={(v) => patch(c.id, { status: v })}
+                    />
                   </td>
                   <td className="actions-cell">
-                    <button
-                      type="button"
+                    <Link
+                      href={`/dashboard/clients/${c.id}`}
                       className="link-btn"
-                      onClick={() => openEdit(c)}
                     >
-                      Edit
-                    </button>
+                      Open ›
+                    </Link>
                   </td>
                 </tr>
               ))}
@@ -154,7 +194,7 @@ export default function ClientsPage() {
       {open && (
         <div className="modal-backdrop" onClick={() => setOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editingId ? "Edit Client" : "Add Client"}</h3>
+            <h3>Add Client</h3>
             <label>
               Name
               <input
@@ -211,10 +251,10 @@ export default function ClientsPage() {
               <button
                 type="button"
                 className="btn"
-                onClick={save}
+                onClick={addClient}
                 disabled={saving || !form.name.trim()}
               >
-                {saving ? "Saving…" : editingId ? "Save Changes" : "Save Client"}
+                {saving ? "Saving…" : "Save Client"}
               </button>
             </div>
           </div>

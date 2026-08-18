@@ -29,9 +29,8 @@ const KIND_META: Record<
   { group: "client" | "matter" | "time"; label: string }
 > = {
   client_added: { group: "client", label: "Client" },
+  client_updated: { group: "client", label: "Client" },
   matter_created: { group: "matter", label: "Matter" },
-  timer_started: { group: "time", label: "Time" },
-  timer_paused: { group: "time", label: "Time" },
   time_logged: { group: "time", label: "Time" },
 };
 

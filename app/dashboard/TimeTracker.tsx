@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ACTIVITY_TYPES, type Matter, type Timer } from "@/lib/types";
+import { usePortal } from "./PortalProvider";
 
 function fmt(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));
@@ -24,11 +25,13 @@ function elapsedOf(t: Timer, nowMs: number): number {
 type LogTarget = { timer: Timer; seconds: number } | null;
 
 export default function TimeTracker() {
+  const { userName } = usePortal();
   const [timers, setTimers] = useState<Timer[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const [open, setOpen] = useState(true);
   const [picking, setPicking] = useState(false);
+  const [pickQuery, setPickQuery] = useState("");
   const [logTarget, setLogTarget] = useState<LogTarget>(null);
 
   const load = useCallback(async () => {
@@ -51,10 +54,6 @@ export default function TimeTracker() {
 
   const matterName = (id: string | null) =>
     matters.find((m) => m.id === id)?.name ?? "Untitled timer";
-
-  async function logActivity(kind: string, description: string) {
-    await supabase.from("activity_log").insert({ kind, description });
-  }
 
   async function pauseOthers(exceptId?: string) {
     for (const t of timers) {
@@ -82,7 +81,6 @@ export default function TimeTracker() {
       is_running: true,
       last_started_at: new Date().toISOString(),
     });
-    await logActivity("timer_started", `Timer started for ${matter.name}`);
     setPicking(false);
     await load();
   }
@@ -106,7 +104,6 @@ export default function TimeTracker() {
         last_started_at: null,
       })
       .eq("id", target.id);
-    await logActivity("timer_paused", `Timer paused for ${matterName(target.matter_id)}`);
     await load();
   }
 
@@ -126,9 +123,13 @@ export default function TimeTracker() {
     activity: string;
     lawyer: string;
     note: string;
+    seconds: number;
   }) {
     if (!logTarget) return;
-    const { timer, seconds } = logTarget;
+    const { timer } = logTarget;
+    const seconds = fields.seconds;
+    const clientId =
+      matters.find((m) => m.id === timer.matter_id)?.client_id ?? null;
 
     await supabase.from("time_entries").insert({
       matter_id: timer.matter_id,
@@ -137,12 +138,14 @@ export default function TimeTracker() {
       duration_seconds: seconds,
       note: fields.note.trim() || null,
     });
-    await logActivity(
-      "time_logged",
-      `${fields.lawyer || "Isa"} logged ${fmt(seconds)} to ${matterName(
+    await supabase.from("activity_log").insert({
+      kind: "time_logged",
+      matter_id: timer.matter_id,
+      client_id: clientId,
+      description: `${userName} logged ${fmt(seconds)} to ${matterName(
         timer.matter_id,
       )} (${fields.activity})`,
-    );
+    });
     // Reset but keep the timer so more time can be added to the same matter.
     await supabase
       .from("timers")
@@ -233,36 +236,69 @@ export default function TimeTracker() {
       )}
 
       {picking && (
-        <div className="modal-backdrop" onClick={() => setPicking(false)}>
+        <div
+          className="modal-backdrop"
+          onClick={() => {
+            setPicking(false);
+            setPickQuery("");
+          }}
+        >
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Start a timer</h3>
-            <p className="modal-dur">Choose a matter to track time against:</p>
+            <p className="modal-dur">Search for a matter to track time against:</p>
             {matters.length === 0 ? (
               <p className="muted-line">
                 No matters yet. Add a matter first, then start a timer.
               </p>
             ) : (
-              <div className="matter-pick">
-                {matters.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className="matter-pick-item"
-                    onClick={() => startForMatter(m)}
-                  >
-                    <span className="mp-name">{m.name}</span>
-                    <span className="mp-sub">
-                      {m.practice_area} · {m.assigned_to || "Unassigned"}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <>
+                <input
+                  className="activity-search"
+                  type="search"
+                  autoFocus
+                  placeholder="Search matters…"
+                  value={pickQuery}
+                  onChange={(e) => setPickQuery(e.target.value)}
+                  style={{ width: "100%" }}
+                />
+                <div className="matter-pick">
+                  {matters
+                    .filter((m) => {
+                      const q = pickQuery.trim().toLowerCase();
+                      if (!q) return true;
+                      return (
+                        m.name.toLowerCase().includes(q) ||
+                        (m.practice_area || "").toLowerCase().includes(q) ||
+                        (m.assigned_to || "").toLowerCase().includes(q)
+                      );
+                    })
+                    .map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className="matter-pick-item"
+                        onClick={() => {
+                          setPickQuery("");
+                          startForMatter(m);
+                        }}
+                      >
+                        <span className="mp-name">{m.name}</span>
+                        <span className="mp-sub">
+                          {m.practice_area} · {m.assigned_to || "Unassigned"}
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              </>
             )}
             <div className="modal-actions">
               <button
                 type="button"
                 className="ghost"
-                onClick={() => setPicking(false)}
+                onClick={() => {
+                  setPicking(false);
+                  setPickQuery("");
+                }}
               >
                 Cancel
               </button>
@@ -298,19 +334,28 @@ function LogModal({
   defaultLawyer: string;
   seconds: number;
   onCancel: () => void;
-  onSubmit: (f: { activity: string; lawyer: string; note: string }) => void;
+  onSubmit: (f: {
+    activity: string;
+    lawyer: string;
+    note: string;
+    seconds: number;
+  }) => void;
 }) {
   const [activity, setActivity] = useState<string>(ACTIVITY_TYPES[0]);
   const [lawyer, setLawyer] = useState(defaultLawyer);
   const [note, setNote] = useState("");
+  const [h, setH] = useState(Math.floor(seconds / 3600));
+  const [m, setM] = useState(Math.floor((seconds % 3600) / 60));
+  const [s, setS] = useState(seconds % 60);
+
+  const totalSeconds = h * 3600 + m * 60 + s;
+  const num = (v: string) => Math.max(0, Number(v.replace(/[^0-9]/g, "")) || 0);
 
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3>Log time</h3>
-        <p className="modal-dur">
-          {matterLabel} · <strong>{fmt(seconds)}</strong>
-        </p>
+        <p className="modal-dur">{matterLabel}</p>
         <label>
           Activity
           <select value={activity} onChange={(e) => setActivity(e.target.value)}>
@@ -322,10 +367,6 @@ function LogModal({
           </select>
         </label>
         <label>
-          Lawyer
-          <input value={lawyer} onChange={(e) => setLawyer(e.target.value)} />
-        </label>
-        <label>
           Description
           <textarea
             rows={3}
@@ -334,6 +375,38 @@ function LogModal({
             onChange={(e) => setNote(e.target.value)}
           />
         </label>
+        <label>
+          Lawyer
+          <input value={lawyer} onChange={(e) => setLawyer(e.target.value)} />
+        </label>
+        <label>
+          Duration (editable)
+          <div className="dur-inputs">
+            <input
+              type="number"
+              min={0}
+              value={h}
+              onChange={(e) => setH(num(e.target.value))}
+            />
+            <span>h</span>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={m}
+              onChange={(e) => setM(Math.min(59, num(e.target.value)))}
+            />
+            <span>m</span>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={s}
+              onChange={(e) => setS(Math.min(59, num(e.target.value)))}
+            />
+            <span>s</span>
+          </div>
+        </label>
         <div className="modal-actions">
           <button type="button" className="ghost" onClick={onCancel}>
             Cancel
@@ -341,7 +414,10 @@ function LogModal({
           <button
             type="button"
             className="btn"
-            onClick={() => onSubmit({ activity, lawyer, note })}
+            disabled={totalSeconds === 0}
+            onClick={() =>
+              onSubmit({ activity, lawyer, note, seconds: totalSeconds })
+            }
           >
             Save entry
           </button>

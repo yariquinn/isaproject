@@ -47,6 +47,8 @@ export type ActivityItem = {
   id: string;
   kind: string;
   description: string;
+  client_id: string | null;
+  matter_id: string | null;
   created_at: string;
 };
 

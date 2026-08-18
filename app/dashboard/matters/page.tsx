@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ATTORNEYS, PRACTICE_AREAS, type Client, type Matter } from "@/lib/types";
+import { InlineNumber, InlineSelect, InlineText } from "../Inline";
+import { usePortal } from "../PortalProvider";
 
 const EMPTY = {
   name: "",
@@ -15,13 +17,14 @@ const EMPTY = {
 };
 
 export default function MattersPage() {
+  const { userName } = usePortal();
   const [matters, setMatters] = useState<Matter[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const [sortAsc, setSortAsc] = useState<boolean | null>(null);
 
   async function load() {
     const [{ data: m }, { data: c }] = await Promise.all([
@@ -40,67 +43,71 @@ export default function MattersPage() {
     load();
   }, []);
 
-  const clientName = (id: string | null) =>
-    clients.find((c) => c.id === id)?.name ?? "—";
+  const rows = useMemo(() => {
+    if (sortAsc === null) return matters;
+    return [...matters].sort((a, b) =>
+      sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
+    );
+  }, [matters, sortAsc]);
 
-  function openAdd() {
-    setForm(EMPTY);
-    setEditingId(null);
-    setOpen(true);
+  const clientOptions = useMemo(
+    () => [
+      { value: "", label: "— none —" },
+      ...clients.map((c) => ({ value: c.id, label: c.name })),
+    ],
+    [clients],
+  );
+
+  const attorneyOptions = (current: string | null) => {
+    const base: { value: string; label: string }[] = ATTORNEYS.map((a) => ({
+      value: a,
+      label: a,
+    }));
+    if (current && !ATTORNEYS.includes(current as (typeof ATTORNEYS)[number])) {
+      base.push({ value: current, label: current });
+    }
+    return base;
+  };
+
+  async function patch(id: string, changes: Partial<Matter>) {
+    setMatters((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, ...changes } : m)),
+    );
+    await supabase.from("matters").update(changes).eq("id", id);
   }
 
-  function openEdit(m: Matter) {
-    setForm({
-      name: m.name,
-      client_id: m.client_id ?? "",
-      practice_area: m.practice_area ?? PRACTICE_AREAS[0],
-      assigned_to: m.assigned_to ?? ATTORNEYS[0],
-      description: m.description ?? "",
-      hourly_rate: m.hourly_rate != null ? String(m.hourly_rate) : "",
-    });
-    setEditingId(m.id);
-    setOpen(true);
-  }
-
-  async function save() {
+  async function addMatter() {
     if (!form.name.trim()) return;
     setSaving(true);
-    const payload = {
-      name: form.name.trim(),
+    const { data: created } = await supabase
+      .from("matters")
+      .insert({
+        name: form.name.trim(),
+        client_id: form.client_id || null,
+        practice_area: form.practice_area,
+        assigned_to: form.assigned_to || null,
+        description: form.description.trim() || null,
+        hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
+      })
+      .select("id")
+      .single();
+    await supabase.from("activity_log").insert({
+      kind: "matter_created",
+      matter_id: created?.id ?? null,
       client_id: form.client_id || null,
-      practice_area: form.practice_area,
-      assigned_to: form.assigned_to || null,
-      description: form.description.trim() || null,
-      hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
-    };
-    if (editingId) {
-      await supabase.from("matters").update(payload).eq("id", editingId);
-    } else {
-      await supabase.from("matters").insert(payload);
-      await supabase.from("activity_log").insert({
-        kind: "matter_created",
-        description: `Matter opened: ${payload.name}`,
-      });
-    }
+      description: `${userName} opened matter ${form.name.trim()}`,
+    });
     setForm(EMPTY);
-    setEditingId(null);
     setOpen(false);
     setSaving(false);
     load();
-  }
-
-  async function updateStatus(m: Matter, status: string) {
-    setMatters((prev) =>
-      prev.map((x) => (x.id === m.id ? { ...x, status } : x)),
-    );
-    await supabase.from("matters").update({ status }).eq("id", m.id);
   }
 
   return (
     <div>
       <div className="page-head">
         <h1 className="page-title">Matters</h1>
-        <button className="btn" onClick={openAdd} type="button">
+        <button className="btn" onClick={() => setOpen(true)} type="button">
           + Add Matter
         </button>
       </div>
@@ -114,7 +121,12 @@ export default function MattersPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Matter</th>
+                <th
+                  className="sortable"
+                  onClick={() => setSortAsc((s) => (s === true ? false : true))}
+                >
+                  Matter {sortAsc === null ? "↕" : sortAsc ? "↑" : "↓"}
+                </th>
                 <th>Client</th>
                 <th>Practice Area</th>
                 <th>Assigned To</th>
@@ -124,35 +136,66 @@ export default function MattersPage() {
               </tr>
             </thead>
             <tbody>
-              {matters.map((m) => (
+              {rows.map((m) => (
                 <tr key={m.id}>
                   <td className="strong-cell">
-                    <Link href={`/dashboard/matters/${m.id}`} className="row-link">
-                      {m.name}
-                    </Link>
+                    <InlineText
+                      value={m.name}
+                      onSave={(v) => {
+                        if (v) patch(m.id, { name: v });
+                      }}
+                    />
                   </td>
-                  <td>{clientName(m.client_id)}</td>
-                  <td>{m.practice_area || "—"}</td>
-                  <td>{m.assigned_to || "—"}</td>
-                  <td>{m.hourly_rate ? `$${m.hourly_rate}/hr` : "—"}</td>
                   <td>
-                    <select
-                      className={`inline-status pill-${m.status}`}
+                    <InlineSelect
+                      value={m.client_id ?? ""}
+                      options={clientOptions}
+                      onSave={(v) => patch(m.id, { client_id: v || null })}
+                    />
+                  </td>
+                  <td>
+                    <InlineSelect
+                      value={m.practice_area ?? PRACTICE_AREAS[0]}
+                      options={PRACTICE_AREAS.map((p) => ({
+                        value: p,
+                        label: p,
+                      }))}
+                      onSave={(v) => patch(m.id, { practice_area: v })}
+                    />
+                  </td>
+                  <td>
+                    <InlineSelect
+                      value={m.assigned_to ?? ATTORNEYS[0]}
+                      options={attorneyOptions(m.assigned_to)}
+                      onSave={(v) => patch(m.id, { assigned_to: v })}
+                    />
+                  </td>
+                  <td>
+                    <InlineNumber
+                      value={m.hourly_rate}
+                      prefix="$"
+                      suffix="/hr"
+                      onSave={(v) => patch(m.id, { hourly_rate: v })}
+                    />
+                  </td>
+                  <td>
+                    <InlineSelect
                       value={m.status}
-                      onChange={(e) => updateStatus(m, e.target.value)}
-                    >
-                      <option value="open">open</option>
-                      <option value="closed">closed</option>
-                    </select>
+                      className={`pill-${m.status}`}
+                      options={[
+                        { value: "open", label: "open" },
+                        { value: "closed", label: "closed" },
+                      ]}
+                      onSave={(v) => patch(m.id, { status: v })}
+                    />
                   </td>
                   <td className="actions-cell">
-                    <button
-                      type="button"
+                    <Link
+                      href={`/dashboard/matters/${m.id}`}
                       className="link-btn"
-                      onClick={() => openEdit(m)}
                     >
-                      Edit
-                    </button>
+                      Open ›
+                    </Link>
                   </td>
                 </tr>
               ))}
@@ -164,7 +207,7 @@ export default function MattersPage() {
       {open && (
         <div className="modal-backdrop" onClick={() => setOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editingId ? "Edit Matter" : "Add Matter"}</h3>
+            <h3>Add Matter</h3>
             <label>
               Matter Name
               <input
@@ -205,18 +248,18 @@ export default function MattersPage() {
             </label>
             <label>
               Assigned To
-              <input
-                list="attorney-list"
+              <select
                 value={form.assigned_to}
                 onChange={(e) =>
                   setForm({ ...form, assigned_to: e.target.value })
                 }
-              />
-              <datalist id="attorney-list">
+              >
                 {ATTORNEYS.map((a) => (
-                  <option key={a} value={a} />
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </label>
             <label>
               Hourly Rate (USD)
@@ -249,10 +292,10 @@ export default function MattersPage() {
               <button
                 type="button"
                 className="btn"
-                onClick={save}
+                onClick={addMatter}
                 disabled={saving || !form.name.trim()}
               >
-                {saving ? "Saving…" : editingId ? "Save Changes" : "Save Matter"}
+                {saving ? "Saving…" : "Save Matter"}
               </button>
             </div>
           </div>

@@ -1201,6 +1201,126 @@ section.block.alt {
   color: var(--dash-muted);
 }
 
+/* Inline edit fields */
+.inline-view {
+  cursor: text;
+  border-bottom: 1px dashed transparent;
+  padding: 0.1rem 0;
+}
+.inline-view:hover {
+  border-bottom-color: var(--accent);
+}
+.inline-view.block {
+  display: block;
+  min-height: 1.5rem;
+  color: var(--dash-fg);
+}
+.inline-placeholder {
+  color: var(--dash-muted);
+  font-style: italic;
+}
+.inline-input {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+  width: 100%;
+  max-width: 100%;
+}
+.inline-input:focus {
+  outline: none;
+}
+.inline-textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+  width: 100%;
+  resize: vertical;
+}
+.inline-textarea:focus {
+  outline: none;
+}
+.inline-select {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  background: var(--dash-bg);
+  color: var(--dash-fg);
+  cursor: pointer;
+  max-width: 100%;
+}
+.inline-select.pill-active,
+.inline-select.pill-open {
+  background: #eaf4ec;
+  color: #285d38;
+  border-color: #bcdcc4;
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+.inline-select.pill-inactive,
+.inline-select.pill-closed {
+  background: var(--dash-bg);
+  color: var(--dash-muted);
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+.editable-title .inline-view {
+  border-bottom-width: 2px;
+}
+.editable-title .inline-input {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+th.sortable:hover {
+  color: var(--accent);
+}
+.subsection {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--dash-fg);
+  margin: 1rem 0 0.25rem;
+}
+.subsection.muted {
+  color: var(--dash-muted);
+  margin-top: 1.5rem;
+}
+.link-list.dim li a {
+  color: var(--dash-muted);
+}
+.dur-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.dur-inputs input {
+  width: 4rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 4px;
+  background: var(--dash-bg);
+  color: var(--dash-fg);
+}
+.dur-inputs span {
+  color: var(--dash-muted);
+  font-size: 0.85rem;
+}
+
 /* ============================================================
    Blog (front end)
    ============================================================ */
