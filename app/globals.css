@@ -187,10 +187,15 @@ section.block.alt {
 /* Contact */
 .contact-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
-  max-width: 40rem;
+  max-width: 60rem;
   margin: 0 auto;
+}
+@media (max-width: 640px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .contact-item {
   border: 1px solid var(--border);
