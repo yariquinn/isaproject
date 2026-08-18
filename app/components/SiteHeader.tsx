@@ -12,6 +12,9 @@ export default function SiteHeader() {
           <Link href="/">Home</Link>
           <Link href="/attorney-bio">Attorney Bio</Link>
           <Link href="/contact">Contact</Link>
+          <Link href="/login" className="nav-login">
+            Attorney Login
+          </Link>
         </nav>
       </div>
     </header>
