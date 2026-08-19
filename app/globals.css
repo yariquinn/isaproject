@@ -2049,6 +2049,7 @@ a.activity-row:hover .act-desc {
 }
 .todo-row-meta {
   flex: none;
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 0.6rem;

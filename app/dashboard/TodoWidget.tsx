@@ -157,16 +157,16 @@ export default function TodoWidget({
           {t.done ? "✓" : ""}
         </button>
         <div className="todo-main">
+          {t.priority && t.priority !== "-" && (
+            <span className={`todo-prio-pill prio-${t.priority}`}>
+              {prioLabel(t.priority)}
+            </span>
+          )}
           <button type="button" className="todo-open" onClick={() => openTodo(t)}>
             <span className="todo-title">{t.title}</span>
           </button>
           <span className="todo-row-meta">
-            {t.priority && t.priority !== "-" && (
-              <span className={`todo-prio-pill prio-${t.priority}`}>
-                {prioLabel(t.priority)}
-              </span>
-            )}
-            {mName && <span className="todo-matter">{mName}</span>}
+            {!matterId && mName && <span className="todo-matter">{mName}</span>}
             {t.due_date && (
               <span className={`todo-due${overdue ? " overdue" : ""}`}>
                 Due {fmtDue(t.due_date)}
