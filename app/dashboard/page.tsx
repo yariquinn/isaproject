@@ -56,12 +56,53 @@ function periodStart(key: string): number {
 }
 
 // Quick actions that are demo-only (open an explainer modal).
-const DEMO_ACTIONS: Record<string, { label: string; icon: string; note: string }> = {
-  invoice: { label: "Create invoice", icon: "🧾", note: "Invoice creation would open here. Invoicing is a demo in this mockup." },
-  payment: { label: "Record payment", icon: "💵", note: "Recording a payment would mark an invoice paid. This is a demo action." },
-  expense: { label: "Add expense", icon: "🧮", note: "Expense entry would open here. Expenses are a demo in this mockup." },
-  document: { label: "Upload document", icon: "📄", note: "Document upload would open here. Storage is a demo in this mockup." },
+const DEMO_ACTIONS: Record<string, { label: string; note: string }> = {
+  invoice: { label: "Create invoice", note: "Invoice creation would open here. Invoicing is a demo in this mockup." },
+  payment: { label: "Record payment", note: "Recording a payment would mark an invoice paid. This is a demo action." },
+  expense: { label: "Add expense", note: "Expense entry would open here. Expenses are a demo in this mockup." },
+  document: { label: "Upload document", note: "Document upload would open here. Storage is a demo in this mockup." },
 };
+
+function Ic({ name }: { name: string }) {
+  const p = {
+    width: 16,
+    height: 16,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  switch (name) {
+    case "invoice":
+      return (
+        <svg {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></svg>
+      );
+    case "payment":
+      return (
+        <svg {...p}><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
+      );
+    case "expense":
+      return (
+        <svg {...p}><circle cx="12" cy="12" r="10" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+      );
+    case "document":
+      return (
+        <svg {...p}><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></svg>
+      );
+    case "matter":
+      return (
+        <svg {...p}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
+      );
+    case "client":
+      return (
+        <svg {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+      );
+    default:
+      return null;
+  }
+}
 
 export default function Overview() {
   const { userName } = usePortal();
@@ -187,22 +228,22 @@ export default function Overview() {
 
       <div className="quick-actions">
         <button type="button" className="qa-btn" onClick={() => setQa("invoice")}>
-          <span className="qa-icon">🧾</span>Create invoice
+          <span className="qa-icon"><Ic name="invoice" /></span>Create invoice
         </button>
         <button type="button" className="qa-btn" onClick={() => setQa("payment")}>
-          <span className="qa-icon">💵</span>Record payment
+          <span className="qa-icon"><Ic name="payment" /></span>Record payment
         </button>
         <button type="button" className="qa-btn" onClick={() => setQa("expense")}>
-          <span className="qa-icon">🧮</span>Add expense
+          <span className="qa-icon"><Ic name="expense" /></span>Add expense
         </button>
         <button type="button" className="qa-btn" onClick={() => setQa("document")}>
-          <span className="qa-icon">📄</span>Upload document
+          <span className="qa-icon"><Ic name="document" /></span>Upload document
         </button>
         <Link href="/dashboard/matters" className="qa-btn">
-          <span className="qa-icon">📁</span>Add Matter
+          <span className="qa-icon"><Ic name="matter" /></span>Add Matter
         </Link>
         <Link href="/dashboard/clients" className="qa-btn">
-          <span className="qa-icon">👤</span>Add Client
+          <span className="qa-icon"><Ic name="client" /></span>Add Client
         </Link>
       </div>
 
@@ -309,9 +350,7 @@ export default function Overview() {
       {qa && DEMO_ACTIONS[qa] && (
         <div className="modal-backdrop" onClick={() => setQa(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>
-              {DEMO_ACTIONS[qa].icon} {DEMO_ACTIONS[qa].label}
-            </h3>
+            <h3>{DEMO_ACTIONS[qa].label}</h3>
             <p className="modal-dur">{DEMO_ACTIONS[qa].note}</p>
             <div className="modal-actions">
               <button type="button" className="btn" onClick={() => setQa(null)}>

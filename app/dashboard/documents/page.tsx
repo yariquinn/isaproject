@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const PLACEHOLDER_DOCS = [
   { name: "Kent Ave — Purchase Agreement.pdf", matter: "Kent Ave Acquisition", updated: "2d ago" },
@@ -9,22 +8,71 @@ const PLACEHOLDER_DOCS = [
   { name: "Crescent Center — Title Report.pdf", matter: "Crescent Center Purchase", updated: "1w ago" },
 ];
 
-const ESIGN_DOCS = [
-  { name: "Okafor — Last Will & Testament", matter: "Okafor Estate Plan", signer: "Ada Okafor", status: "signed" },
-  { name: "Okafor — Durable Power of Attorney", matter: "Okafor Estate Plan", signer: "Chike Okafor", status: "awaiting" },
-  { name: "Greenpoint — Operating Agreement", matter: "Greenpoint Formation", signer: "Marcus Vale", status: "sent" },
+const TEMPLATES = [
+  { name: "Residential Purchase Agreement", area: "Real Estate" },
+  { name: "Operating Agreement (LLC)", area: "Business Law" },
+  { name: "Last Will & Testament", area: "Family Estates" },
+  { name: "Retainer / Engagement Letter", area: "General" },
+  { name: "Deed of Sale", area: "Real Estate" },
 ];
 
+type Esign = {
+  doc: string;
+  type: string;
+  client: string;
+  sent: string;
+  signers: string[];
+  status: "signed" | "awaiting";
+};
+
+const ESIGN: Esign[] = [
+  { doc: "Engagement Letter", type: "LETTER", client: "The Okafor Family Estate", sent: "Aug 18th", signers: ["Ada Okafor"], status: "signed" },
+  { doc: "Last Will & Testament", type: "WILL", client: "The Okafor Family Estate", sent: "Aug 18th", signers: ["Ada Okafor", "Chike Okafor"], status: "signed" },
+  { doc: "Durable Power of Attorney", type: "POA", client: "The Okafor Family Estate", sent: "Aug 17th", signers: ["Chike Okafor"], status: "awaiting" },
+  { doc: "Operating Agreement", type: "LLC", client: "Greenpoint Holdings LLC", sent: "Aug 15th", signers: ["Marcus Vale"], status: "awaiting" },
+  { doc: "Engagement Letter", type: "LETTER", client: "Crescent Faith Center", sent: "Aug 12th", signers: ["Yusuf Bello"], status: "signed" },
+  { doc: "Trust Agreement", type: "TRUST", client: "The Okafor Family Estate", sent: "Aug 9th", signers: ["Ada Okafor", "Chike Okafor"], status: "signed" },
+  { doc: "Healthcare Proxy", type: "PROXY", client: "Crescent Faith Center", sent: "Aug 6th", signers: ["Yusuf Bello"], status: "signed" },
+];
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 export default function DocumentsPage() {
-  const [tab, setTab] = useState<"documents" | "esign">("documents");
+  const [tab, setTab] = useState<"documents" | "templates" | "esign">("documents");
+  const [esTab, setEsTab] = useState<"all" | "awaiting" | "signed">("all");
+  const [clientFilter, setClientFilter] = useState<string>("all");
+
+  const clientsList = useMemo(
+    () => Array.from(new Set(ESIGN.map((e) => e.client))).sort(),
+    [],
+  );
+  const counts = useMemo(
+    () => ({
+      all: ESIGN.length,
+      awaiting: ESIGN.filter((e) => e.status === "awaiting").length,
+      signed: ESIGN.filter((e) => e.status === "signed").length,
+    }),
+    [],
+  );
+  const esRows = useMemo(
+    () =>
+      ESIGN.filter((e) => (esTab === "all" ? true : e.status === esTab)).filter(
+        (e) => (clientFilter === "all" ? true : e.client === clientFilter),
+      ),
+    [esTab, clientFilter],
+  );
 
   return (
     <div>
       <div className="page-head">
         <h1 className="page-title">Documents</h1>
-        <Link href="/dashboard/documents/templates" className="btn">
-          Templates
-        </Link>
       </div>
 
       <div className="doc-tabs">
@@ -36,6 +84,13 @@ export default function DocumentsPage() {
           Documents
         </button>
         <button
+          className={tab === "templates" ? "active" : undefined}
+          onClick={() => setTab("templates")}
+          type="button"
+        >
+          Templates
+        </button>
+        <button
           className={tab === "esign" ? "active" : undefined}
           onClick={() => setTab("esign")}
           type="button"
@@ -44,7 +99,36 @@ export default function DocumentsPage() {
         </button>
       </div>
 
-      {tab === "documents" ? (
+      {tab === "templates" ? (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Template</th>
+                <th>Practice Area</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {TEMPLATES.map((t) => (
+                <tr key={t.name}>
+                  <td className="strong-cell">{t.name}</td>
+                  <td>{t.area}</td>
+                  <td className="actions-cell">
+                    <button className="link-btn" type="button" disabled>
+                      Use template
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="muted-line" style={{ marginTop: "1rem" }}>
+            Templates are demo entries — generating a document from a template is
+            not functional yet.
+          </p>
+        </div>
+      ) : tab === "documents" ? (
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -69,39 +153,100 @@ export default function DocumentsPage() {
           </p>
         </div>
       ) : (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Document</th>
-                <th>Matter</th>
-                <th>Signer</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ESIGN_DOCS.map((d) => (
-                <tr key={d.name}>
-                  <td className="strong-cell">{d.name}</td>
-                  <td>{d.matter}</td>
-                  <td>{d.signer}</td>
-                  <td>
-                    <span className={`pill esign-${d.status}`}>
-                      {d.status === "signed"
-                        ? "Signed"
-                        : d.status === "awaiting"
-                          ? "Awaiting"
-                          : "Sent"}
-                    </span>
-                  </td>
-                </tr>
+        <>
+          <div className="es-head">
+            <div className="es-tabs">
+              {(["all", "awaiting", "signed"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={esTab === t ? "active" : undefined}
+                  onClick={() => setEsTab(t)}
+                >
+                  {t === "all" ? "All" : t === "awaiting" ? "Awaiting" : "Signed"}
+                  <span className="es-count">{counts[t]}</span>
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+            <label className="es-filter">
+              Client
+              <select
+                value={clientFilter}
+                onChange={(e) => setClientFilter(e.target.value)}
+              >
+                <option value="all">All clients</option>
+                {clientsList.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="table-wrap">
+            <table className="data-table es-table">
+              <thead>
+                <tr>
+                  <th>Document</th>
+                  <th>Client</th>
+                  <th>Sent</th>
+                  <th>Signers</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {esRows.map((e, i) => {
+                  const total = e.signers.length;
+                  const signed = e.status === "signed" ? total : 0;
+                  return (
+                    <tr key={`${e.doc}-${i}`}>
+                      <td className="strong-cell">
+                        {e.doc} <span className="es-type">{e.type}</span>
+                      </td>
+                      <td>{e.client}</td>
+                      <td>{e.sent}</td>
+                      <td>
+                        {total > 1 ? (
+                          <span className="es-signers">
+                            {e.signers.map((s) => (
+                              <span
+                                key={s}
+                                className={`es-avatar${e.status === "signed" ? " done" : ""}`}
+                                title={s}
+                              >
+                                {initials(s)}
+                              </span>
+                            ))}
+                            <span className="es-frac">
+                              {signed}/{total}
+                            </span>
+                          </span>
+                        ) : (
+                          e.signers[0]
+                        )}
+                      </td>
+                      <td>
+                        <span className={`es-status es-${e.status}`}>
+                          {e.status === "signed" ? "Signed" : "Awaiting client"}
+                        </span>
+                      </td>
+                      <td>
+                        <button type="button" className="es-open">
+                          {e.status === "signed" ? "View signed" : "Open"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           <p className="muted-line" style={{ marginTop: "1rem" }}>
             E-signature sending is a placeholder for this mockup.
           </p>
-        </div>
+        </>
       )}
     </div>
   );

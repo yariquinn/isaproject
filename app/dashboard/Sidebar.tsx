@@ -42,6 +42,13 @@ const GROUPS: {
 
 export default function Sidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
+  const initials =
+    userName
+      .split(" ")
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "U";
   const isActive = (href: string) =>
     href === "/dashboard"
       ? pathname === "/dashboard"
@@ -76,17 +83,23 @@ export default function Sidebar({ userName }: { userName: string }) {
       </div>
 
       <div className="sidebar-foot">
-        <div className="sidebar-user">
-          <span>
-            Signed in as <strong>{userName}</strong>
-          </span>
+        <div className="user-card">
+          <div className="user-avatar">{initials}</div>
+          <div className="user-meta">
+            <span className="user-name">{userName}</span>
+            <span className="user-sub">Employee</span>
+          </div>
           <ThemeToggle />
+          <form action={logoutAction}>
+            <button type="submit" className="signout-icon" title="Sign out" aria-label="Sign out">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
+          </form>
         </div>
-        <form action={logoutAction}>
-          <button type="submit" className="logout-btn">
-            Sign out
-          </button>
-        </form>
       </div>
     </aside>
   );

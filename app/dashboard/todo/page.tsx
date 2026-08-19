@@ -6,7 +6,7 @@ export default function TodoPage() {
   return (
     <div>
       <h1 className="page-title">Tasks</h1>
-      <div className="panel" style={{ maxWidth: "42rem" }}>
+      <div className="panel">
         <TodoWidget />
       </div>
     </div>
