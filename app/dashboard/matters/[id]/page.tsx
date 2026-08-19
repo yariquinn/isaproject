@@ -102,6 +102,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     "checklist",
   );
   const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
+  const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
 
   async function loadActivity() {
     const { data } = await supabase
@@ -181,6 +182,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       });
       loadActivity();
     }
+    // If this was the client's only open matter, offer to archive them.
+    if (status === "closed" && matter.client_id) {
+      const { count } = await supabase
+        .from("matters")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", matter.client_id)
+        .eq("status", "open");
+      if ((count ?? 0) === 0) {
+        setArchivePrompt({
+          clientId: matter.client_id,
+          name: clients.find((c) => c.id === matter.client_id)?.name ?? "this client",
+        });
+      }
+    }
+  }
+
+  async function archiveClient() {
+    if (!archivePrompt) return;
+    await supabase.from("clients").update({ archived: true }).eq("id", archivePrompt.clientId);
+    setArchivePrompt(null);
   }
 
   async function logTime(f: {
@@ -606,6 +627,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
       </div>
+
+      {archivePrompt && (
+        <div className="modal-backdrop" onClick={() => setArchivePrompt(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Archive client?</h3>
+            <p className="modal-dur">
+              This was <strong>{archivePrompt.name}</strong>&rsquo;s only open
+              matter. Archive the primary contact?
+            </p>
+            <div className="modal-actions">
+              <button type="button" className="ghost" onClick={() => setArchivePrompt(null)}>
+                Keep active
+              </button>
+              <button type="button" className="btn" onClick={archiveClient}>
+                Archive client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {logOpen && (
         <MatterLogModal

@@ -2278,6 +2278,11 @@ a.activity-row:hover .act-desc {
   color: var(--dash-muted);
 }
 
+.client-tabs {
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
 /* Centered primary-contact modal */
 .contact-modal h3 {
   text-align: center;

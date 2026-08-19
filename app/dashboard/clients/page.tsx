@@ -27,6 +27,8 @@ export default function ClientsPage() {
   const [saving, setSaving] = useState(false);
   const [sortAsc, setSortAsc] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"open" | "archived" | "all">("open");
+  const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
 
   // Guarded editing (mirrors the client record)
   const [prompt, setPrompt] = useState<{
@@ -47,11 +49,17 @@ export default function ClientsPage() {
   const [newForm, setNewForm] = useState(NEW_FORM);
 
   async function load() {
-    const { data } = await supabase
-      .from("clients")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [{ data }, { data: ms }] = await Promise.all([
+      supabase.from("clients").select("*").order("created_at", { ascending: false }),
+      supabase.from("matters").select("client_id,status"),
+    ]);
     setClients((data as Client[]) ?? []);
+    const counts: Record<string, number> = {};
+    for (const m of (ms as { client_id: string | null; status: string }[]) ?? []) {
+      if (m.client_id && m.status !== "closed")
+        counts[m.client_id] = (counts[m.client_id] ?? 0) + 1;
+    }
+    setActiveCounts(counts);
     setLoading(false);
   }
 
@@ -61,10 +69,12 @@ export default function ClientsPage() {
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let list = clients;
+    let list = clients.filter((c) =>
+      view === "archived" ? c.archived : view === "open" ? !c.archived : true,
+    );
     if (q) {
-      list = clients.filter((c) =>
-        [c.name, c.primary_contact, c.email, c.phone]
+      list = list.filter((c) =>
+        [c.name, c.primary_contact, c.email, c.phone, c.address]
           .filter(Boolean)
           .some((v) => (v as string).toLowerCase().includes(q)),
       );
@@ -73,7 +83,7 @@ export default function ClientsPage() {
     return [...list].sort((a, b) =>
       sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
     );
-  }, [clients, sortAsc, query]);
+  }, [clients, sortAsc, query, view]);
 
   async function patch(id: string, changes: Partial<Client>) {
     setClients((prev) =>
@@ -246,6 +256,19 @@ export default function ClientsPage() {
         </div>
       </div>
 
+      <div className="seg" style={{ marginBottom: "1.25rem" }}>
+        {(["open", "archived", "all"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            className={view === v ? "active" : undefined}
+            onClick={() => setView(v)}
+          >
+            {v === "open" ? "Open" : v === "archived" ? "Archived" : "All"}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <p className="muted-line">Loading…</p>
       ) : clients.length === 0 ? (
@@ -264,6 +287,7 @@ export default function ClientsPage() {
                 <th>Contact</th>
                 <th>Email</th>
                 <th>Phone</th>
+                <th>Active Matters</th>
               </tr>
             </thead>
             <tbody>
@@ -299,6 +323,15 @@ export default function ClientsPage() {
                       label="phone number"
                       type="tel"
                     />
+                  </td>
+                  <td>
+                    {activeCounts[c.id] ? (
+                      <span className="pill pill-open">
+                        {activeCounts[c.id]} active
+                      </span>
+                    ) : (
+                      <span className="inline-placeholder">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
