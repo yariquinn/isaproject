@@ -3412,3 +3412,14 @@ a.activity-row:hover .act-desc {
   gap: 0;
   min-width: 0;
 }
+
+/* Inline new-client form inside Add Matter */
+.nc-inline {
+  border: 1px dashed var(--dash-border);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem;
+  background: var(--dash-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}

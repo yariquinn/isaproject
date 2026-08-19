@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   ATTORNEYS,
+  CLIENT_TYPES,
   PRACTICE_AREAS,
   PRIORITIES,
   RATE_TYPES,
@@ -53,6 +54,36 @@ export default function MattersPage() {
   );
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [ncOpen, setNcOpen] = useState(false);
+  const [nc, setNc] = useState({ name: "", client_type: "individual", email: "", phone: "" });
+
+  async function createNewClient() {
+    if (!nc.name.trim()) return;
+    const isBiz = nc.client_type === "business";
+    const { data: created } = await supabase
+      .from("clients")
+      .insert({
+        name: nc.name.trim(),
+        client_type: nc.client_type,
+        primary_contact: isBiz ? null : nc.name.trim() || null,
+        email: nc.email.trim() || null,
+        phone: nc.phone.trim() || null,
+      })
+      .select("*")
+      .single();
+    if (created) {
+      const c = created as Client;
+      setClients((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)));
+      setForm((f) => ({ ...f, client_id: c.id }));
+      await supabase.from("activity_log").insert({
+        kind: "client_added",
+        client_id: c.id,
+        description: `${userName} added client ${c.name}`,
+      });
+    }
+    setNc({ name: "", client_type: "individual", email: "", phone: "" });
+    setNcOpen(false);
+  }
 
   function toggleRow(id: string) {
     setSelected((prev) => {
@@ -434,10 +465,16 @@ export default function MattersPage() {
             <label>
               Client
               <select
-                value={form.client_id}
-                onChange={(e) =>
-                  setForm({ ...form, client_id: e.target.value })
-                }
+                value={ncOpen ? "__new__" : form.client_id}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") {
+                    setNcOpen(true);
+                    setForm({ ...form, client_id: "" });
+                  } else {
+                    setNcOpen(false);
+                    setForm({ ...form, client_id: e.target.value });
+                  }
+                }}
               >
                 <option value="">— Select client —</option>
                 {clients.map((c) => (
@@ -445,8 +482,52 @@ export default function MattersPage() {
                     {c.name}
                   </option>
                 ))}
+                <option value="__new__">+ Add new client…</option>
               </select>
             </label>
+
+            {ncOpen && (
+              <div className="nc-inline">
+                <div className="seg seg-full" style={{ marginBottom: "0.6rem" }}>
+                  {CLIENT_TYPES.map((t) => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      className={nc.client_type === t.value ? "active" : undefined}
+                      onClick={() => setNc({ ...nc, client_type: t.value })}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <label>
+                  {nc.client_type === "business" ? "Business name" : "Full name"}
+                  <input
+                    value={nc.name}
+                    onChange={(e) => setNc({ ...nc, name: e.target.value })}
+                    autoFocus
+                  />
+                </label>
+                <div className="field-pair">
+                  <label>
+                    Email
+                    <input value={nc.email} onChange={(e) => setNc({ ...nc, email: e.target.value })} />
+                  </label>
+                  <label>
+                    Phone
+                    <input value={nc.phone} onChange={(e) => setNc({ ...nc, phone: e.target.value })} />
+                  </label>
+                </div>
+                <div className="modal-actions" style={{ marginTop: "0.4rem" }}>
+                  <button type="button" className="ghost" onClick={() => { setNcOpen(false); setNc({ name: "", client_type: "individual", email: "", phone: "" }); }}>
+                    Cancel
+                  </button>
+                  <button type="button" className="btn" onClick={createNewClient} disabled={!nc.name.trim()}>
+                    Create client
+                  </button>
+                </div>
+              </div>
+            )}
             <label>
               Practice Area
               <select
