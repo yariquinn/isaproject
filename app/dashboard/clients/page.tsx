@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client } from "@/lib/types";
-import { InlineSelect, InlineText } from "../Inline";
+import { InlineText } from "../Inline";
 import { usePortal } from "../PortalProvider";
 
 const EMPTY = {
@@ -145,7 +145,6 @@ export default function ClientsPage() {
                 <th>Contact</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -176,17 +175,6 @@ export default function ClientsPage() {
                       value={c.phone}
                       type="tel"
                       onSave={(v) => updateContact(c, "phone", "phone number", v)}
-                    />
-                  </td>
-                  <td>
-                    <InlineSelect
-                      value={c.status}
-                      className={`pill-${c.status}`}
-                      options={[
-                        { value: "active", label: "active" },
-                        { value: "inactive", label: "inactive" },
-                      ]}
-                      onSave={(v) => patch(c.id, { status: v })}
                     />
                   </td>
                 </tr>

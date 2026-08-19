@@ -76,13 +76,8 @@ export default function MattersPage() {
     );
   }, [matters, clients, sortAsc, query, statusFilter, areaFilter]);
 
-  const clientOptions = useMemo(
-    () => [
-      { value: "", label: "— none —" },
-      ...clients.map((c) => ({ value: c.id, label: c.name })),
-    ],
-    [clients],
-  );
+  const nameOf = (id: string | null) =>
+    clients.find((c) => c.id === id)?.name ?? "";
 
   const attorneyOptions = (current: string | null) => {
     const base: { value: string; label: string }[] = ATTORNEYS.map((a) => ({
@@ -214,11 +209,16 @@ export default function MattersPage() {
                     </Link>
                   </td>
                   <td>
-                    <InlineSelect
-                      value={m.client_id ?? ""}
-                      options={clientOptions}
-                      onSave={(v) => patch(m.id, { client_id: v || null })}
-                    />
+                    {m.client_id ? (
+                      <Link
+                        href={`/dashboard/clients/${m.client_id}`}
+                        className="row-link"
+                      >
+                        {nameOf(m.client_id)}
+                      </Link>
+                    ) : (
+                      <span className="inline-placeholder">—</span>
+                    )}
                   </td>
                   <td>
                     <InlineSelect
