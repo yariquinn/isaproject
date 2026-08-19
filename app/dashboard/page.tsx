@@ -175,6 +175,9 @@ export default function Overview() {
     });
   }, [activity, filter, query]);
 
+  const matterName = (id: string | null) =>
+    id ? matters.find((m) => m.id === id)?.name ?? null : null;
+
   const dateLine = new Date()
     .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
     .toUpperCase();
@@ -186,6 +189,15 @@ export default function Overview() {
         <h1 className="greeting-title">
           {greeting()}, <strong>{firstName}</strong>
         </h1>
+      </div>
+
+      <div className="quick-links">
+        <Link href="/dashboard/clients" className="ql-chip">Clients</Link>
+        <Link href="/dashboard/matters" className="ql-chip">Matters</Link>
+        <Link href="/dashboard/todo" className="ql-chip">Tasks</Link>
+        <Link href="/dashboard/calendar" className="ql-chip">Calendar</Link>
+        <Link href="/dashboard/billing" className="ql-chip">Billing</Link>
+        <Link href="/dashboard/documents" className="ql-chip">Documents</Link>
       </div>
 
       <div className="ov-stats-head">
@@ -266,13 +278,18 @@ export default function Overview() {
                       })}
                     </span>
                     <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
-                    {ev.matter_id ? (
-                      <Link href={`/dashboard/matters/${ev.matter_id}`} className="event-title">
-                        {ev.title}
-                      </Link>
-                    ) : (
-                      <span className="event-title">{ev.title}</span>
-                    )}
+                    <span className="event-body">
+                      {ev.matter_id ? (
+                        <Link href={`/dashboard/matters/${ev.matter_id}`} className="event-title">
+                          {ev.title}
+                        </Link>
+                      ) : (
+                        <span className="event-title">{ev.title}</span>
+                      )}
+                      {matterName(ev.matter_id) && (
+                        <span className="event-matter">{matterName(ev.matter_id)}</span>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
