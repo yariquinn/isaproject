@@ -2859,6 +2859,41 @@ a.activity-row:hover .act-desc {
   display: flex;
   flex-direction: column;
 }
+.notes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+.notes-head .panel-title {
+  margin-bottom: 0;
+}
+.notes-filter {
+  display: inline-flex;
+  gap: 0.1rem;
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 20px;
+  padding: 2px;
+}
+.notes-filter button {
+  border: none;
+  background: transparent;
+  color: var(--dash-muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  padding: 0.16rem 0.5rem;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.notes-filter button.active {
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+  box-shadow: var(--shadow-sm);
+}
 /* The log fills the card's leftover height; the scroll layer is taken out of
    flow (absolute) so its content never grows the panel — adding a note just
    scrolls, it never adds height. */

@@ -159,6 +159,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [noteDraft, setNoteDraft] = useState("");
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
+  const [noteFilter, setNoteFilter] = useState<"all" | "comment" | "activity">("all");
 
   useEffect(() => {
     const l = Number(localStorage.getItem("matterCardsLeftPct"));
@@ -773,7 +774,21 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           className="panel notes-panel"
           style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0 }}
         >
-          <h2 className="panel-title">Notes</h2>
+          <div className="notes-head">
+            <h2 className="panel-title">Notes</h2>
+            <div className="notes-filter">
+              {(["all", "comment", "activity"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  className={noteFilter === f ? "active" : undefined}
+                  onClick={() => setNoteFilter(f)}
+                >
+                  {f === "all" ? "All" : f === "comment" ? "Comments" : "Activity"}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="notes-log">
             <div className="notes-log-scroll">
             {(() => {
@@ -799,9 +814,25 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   time: fmtStamp(new Date(a.created_at)),
                   description: a.description,
                 })),
-              ].sort((x, y) => y.sort - x.sort);
+              ]
+                .filter((item) =>
+                  noteFilter === "all"
+                    ? true
+                    : noteFilter === "comment"
+                      ? item.type === "note"
+                      : item.type === "act",
+                )
+                .sort((x, y) => y.sort - x.sort);
               if (feed.length === 0)
-                return <p className="muted-line">No notes or activity yet.</p>;
+                return (
+                  <p className="muted-line">
+                    {noteFilter === "comment"
+                      ? "No comments yet."
+                      : noteFilter === "activity"
+                        ? "No activity yet."
+                        : "No notes or activity yet."}
+                  </p>
+                );
               return (
                 <ul className="note-feed">
                   {feed.map((item) =>
