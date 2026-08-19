@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ACTIVITY_TYPES, ATTORNEYS, type Matter, type Timer } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
@@ -42,6 +43,11 @@ export default function TimeTracker() {
     setTimers((t as Timer[]) || []);
     setMatters((m as Matter[]) || []);
   }, []);
+
+  const pathname = usePathname();
+  const currentMatterId = pathname.startsWith("/dashboard/matters/")
+    ? pathname.split("/")[3]
+    : null;
 
   useEffect(() => {
     load();
@@ -175,7 +181,13 @@ export default function TimeTracker() {
         </button>
         <button
           className="tracker-add"
-          onClick={() => setPicking(true)}
+          onClick={() => {
+            const m = currentMatterId
+              ? matters.find((x) => x.id === currentMatterId)
+              : null;
+            if (m) startForMatter(m);
+            else setPicking(true);
+          }}
           type="button"
         >
           + New timer

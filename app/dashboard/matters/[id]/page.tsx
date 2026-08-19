@@ -6,10 +6,13 @@ import { supabase } from "@/lib/supabase";
 import {
   ACTIVITY_TYPES,
   ATTORNEYS,
+  CASE_TIMELINE_TEMPLATES,
   PRACTICE_AREAS,
   PRIORITIES,
   type ActivityItem,
   type Client,
+  type EventItem,
+  type Invoice,
   type Matter,
   type TimeEntry,
 } from "@/lib/types";
@@ -21,6 +24,41 @@ import {
 } from "../../Inline";
 import { usePortal } from "../../PortalProvider";
 import TodoWidget from "../../TodoWidget";
+import Disclaimer from "../../Disclaimer";
+
+const TIMELINE_STEPS: Record<string, string[]> = {
+  "LLC Formation": [
+    "Name availability check",
+    "File Articles of Organization",
+    "Draft Operating Agreement",
+    "Obtain EIN",
+    "Open business bank account",
+    "File beneficial ownership report",
+  ],
+  "Estate Planning": [
+    "Intake questionnaire",
+    "Draft will",
+    "Draft trust",
+    "Draft power of attorney",
+    "Review with client",
+    "Execute & notarize",
+  ],
+  "Real Estate": [
+    "Engagement & conflict check",
+    "Contract review",
+    "Title search",
+    "Financing / mortgage",
+    "Closing preparation",
+    "Closing & recording",
+  ],
+  Other: [
+    "Open matter",
+    "Initial review",
+    "Client update",
+    "Resolution",
+    "Close matter",
+  ],
+};
 
 function fmtHm(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -55,8 +93,15 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [logOpen, setLogOpen] = useState(false);
+  const [timelineType, setTimelineType] = useState<string>("");
+  const [timelineView, setTimelineView] = useState<"checklist" | "board" | "tasks">(
+    "checklist",
+  );
+  const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
 
   async function loadActivity() {
     const { data } = await supabase
@@ -69,18 +114,33 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   }
 
   async function loadAll() {
-    const [{ data: m }, { data: cs }, { data: e }] = await Promise.all([
-      supabase.from("matters").select("*").eq("id", params.id).single(),
-      supabase.from("clients").select("*").order("name"),
-      supabase
-        .from("time_entries")
-        .select("*")
-        .eq("matter_id", params.id)
-        .order("logged_at", { ascending: false }),
-    ]);
-    setMatter((m as Matter) ?? null);
+    const [{ data: m }, { data: cs }, { data: e }, { data: ev }, { data: inv }] =
+      await Promise.all([
+        supabase.from("matters").select("*").eq("id", params.id).single(),
+        supabase.from("clients").select("*").order("name"),
+        supabase
+          .from("time_entries")
+          .select("*")
+          .eq("matter_id", params.id)
+          .order("logged_at", { ascending: false }),
+        supabase
+          .from("events")
+          .select("*")
+          .eq("matter_id", params.id)
+          .order("event_date"),
+        supabase
+          .from("invoices")
+          .select("*")
+          .eq("matter_id", params.id)
+          .order("created_at", { ascending: false }),
+      ]);
+    const matterRow = (m as Matter) ?? null;
+    setMatter(matterRow);
     setClients((cs as Client[]) ?? []);
     setEntries((e as TimeEntry[]) ?? []);
+    setEvents((ev as EventItem[]) ?? []);
+    setInvoices((inv as Invoice[]) ?? []);
+    setTimelineType(matterRow?.case_timeline_type ?? "");
     await loadActivity();
     setLoading(false);
   }
@@ -102,6 +162,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     if (status === "closed" && matter.status !== "closed") {
       changes.closed_at = new Date().toISOString();
       changes.closed_by = userName;
+      changes.priority = "-";
     } else if (status !== "closed") {
       changes.closed_at = null;
       changes.closed_by = null;
@@ -164,8 +225,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     ? (totalSeconds / 3600) * matter.hourly_rate
     : null;
 
-  const clientName =
-    clients.find((c) => c.id === matter.client_id)?.name ?? null;
+  const clientObj = clients.find((c) => c.id === matter.client_id) ?? null;
+  const clientName = clientObj?.name ?? null;
   const attorneyOptions: { value: string; label: string }[] = ATTORNEYS.map(
     (a) => ({ value: a, label: a }),
   );
@@ -197,9 +258,22 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           {matter.status === "closed" && (
             <span className="closed-note">
               Closed{" "}
-              {matter.closed_at
-                ? new Date(matter.closed_at).toLocaleDateString()
-                : ""}
+              <input
+                type="date"
+                className="closed-date-input"
+                value={
+                  matter.closed_at
+                    ? new Date(matter.closed_at).toISOString().slice(0, 10)
+                    : ""
+                }
+                onChange={(e) =>
+                  patch({
+                    closed_at: e.target.value
+                      ? new Date(e.target.value + "T12:00:00").toISOString()
+                      : null,
+                  })
+                }
+              />
               {matter.closed_by ? ` · by ${matter.closed_by}` : ""}
             </span>
           )}
@@ -244,12 +318,20 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         <div className="detail-item">
           <span className="detail-label">Client</span>
           {matter.client_id ? (
-            <Link
-              href={`/dashboard/clients/${matter.client_id}`}
-              className="row-link"
-            >
-              {clientName}
-            </Link>
+            <>
+              <Link
+                href={`/dashboard/clients/${matter.client_id}`}
+                className="row-link"
+              >
+                {clientName}
+              </Link>
+              {(clientObj?.email || clientObj?.phone) && (
+                <span className="client-contact">
+                  {clientObj?.email && <span>{clientObj.email}</span>}
+                  {clientObj?.phone && <span>{clientObj.phone}</span>}
+                </span>
+              )}
+            </>
           ) : (
             <span className="inline-placeholder">—</span>
           )}
@@ -279,6 +361,120 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           <span className="detail-label">Billable</span>
           {billable != null ? `$${billable.toFixed(2)}` : "—"}
         </div>
+      </div>
+
+      <div className="panel" style={{ marginBottom: "1.5rem" }}>
+        <div className="panel-head">
+          <h2 className="panel-title">Case Timeline</h2>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={!!timelineType}
+              onChange={() => {
+                const next = timelineType ? "" : CASE_TIMELINE_TEMPLATES[0];
+                setTimelineType(next);
+                patch({ case_timeline_type: next || null });
+              }}
+            />
+            <span className="switch-track" />
+            {timelineType ? "On" : "Off"}
+          </label>
+        </div>
+
+        {timelineType && (
+          <div className="timeline-body">
+            <div className="timeline-controls">
+              <select
+                className="inline-select"
+                value={timelineType}
+                onChange={(e) => {
+                  setTimelineType(e.target.value);
+                  patch({ case_timeline_type: e.target.value });
+                }}
+              >
+                {CASE_TIMELINE_TEMPLATES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <div className="seg">
+                {(["checklist", "board", "tasks"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    className={timelineView === v ? "active" : undefined}
+                    onClick={() => setTimelineView(v)}
+                  >
+                    {v === "checklist"
+                      ? "Checklist"
+                      : v === "board"
+                        ? "Board"
+                        : "Tasks"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Disclaimer>
+              Preview only — compare the three layouts, then tell me which to keep
+              (progress isn&rsquo;t saved yet).
+            </Disclaimer>
+
+            {(() => {
+              const steps = TIMELINE_STEPS[timelineType] ?? [];
+              if (timelineView === "checklist") {
+                return (
+                  <ul className="tl-checklist">
+                    {steps.map((s) => (
+                      <li key={s}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={!!checkedSteps[s]}
+                            onChange={() =>
+                              setCheckedSteps((p) => ({ ...p, [s]: !p[s] }))
+                            }
+                          />
+                          <span className={checkedSteps[s] ? "done" : ""}>{s}</span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+              if (timelineView === "board") {
+                const cols = ["To Do", "In Progress", "Done"];
+                return (
+                  <div className="tl-board">
+                    {cols.map((col, ci) => (
+                      <div className="tl-col" key={col}>
+                        <div className="tl-col-head">{col}</div>
+                        {steps
+                          .filter((_, i) => i % 3 === ci)
+                          .map((s) => (
+                            <div className="tl-card" key={s}>
+                              {s}
+                            </div>
+                          ))}
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              return (
+                <ul className="tl-tasks">
+                  {steps.map((s, i) => (
+                    <li key={s}>
+                      <span className="tl-num">{i + 1}</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       <div className="matter-body">
@@ -335,6 +531,50 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         </div>
 
         <div className="matter-body-side">
+          <div className="panel">
+            <div className="panel-head">
+              <h2 className="panel-title">Events</h2>
+              <span className="chip-note">from calendar (demo)</span>
+            </div>
+            {events.length === 0 ? (
+              <p className="muted-line">No upcoming events.</p>
+            ) : (
+              <ul className="event-list">
+                {events.map((ev) => (
+                  <li key={ev.id}>
+                    <span className="event-date">
+                      {new Date(ev.event_date).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
+                    <span className="event-title">{ev.title}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="panel">
+            <h2 className="panel-title">Invoices ({invoices.length})</h2>
+            {invoices.length === 0 ? (
+              <p className="muted-line">No invoices for this matter.</p>
+            ) : (
+              <ul className="invoice-list">
+                {invoices.map((i) => (
+                  <li key={i.id}>
+                    <span className="strong-cell">{i.number || "—"}</span>
+                    <span>
+                      {i.amount != null ? `$${i.amount.toFixed(2)}` : "—"}
+                    </span>
+                    <span className={`pill inv-${i.status}`}>{i.status}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div className="panel">
             <h2 className="panel-title">Tasks</h2>
             <TodoWidget matterId={matter.id} compact />
