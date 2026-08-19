@@ -184,6 +184,23 @@ export default function MattersPage() {
     await bulkPatch(changes);
   }
 
+  async function bulkDelete() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (
+      !window.confirm(
+        `Delete ${ids.length} matter${ids.length === 1 ? "" : "s"}? This also removes their time entries, events, invoices, tasks and activity. This cannot be undone.`,
+      )
+    )
+      return;
+    for (const table of ["time_entries", "events", "invoices", "todos", "activity_log"]) {
+      await supabase.from(table).delete().in("matter_id", ids);
+    }
+    await supabase.from("matters").delete().in("id", ids);
+    setMatters((prev) => prev.filter((m) => !selected.has(m.id)));
+    setSelected(new Set());
+  }
+
   // Changing status records who/when on close, clears it on reopen, and logs.
   async function changeStatus(m: Matter, status: string) {
     const changes: Partial<Matter> = { status };
@@ -340,6 +357,7 @@ export default function MattersPage() {
                   ))}
                 </select>
               </label>
+              <button type="button" className="ghost sm danger" onClick={bulkDelete}>Delete</button>
               <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
             </div>
           )}

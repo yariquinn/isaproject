@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -94,6 +95,8 @@ const KIND_GROUP: Record<string, string> = {
 
 export default function MatterDetail({ params }: { params: { id: string } }) {
   const { userName } = usePortal();
+  const router = useRouter();
+  const [confirmDel, setConfirmDel] = useState(false);
   const [matter, setMatter] = useState<Matter | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -213,6 +216,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     setArchivePrompt(null);
   }
 
+  async function deleteMatter() {
+    if (!matter) return;
+    const id = matter.id;
+    for (const table of ["time_entries", "events", "invoices", "todos", "activity_log"]) {
+      await supabase.from(table).delete().eq("matter_id", id);
+    }
+    await supabase.from("matters").delete().eq("id", id);
+    router.push("/dashboard/matters");
+  }
+
   async function saveBillingNotes(clientId: string, v: string) {
     const next = v.trim() || null;
     setClients((prev) =>
@@ -266,9 +279,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <Link href="/dashboard/matters" className="back-link">
-        ← Matters
-      </Link>
+      <div className="matter-topbar">
+        <Link href="/dashboard/matters" className="back-link">
+          ← Matters
+        </Link>
+        <button type="button" className="ghost sm danger" onClick={() => setConfirmDel(true)}>
+          Delete matter
+        </button>
+      </div>
       <div className="matter-head">
         <div className="matter-head-title">
           <h1 className="page-title editable-title">
@@ -680,6 +698,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </>
         )}
       </div>
+
+      {confirmDel && (
+        <div className="modal-backdrop" onClick={() => setConfirmDel(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete matter?</h3>
+            <p className="modal-dur">
+              Delete <strong>{matter.name}</strong>? This also removes its time
+              entries, events, invoices, tasks and activity. This cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button type="button" className="ghost" onClick={() => setConfirmDel(false)}>
+                Cancel
+              </button>
+              <button type="button" className="btn danger-btn" onClick={deleteMatter}>
+                Delete matter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {archivePrompt && (
         <div className="modal-backdrop" onClick={() => setArchivePrompt(null)}>
