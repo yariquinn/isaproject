@@ -490,7 +490,68 @@ section.block.alt {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+/* Time tracker docked in the sidebar */
+.sidebar-tracker {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.sidebar-tracker .tracker {
+  position: static;
+  background: transparent;
+  border: none;
+}
+.sidebar-tracker .tracker-head {
+  padding: 0 0.25rem 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.sidebar-tracker .tracker-toggle {
+  color: var(--dash-sidebar-fg);
+}
+.sidebar-tracker .tracker-add {
+  color: var(--dash-sidebar-fg);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: transparent;
+}
+.sidebar-tracker .tracker-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.sidebar-tracker .tracker-body {
+  flex-direction: column;
+  padding: 0 0.25rem;
+  overflow: visible;
+}
+.sidebar-tracker .tracker-empty {
+  color: var(--dash-sidebar-muted);
+  font-size: 0.8rem;
+}
+.sidebar-tracker .timer-chip {
+  min-width: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.sidebar-tracker .timer-label,
+.sidebar-tracker .timer-clock {
+  color: var(--dash-sidebar-fg);
+}
+.sidebar-tracker .timer-controls button {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--dash-sidebar-fg);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.sidebar-tracker .timer-controls button:disabled {
+  opacity: 0.4;
+}
+.sidebar-tracker .timer-log {
+  color: var(--accent);
 }
 .sidebar-nav a {
   color: var(--dash-sidebar-fg);
@@ -981,6 +1042,13 @@ section.block.alt {
     flex-wrap: wrap;
     flex: 1 1 100%;
   }
+  .sidebar-tracker {
+    flex: 1 1 100%;
+    max-height: 220px;
+    border-top: none;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+  }
   .sidebar-foot {
     border-top: none;
     padding-top: 0;
@@ -1240,6 +1308,67 @@ section.block.alt {
 }
 :root[data-theme="dark"] .seg button.active {
   background: var(--accent);
+}
+
+/* Side-by-side panels on detail pages */
+.detail-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .detail-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Primary-contact picker button */
+.contact-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  color: var(--dash-fg);
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+.contact-picker:hover {
+  border-color: var(--accent);
+}
+.cp-icon {
+  color: var(--dash-muted);
+  font-size: 1.05rem;
+}
+.stack-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.stack-actions .btn,
+.stack-actions .ghost {
+  width: 100%;
+  text-align: center;
+  padding: 0.7rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.stack-actions .ghost {
+  background: transparent;
+  border: 1px solid var(--dash-border);
+  color: var(--dash-fg);
+}
+.stack-actions .btn {
+  border: none;
 }
 
 /* Inline edit fields */

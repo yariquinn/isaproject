@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
+import TimeTracker from "./TimeTracker";
 import { logoutAction } from "./actions";
 
 const LINKS = [
@@ -39,6 +40,10 @@ export default function Sidebar({ userName }: { userName: string }) {
           );
         })}
       </nav>
+
+      <div className="sidebar-tracker">
+        <TimeTracker />
+      </div>
 
       <div className="sidebar-foot">
         <ThemeToggle />

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ActivityItem, Client, Matter } from "@/lib/types";
 import { InlineText, InlineTextarea } from "../../Inline";
@@ -17,12 +17,29 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+type GuardField = "email" | "phone" | "address";
+const NEW_FORM = { name: "", email: "", phone: "", address: "" };
+
 export default function ClientDetail({ params }: { params: { id: string } }) {
   const { userName } = usePortal();
   const [client, setClient] = useState<Client | null>(null);
+  const [allClients, setAllClients] = useState<Client[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Editing state for the guarded contact fields
+  const [prompt, setPrompt] = useState<{ field: GuardField; label: string } | null>(
+    null,
+  );
+  const [activeEdit, setActiveEdit] = useState<GuardField | null>(null);
+  const [draft, setDraft] = useState("");
+
+  // Contact search / create modal
+  const [contactModal, setContactModal] = useState(false);
+  const [contactTab, setContactTab] = useState<"search" | "new">("search");
+  const [contactQuery, setContactQuery] = useState("");
+  const [newForm, setNewForm] = useState(NEW_FORM);
 
   async function loadActivity() {
     const { data } = await supabase
@@ -35,8 +52,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   }
 
   async function loadAll() {
-    const [{ data: c }, { data: m }] = await Promise.all([
+    const [{ data: c }, { data: all }, { data: m }] = await Promise.all([
       supabase.from("clients").select("*").eq("id", params.id).single(),
+      supabase.from("clients").select("*").order("name"),
       supabase
         .from("matters")
         .select("*")
@@ -44,6 +62,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         .order("created_at", { ascending: false }),
     ]);
     setClient((c as Client) ?? null);
+    setAllClients((all as Client[]) ?? []);
     setMatters((m as Matter[]) ?? []);
     await loadActivity();
     setLoading(false);
@@ -60,26 +79,100 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     await supabase.from("clients").update(changes).eq("id", client.id);
   }
 
-  // Update a contact field and log the change (actor first) to this client's feed.
-  async function updateContact(
-    field: "email" | "phone" | "primary_contact",
-    label: string,
-    rawValue: string,
-  ) {
+  async function logChange(description: string) {
     if (!client) return;
-    const oldVal = client[field];
-    const newVal = rawValue.trim() || null;
-    if (newVal === oldVal) return;
-    await patch({ [field]: newVal } as Partial<Client>);
     await supabase.from("activity_log").insert({
       kind: "client_updated",
       client_id: client.id,
-      description: `${userName} updated ${client.name}'s ${label} from ${
-        oldVal || "—"
-      } to ${newVal || "—"}`,
+      description,
     });
     loadActivity();
   }
+
+  const contactName = client?.primary_contact || "this contact";
+
+  // Path 1: keep the same contact, just correct their information.
+  async function saveField(field: GuardField, label: string) {
+    setActiveEdit(null);
+    if (!client) return;
+    const oldVal = client[field];
+    const newVal = draft.trim() || null;
+    if (newVal === oldVal) return;
+    await patch({ [field]: newVal } as Partial<Client>);
+    await logChange(
+      `${userName} updated ${contactName}'s ${label} from ${oldVal || "—"} to ${
+        newVal || "—"
+      }`,
+    );
+  }
+
+  // Path 2: the contact changed to someone else — from an existing client…
+  async function applyExisting(source: Client) {
+    await patch({
+      primary_contact: source.name,
+      email: source.email,
+      phone: source.phone,
+      address: source.address,
+    });
+    await logChange(
+      `${userName} changed the primary contact to ${source.name} (existing client)`,
+    );
+    closeContactModal();
+  }
+
+  // …or by creating a brand-new client in the system.
+  async function createAndApply() {
+    if (!newForm.name.trim() || !client) return;
+    const { data: created } = await supabase
+      .from("clients")
+      .insert({
+        name: newForm.name.trim(),
+        email: newForm.email.trim() || null,
+        phone: newForm.phone.trim() || null,
+        address: newForm.address.trim() || null,
+      })
+      .select("*")
+      .single();
+    if (created) {
+      await supabase.from("activity_log").insert({
+        kind: "client_added",
+        client_id: (created as Client).id,
+        description: `${userName} added client ${(created as Client).name}`,
+      });
+    }
+    await patch({
+      primary_contact: newForm.name.trim(),
+      email: newForm.email.trim() || null,
+      phone: newForm.phone.trim() || null,
+      address: newForm.address.trim() || null,
+    });
+    await logChange(
+      `${userName} changed the primary contact to ${newForm.name.trim()} (new client created)`,
+    );
+    closeContactModal();
+  }
+
+  function openContactModal() {
+    setContactTab("search");
+    setContactQuery("");
+    setNewForm(NEW_FORM);
+    setContactModal(true);
+  }
+  function closeContactModal() {
+    setContactModal(false);
+  }
+
+  function beginGuardedEdit(field: GuardField, label: string) {
+    setPrompt({ field, label });
+  }
+
+  const contactResults = useMemo(() => {
+    const q = contactQuery.trim().toLowerCase();
+    return allClients
+      .filter((c) => c.id !== params.id)
+      .filter((c) => (q ? c.name.toLowerCase().includes(q) : true))
+      .slice(0, 8);
+  }, [allClients, contactQuery, params.id]);
 
   if (loading) return <p className="muted-line">Loading…</p>;
   if (!client)
@@ -105,6 +198,36 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     </li>
   );
 
+  // A guarded field renders either the value (click → prompt) or an input.
+  const GuardedField = ({
+    field,
+    label,
+  }: {
+    field: GuardField;
+    label: string;
+  }) =>
+    activeEdit === field ? (
+      <input
+        className="inline-input"
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => saveField(field, label)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") setActiveEdit(null);
+        }}
+      />
+    ) : (
+      <span
+        className="inline-view"
+        onClick={() => beginGuardedEdit(field, label)}
+        title="Click to edit"
+      >
+        {client[field] || <span className="inline-placeholder">—</span>}
+      </span>
+    );
+
   return (
     <div>
       <Link href="/dashboard/clients" className="back-link">
@@ -125,33 +248,26 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       <div className="detail-grid">
         <div className="detail-item">
           <span className="detail-label">Primary Contact</span>
-          <InlineText
-            value={client.primary_contact}
-            onSave={(v) => updateContact("primary_contact", "primary contact", v)}
-          />
+          <button
+            type="button"
+            className="contact-picker"
+            onClick={openContactModal}
+          >
+            {client.primary_contact || "Search or add a contact…"}
+            <span className="cp-icon">⌕</span>
+          </button>
         </div>
         <div className="detail-item">
           <span className="detail-label">Email</span>
-          <InlineText
-            value={client.email}
-            type="email"
-            onSave={(v) => updateContact("email", "email", v)}
-          />
+          <GuardedField field="email" label="email" />
         </div>
         <div className="detail-item">
           <span className="detail-label">Phone</span>
-          <InlineText
-            value={client.phone}
-            type="tel"
-            onSave={(v) => updateContact("phone", "phone number", v)}
-          />
+          <GuardedField field="phone" label="phone number" />
         </div>
         <div className="detail-item">
           <span className="detail-label">Address</span>
-          <InlineText
-            value={client.address}
-            onSave={(v) => patch({ address: v || null })}
-          />
+          <GuardedField field="address" label="address" />
         </div>
       </div>
 
@@ -164,7 +280,8 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         />
       </div>
 
-      <div className="panel" style={{ marginBottom: "1.5rem" }}>
+      <div className="detail-cols">
+      <div className="panel">
         <h2 className="panel-title">Matters ({matters.length})</h2>
         {matters.length === 0 ? (
           <p className="muted-line">No matters for this client yet.</p>
@@ -180,7 +297,6 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 ))}
               </ul>
             )}
-
             {closedMatters.length > 0 && (
               <>
                 <h3 className="subsection muted">
@@ -213,6 +329,157 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           </ul>
         )}
       </div>
+      </div>
+
+      {/* Prompt shown before editing email / phone / address */}
+      {prompt && (
+        <div className="modal-backdrop" onClick={() => setPrompt(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Editing {prompt.label}</h3>
+            <p className="modal-dur">
+              Are we updating <strong>{contactName}</strong>&rsquo;s information,
+              or is a different person the primary contact?
+            </p>
+            <div className="stack-actions">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setDraft(client[prompt.field] ?? "");
+                  setActiveEdit(prompt.field);
+                  setPrompt(null);
+                }}
+              >
+                Update {contactName}&rsquo;s info
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => {
+                  setPrompt(null);
+                  openContactModal();
+                }}
+              >
+                Switch to a different contact
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact search / create modal */}
+      {contactModal && (
+        <div className="modal-backdrop" onClick={closeContactModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Set primary contact</h3>
+            <div className="doc-tabs" style={{ marginBottom: "0.5rem" }}>
+              <button
+                type="button"
+                className={contactTab === "search" ? "active" : undefined}
+                onClick={() => setContactTab("search")}
+              >
+                Search existing
+              </button>
+              <button
+                type="button"
+                className={contactTab === "new" ? "active" : undefined}
+                onClick={() => setContactTab("new")}
+              >
+                Add new client
+              </button>
+            </div>
+
+            {contactTab === "search" ? (
+              <>
+                <input
+                  className="activity-search"
+                  type="search"
+                  autoFocus
+                  placeholder="Search clients…"
+                  value={contactQuery}
+                  onChange={(e) => setContactQuery(e.target.value)}
+                  style={{ width: "100%" }}
+                />
+                <div className="matter-pick">
+                  {contactResults.length === 0 ? (
+                    <p className="muted-line">No matching clients.</p>
+                  ) : (
+                    contactResults.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="matter-pick-item"
+                        onClick={() => applyExisting(c)}
+                      >
+                        <span className="mp-name">{c.name}</span>
+                        <span className="mp-sub">
+                          {c.email || "no email"} · {c.phone || "no phone"}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <label>
+                  Name
+                  <input
+                    value={newForm.name}
+                    onChange={(e) =>
+                      setNewForm({ ...newForm, name: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Email
+                  <input
+                    value={newForm.email}
+                    onChange={(e) =>
+                      setNewForm({ ...newForm, email: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Phone
+                  <input
+                    value={newForm.phone}
+                    onChange={(e) =>
+                      setNewForm({ ...newForm, phone: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Address
+                  <input
+                    value={newForm.address}
+                    onChange={(e) =>
+                      setNewForm({ ...newForm, address: e.target.value })
+                    }
+                  />
+                </label>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={closeContactModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={createAndApply}
+                    disabled={!newForm.name.trim()}
+                  >
+                    Create &amp; set as contact
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
