@@ -688,6 +688,20 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "invoices" && (
           <>
+            {clientObj && (
+              <div style={{ marginBottom: "1.25rem" }}>
+                <Collapsible title="Billing Notes" empty={!clientObj.billing_notes}>
+                  <p className="field-note">
+                    How {clientObj.name} likes to be billed.
+                  </p>
+                  <InlineTextarea
+                    value={clientObj.billing_notes}
+                    onSave={(v) => saveBillingNotes(clientObj.id, v)}
+                    placeholder="e.g. Flat monthly retainer, invoice on the 1st…"
+                  />
+                </Collapsible>
+              </div>
+            )}
             <h2 className="panel-title">Invoices ({invoices.length})</h2>
             {invoices.length === 0 ? (
               <p className="muted-line">No invoices for this matter.</p>
@@ -701,20 +715,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   </li>
                 ))}
               </ul>
-            )}
-            {clientObj && (
-              <div style={{ marginTop: "1.25rem" }}>
-                <Collapsible title="Billing Notes" empty={!clientObj.billing_notes}>
-                  <p className="field-note">
-                    How {clientObj.name} likes to be billed.
-                  </p>
-                  <InlineTextarea
-                    value={clientObj.billing_notes}
-                    onSave={(v) => saveBillingNotes(clientObj.id, v)}
-                    placeholder="e.g. Flat monthly retainer, invoice on the 1st…"
-                  />
-                </Collapsible>
-              </div>
             )}
           </>
         )}
