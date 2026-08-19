@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type {
-  ActivityItem,
-  Client,
-  Invoice,
-  Matter,
-  TimeEntry,
-  Todo,
-} from "@/lib/types";
+import type { ActivityItem, Client, Matter } from "@/lib/types";
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal } from "../../PortalProvider";
 
@@ -23,21 +16,8 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 }
-function fmtHm(s: number) {
-  return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
-}
 
 type GuardField = "email" | "phone" | "address" | "primary_contact";
-type Tab = "overview" | "contacts" | "time" | "tasks" | "invoices" | "billing" | "activity";
-const TABS: { key: Tab; label: string }[] = [
-  { key: "overview", label: "Overview" },
-  { key: "contacts", label: "Contacts" },
-  { key: "time", label: "Time Entries" },
-  { key: "tasks", label: "Tasks" },
-  { key: "invoices", label: "Invoices" },
-  { key: "billing", label: "Billing" },
-  { key: "activity", label: "Activity" },
-];
 const NEW_FORM = { name: "", email: "", phone: "", address: "" };
 
 export default function ClientDetail({ params }: { params: { id: string } }) {
@@ -45,12 +25,8 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [client, setClient] = useState<Client | null>(null);
   const [allClients, setAllClients] = useState<Client[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
-  const [entries, setEntries] = useState<TimeEntry[]>([]);
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("overview");
 
   const [prompt, setPrompt] = useState<{ field: GuardField; label: string } | null>(null);
   const [activeEdit, setActiveEdit] = useState<GuardField | null>(null);
@@ -71,30 +47,14 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   }
 
   async function loadAll() {
-    const [{ data: c }, { data: all }, { data: m }, { data: inv }] =
-      await Promise.all([
-        supabase.from("clients").select("*").eq("id", params.id).single(),
-        supabase.from("clients").select("*").order("name"),
-        supabase.from("matters").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
-        supabase.from("invoices").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
-      ]);
+    const [{ data: c }, { data: all }, { data: m }] = await Promise.all([
+      supabase.from("clients").select("*").eq("id", params.id).single(),
+      supabase.from("clients").select("*").order("name"),
+      supabase.from("matters").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
+    ]);
     setClient((c as Client) ?? null);
     setAllClients((all as Client[]) ?? []);
-    const ms = (m as Matter[]) ?? [];
-    setMatters(ms);
-    setInvoices((inv as Invoice[]) ?? []);
-    const ids = ms.map((x) => x.id);
-    if (ids.length) {
-      const [{ data: te }, { data: td }] = await Promise.all([
-        supabase.from("time_entries").select("*").in("matter_id", ids).order("logged_at", { ascending: false }),
-        supabase.from("todos").select("*").in("matter_id", ids).order("created_at", { ascending: false }),
-      ]);
-      setEntries((te as TimeEntry[]) ?? []);
-      setTodos((td as Todo[]) ?? []);
-    } else {
-      setEntries([]);
-      setTodos([]);
-    }
+    setMatters((m as Matter[]) ?? []);
     await loadActivity();
     setLoading(false);
   }
@@ -167,7 +127,6 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
 
   const openMatters = matters.filter((m) => m.status !== "closed");
   const closedMatters = matters.filter((m) => m.status === "closed");
-  const matterName = (id: string | null) => matters.find((m) => m.id === id)?.name ?? "—";
 
   const Guarded = ({ field, label, type = "text" }: { field: GuardField; label: string; type?: string }) =>
     activeEdit === field ? (
@@ -198,32 +157,26 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <span className={`pill pill-${client.status}`}>{client.status}</span>
       </div>
 
-      <div className="doc-tabs client-tabs">
-        {TABS.map((t) => (
-          <button key={t.key} type="button" className={tab === t.key ? "active" : undefined} onClick={() => setTab(t.key)}>
-            {t.label}
+      <div className="detail-grid">
+        <div className="detail-item"><span className="detail-label">Primary Contact</span>
+          <button type="button" className="contact-picker" onClick={openContactModal}>
+            {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
           </button>
-        ))}
+        </div>
+        <div className="detail-item"><span className="detail-label">Email</span><Guarded field="email" label="email" type="email" /></div>
+        <div className="detail-item"><span className="detail-label">Phone</span><Guarded field="phone" label="phone number" type="tel" /></div>
+        <div className="detail-item"><span className="detail-label">Address</span><Guarded field="address" label="address" /></div>
       </div>
 
-      {tab === "overview" && (
-        <>
-          <div className="detail-grid">
-            <div className="detail-item"><span className="detail-label">Primary Contact</span>
-              <button type="button" className="contact-picker" onClick={openContactModal}>
-                {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
-              </button>
-            </div>
-            <div className="detail-item"><span className="detail-label">Email</span><Guarded field="email" label="email" type="email" /></div>
-            <div className="detail-item"><span className="detail-label">Phone</span><Guarded field="phone" label="phone number" type="tel" /></div>
-            <div className="detail-item"><span className="detail-label">Address</span><Guarded field="address" label="address" /></div>
-          </div>
-          <div className="panel" style={{ marginBottom: "1.5rem" }}>
-            <h2 className="panel-title">Notes</h2>
-            <InlineTextarea value={client.notes} onSave={(v) => patch({ notes: v || null })} placeholder="Click to add notes…" />
-          </div>
-          <div className="panel">
-            <h2 className="panel-title">Matters ({matters.length})</h2>
+      <div className="panel" style={{ marginBottom: "1.5rem" }}>
+        <h2 className="panel-title">Notes</h2>
+        <InlineTextarea value={client.notes} onSave={(v) => patch({ notes: v || null })} placeholder="Click to add notes…" />
+      </div>
+
+      <div className="detail-cols">
+        <div className="panel">
+          <h2 className="panel-title">Matters ({matters.length})</h2>
+          <div className="panel-scroll">
             {matters.length === 0 ? <p className="muted-line">No matters yet.</p> : (
               <>
                 <h3 className="subsection">Active ({openMatters.length})</h3>
@@ -239,92 +192,8 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
               </>
             )}
           </div>
-        </>
-      )}
-
-      {tab === "contacts" && (
-        <div className="panel">
-          <div className="panel-head">
-            <h2 className="panel-title">Primary Contact</h2>
-            <button className="btn" type="button" onClick={openContactModal}>Set contact</button>
-          </div>
-          <div className="detail-grid" style={{ marginBottom: 0 }}>
-            <div className="detail-item"><span className="detail-label">Name</span>{client.primary_contact || "—"}</div>
-            <div className="detail-item"><span className="detail-label">Email</span>{client.email || "—"}</div>
-            <div className="detail-item"><span className="detail-label">Phone</span>{client.phone || "—"}</div>
-            <div className="detail-item"><span className="detail-label">Address</span>{client.address || "—"}</div>
-          </div>
         </div>
-      )}
 
-      {tab === "time" && (
-        <div className="panel">
-          <h2 className="panel-title">Time Entries ({entries.length})</h2>
-          {entries.length === 0 ? <p className="muted-line">No time logged for this client.</p> : (
-            <div className="table-wrap" style={{ border: "none" }}>
-              <table className="data-table">
-                <thead><tr><th>Date</th><th>Matter</th><th>Activity</th><th>Lawyer</th><th>Duration</th></tr></thead>
-                <tbody>{entries.map((e) => (
-                  <tr key={e.id}>
-                    <td>{new Date(e.logged_at).toLocaleDateString()}</td>
-                    <td><Link href={`/dashboard/matters/${e.matter_id}`} className="row-link">{matterName(e.matter_id)}</Link></td>
-                    <td>{e.activity || "—"}</td><td>{e.lawyer}</td><td>{fmtHm(e.duration_seconds)}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "tasks" && (
-        <div className="panel">
-          <h2 className="panel-title">Tasks ({todos.length})</h2>
-          {todos.length === 0 ? <p className="muted-line">No tasks for this client&rsquo;s matters.</p> : (
-            <ul className="link-list">{todos.map((t) => (
-              <li key={t.id}>
-                <span className={t.done ? "todo-title done" : ""} style={t.done ? { textDecoration: "line-through", color: "var(--dash-muted)" } : undefined}>{t.title}</span>
-                <span className="muted-line">{matterName(t.matter_id)}</span>
-                {t.assignee && <span className="todo-assignee">{(t.assignee || "").split(" ")[0]}</span>}
-              </li>
-            ))}</ul>
-          )}
-        </div>
-      )}
-
-      {tab === "invoices" && (
-        <div className="panel">
-          <h2 className="panel-title">Invoices ({invoices.length})</h2>
-          {invoices.length === 0 ? <p className="muted-line">No invoices for this client.</p> : (
-            <div className="table-wrap" style={{ border: "none" }}>
-              <table className="data-table">
-                <thead><tr><th>Invoice</th><th>Matter</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead>
-                <tbody>{invoices.map((i) => (
-                  <tr key={i.id}>
-                    <td className="strong-cell">{i.number || "—"}</td>
-                    <td>{i.matter_id ? <Link href={`/dashboard/matters/${i.matter_id}`} className="row-link">{matterName(i.matter_id)}</Link> : "—"}</td>
-                    <td>{i.amount != null ? `$${i.amount.toFixed(2)}` : "—"}</td>
-                    <td>{i.due_date ? new Date(i.due_date).toLocaleDateString() : "—"}</td>
-                    <td><span className={`pill inv-${i.status}`}>{i.status}</span></td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "billing" && (
-        <div className="panel">
-          <h2 className="panel-title">Billing Preferences</h2>
-          <p className="muted-line" style={{ marginBottom: "0.75rem" }}>
-            Notes on how this client prefers to be billed, payment terms, or anything else billing-related.
-          </p>
-          <InlineTextarea value={client.billing_notes} onSave={(v) => patch({ billing_notes: v || null })} placeholder="Click to add billing notes…" />
-        </div>
-      )}
-
-      {tab === "activity" && (
         <div className="panel">
           <h2 className="panel-title">Activity</h2>
           <div className="panel-scroll">
@@ -339,7 +208,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
-      )}
+      </div>
 
       {prompt && (
         <div className="modal-backdrop" onClick={() => setPrompt(null)}>

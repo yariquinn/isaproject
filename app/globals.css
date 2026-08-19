@@ -1926,8 +1926,16 @@ a.activity-row:hover .act-desc {
   color: var(--dash-sidebar-muted);
   margin-top: 0.15rem;
 }
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
 .nav-group + .nav-group {
   margin-top: 0.35rem;
+}
+.sidebar-nav a {
+  display: block;
 }
 .nav-group-label {
   font-size: 0.58rem;
