@@ -507,22 +507,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 day: "numeric",
               })}
             </span>
-            {matter.status === "closed" ? (
-              matter.closed_by && (
-                <>
-                  <span className="strip-sep">·</span>
-                  <span className="strip-item">Closed by {matter.closed_by}</span>
-                </>
-              )
-            ) : (
+            {matter.status === "closed" && matter.closed_by && (
               <>
                 <span className="strip-sep">·</span>
-                <InlineSelect
-                  value={matter.priority}
-                  className={`prio-${matter.priority}`}
-                  options={PRIORITIES.map((p) => ({ value: p.value, label: p.label }))}
-                  onSave={(v) => patch({ priority: v })}
-                />
+                <span className="strip-item">Closed by {matter.closed_by}</span>
               </>
             )}
           </div>
@@ -664,7 +652,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         >
           <h2 className="panel-title">Details</h2>
           <dl className="details-grid">
-            <div>
+            <div style={{ gridColumn: "1 / -1" }}>
               <dt>Rate</dt>
               <dd className="rate-dd">
                 <InlineNumber
@@ -693,6 +681,19 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 />
               </dd>
             </div>
+            {matter.status !== "closed" && (
+              <div>
+                <dt>Priority</dt>
+                <dd>
+                  <InlineSelect
+                    value={matter.priority}
+                    className={`prio-${matter.priority}`}
+                    options={PRIORITIES.map((p) => ({ value: p.value, label: p.label }))}
+                    onSave={(v) => patch({ priority: v })}
+                  />
+                </dd>
+              </div>
+            )}
           </dl>
           <div className="details-desc">
             <dt>Description</dt>

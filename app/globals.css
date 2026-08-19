@@ -3256,9 +3256,9 @@ a.activity-row:hover .act-desc {
   cursor: pointer;
 }
 .te-toggle.on {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: rgba(46, 125, 70, 0.13);
+  border-color: #8dc4a1;
+  color: #2e7d46;
 }
 .icon-add {
   width: 32px;
