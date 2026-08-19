@@ -25,6 +25,7 @@ import {
 import { usePortal } from "../../PortalProvider";
 import TodoWidget from "../../TodoWidget";
 import Disclaimer from "../../Disclaimer";
+import Collapsible from "../../Collapsible";
 
 const TIMELINE_STEPS: Record<string, string[]> = {
   "LLC Formation": [
@@ -500,26 +501,23 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
       <div className="matter-body">
         <div className="matter-body-main">
-          <div className="panel">
-            <h2 className="panel-title">Description</h2>
+          <Collapsible title="Description" empty={!matter.description}>
             <InlineTextarea
               value={matter.description}
               onSave={(v) => patch({ description: v || null })}
               placeholder="Click to add a description…"
             />
-          </div>
+          </Collapsible>
 
-          <div className="panel">
-            <div className="panel-head">
-              <h2 className="panel-title">Time Entries ({entries.length})</h2>
-              <button
-                className="btn"
-                type="button"
-                onClick={() => setLogOpen(true)}
-              >
+          <Collapsible
+            title={`Time Entries (${entries.length})`}
+            empty={entries.length === 0}
+            action={
+              <button className="btn" type="button" onClick={() => setLogOpen(true)}>
                 + Log time
               </button>
-            </div>
+            }
+          >
             {entries.length === 0 ? (
               <p className="muted-line">No time logged to this matter yet.</p>
             ) : (
@@ -548,15 +546,15 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </table>
               </div>
             )}
-          </div>
+          </Collapsible>
         </div>
 
         <div className="matter-body-side">
-          <div className="panel">
-            <div className="panel-head">
-              <h2 className="panel-title">Events</h2>
-              <span className="chip-note">from calendar (demo)</span>
-            </div>
+          <Collapsible
+            title="Events"
+            empty={events.length === 0}
+            action={<span className="chip-note">from calendar (demo)</span>}
+          >
             {events.length === 0 ? (
               <p className="muted-line">No upcoming events.</p>
             ) : (
@@ -575,10 +573,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 ))}
               </ul>
             )}
-          </div>
+          </Collapsible>
 
-          <div className="panel">
-            <h2 className="panel-title">Invoices ({invoices.length})</h2>
+          <Collapsible
+            title={`Invoices (${invoices.length})`}
+            empty={invoices.length === 0}
+          >
             {invoices.length === 0 ? (
               <p className="muted-line">No invoices for this matter.</p>
             ) : (
@@ -594,15 +594,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 ))}
               </ul>
             )}
-          </div>
+          </Collapsible>
 
           <div className="panel">
             <h2 className="panel-title">Tasks</h2>
             <TodoWidget matterId={matter.id} compact />
           </div>
 
-          <div className="panel matter-activity">
-            <h2 className="panel-title">Activity</h2>
+          <Collapsible title="Activity" empty={activity.length === 0}>
             <div className="panel-scroll tall">
               {activity.length === 0 ? (
                 <p className="muted-line">No activity for this matter yet.</p>
@@ -624,7 +623,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </ul>
               )}
             </div>
-          </div>
+          </Collapsible>
         </div>
       </div>
 

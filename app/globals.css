@@ -2282,6 +2282,34 @@ a.activity-row:hover .act-desc {
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
 }
+.collapse-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--dash-fg);
+  padding: 0;
+}
+.collapse-caret {
+  color: var(--dash-muted);
+  font-size: 0.8rem;
+}
+.collapse-empty-tag {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dash-muted);
+  border: 1px solid var(--dash-border);
+  border-radius: 20px;
+  padding: 0.1rem 0.45rem;
+}
 
 /* Centered primary-contact modal */
 .contact-modal h3 {
