@@ -266,6 +266,15 @@ export default function ClientsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          <button
+            className="icon-btn print-btn"
+            onClick={() => window.print()}
+            type="button"
+            title="Print list"
+            aria-label="Print list"
+          >
+            🖨
+          </button>
           <button className="btn" onClick={() => setAddOpen(true)} type="button">
             + Add Client
           </button>
@@ -290,7 +299,7 @@ export default function ClientsPage() {
       ) : clients.length === 0 ? (
         <p className="muted-line">No clients yet.</p>
       ) : (
-        <div className="table-wrap">
+        <div className="table-wrap printable">
           <table className="data-table">
             <thead>
               <tr>

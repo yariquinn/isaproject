@@ -36,7 +36,7 @@ export default function MattersPage() {
   const [sort, setSort] = useState<{
     key: "name" | "priority";
     dir: 1 | -1;
-  } | null>(null);
+  } | null>({ key: "priority", dir: 1 });
   const [query, setQuery] = useState("");
 
   function toggleSort(key: "name" | "priority") {
@@ -192,6 +192,15 @@ export default function MattersPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          <button
+            className="icon-btn print-btn"
+            onClick={() => window.print()}
+            type="button"
+            title="Print list"
+            aria-label="Print list"
+          >
+            🖨
+          </button>
           <button className="btn" onClick={() => setOpen(true)} type="button">
             + Add Matter
           </button>
@@ -239,7 +248,7 @@ export default function MattersPage() {
       ) : rows.length === 0 ? (
         <p className="muted-line">No matters match these filters.</p>
       ) : (
-        <div className="table-wrap">
+        <div className="table-wrap printable">
           <table className="data-table">
             <thead>
               <tr>
@@ -315,7 +324,7 @@ export default function MattersPage() {
                   <td>
                     <InlineSelect
                       value={m.status}
-                      className={`pill-${m.status}`}
+                      className={`pill-${m.status}${m.status === "closed" ? " closed-strong" : ""}`}
                       options={[
                         { value: "open", label: "open" },
                         { value: "closed", label: "closed" },

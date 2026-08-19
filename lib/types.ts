@@ -80,6 +80,7 @@ export type Todo = {
   created_by: string | null;
   matter_id: string | null;
   due_date: string | null;
+  priority: string;
   created_at: string;
 };
 

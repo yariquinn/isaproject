@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { ATTORNEYS, type Todo } from "@/lib/types";
+import { ATTORNEYS, PRIORITIES, type Todo } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
 
 type MatterLite = { id: string; name: string };
@@ -21,12 +21,14 @@ export default function TodoWidget({
   const [assignee, setAssignee] = useState<string>(ATTORNEYS[0]);
   const [newMatter, setNewMatter] = useState<string>("");
   const [newDue, setNewDue] = useState<string>("");
+  const [newPriority, setNewPriority] = useState<string>("-");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Todo | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editAssignee, setEditAssignee] = useState<string>(ATTORNEYS[0]);
   const [editMatter, setEditMatter] = useState<string>("");
   const [editDue, setEditDue] = useState<string>("");
+  const [editPriority, setEditPriority] = useState<string>("-");
 
   async function load() {
     let q = supabase
@@ -64,12 +66,14 @@ export default function TodoWidget({
         created_by: userName,
         matter_id: matterId ?? (newMatter || null),
         due_date: newDue || null,
+        priority: newPriority,
       })
       .select("*")
       .single();
     if (data) setTodos((prev) => [data as Todo, ...prev]);
     setNewMatter("");
     setNewDue("");
+    setNewPriority("-");
   }
 
   async function toggle(t: Todo) {
@@ -101,6 +105,7 @@ export default function TodoWidget({
       title,
       assignee: editAssignee,
       due_date: editDue || null,
+      priority: editPriority,
     };
     if (!matterId) changes.matter_id = editMatter || null;
     setTodos((prev) =>
@@ -115,6 +120,7 @@ export default function TodoWidget({
     setEditAssignee(t.assignee ?? ATTORNEYS[0]);
     setEditMatter(t.matter_id ?? "");
     setEditDue(t.due_date ?? "");
+    setEditPriority(t.priority ?? "-");
     setSelected(t);
   }
 
@@ -141,6 +147,12 @@ export default function TodoWidget({
         >
           {t.done ? "✓" : ""}
         </button>
+        {t.priority && t.priority !== "-" && (
+          <span
+            className={`todo-prio prio-${t.priority}`}
+            title={`Priority: ${t.priority}`}
+          />
+        )}
         <button type="button" className="todo-open" onClick={() => openTodo(t)}>
           <span className="todo-title">{t.title}</span>
           {(mName || t.due_date) && (
@@ -209,6 +221,18 @@ export default function TodoWidget({
         />
         <select
           className="todo-assign-select"
+          value={newPriority}
+          onChange={(e) => setNewPriority(e.target.value)}
+          aria-label="Priority"
+        >
+          {PRIORITIES.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.value === "-" ? "Priority" : p.label}
+            </option>
+          ))}
+        </select>
+        <select
+          className="todo-assign-select"
           value={assignee}
           onChange={(e) => setAssignee(e.target.value)}
           aria-label="Assign to"
@@ -272,14 +296,29 @@ export default function TodoWidget({
                 </select>
               </label>
             )}
-            <label>
-              Due date
-              <input
-                type="date"
-                value={editDue}
-                onChange={(e) => setEditDue(e.target.value)}
-              />
-            </label>
+            <div className="field-pair">
+              <label>
+                Due date
+                <input
+                  type="date"
+                  value={editDue}
+                  onChange={(e) => setEditDue(e.target.value)}
+                />
+              </label>
+              <label>
+                Priority
+                <select
+                  value={editPriority}
+                  onChange={(e) => setEditPriority(e.target.value)}
+                >
+                  {PRIORITIES.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <label>
               Assigned to
               <select
