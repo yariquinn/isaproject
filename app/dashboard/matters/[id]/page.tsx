@@ -114,7 +114,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const dragStep = useRef<string | null>(null);
   const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
   const [bodyTab, setBodyTab] = useState<
-    "time" | "tasks" | "documents" | "events" | "invoices" | "notes" | "timeline" | "activity"
+    "time" | "tasks" | "documents" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
 
   async function loadActivity() {
@@ -233,6 +233,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       prev.map((c) => (c.id === clientId ? { ...c, billing_notes: next } : c)),
     );
     await supabase.from("clients").update({ billing_notes: next }).eq("id", clientId);
+  }
+
+  async function saveClientNotes(clientId: string, v: string) {
+    const next = v.trim() || null;
+    setClients((prev) =>
+      prev.map((c) => (c.id === clientId ? { ...c, notes: next } : c)),
+    );
+    await supabase.from("clients").update({ notes: next }).eq("id", clientId);
   }
 
   async function addEntry(f: {
@@ -410,6 +418,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   </div>
                 )}
               </dl>
+              <div className="cc-notes">
+                <dt>Notes</dt>
+                <InlineTextarea
+                  value={clientObj.notes}
+                  onSave={(v) => saveClientNotes(clientObj.id, v)}
+                  placeholder="Click to add client notes…"
+                />
+              </div>
             </>
           ) : (
             <p className="muted-line">No client linked.</p>
@@ -449,29 +465,30 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               />
             </dd>
           </div>
-          <div className="details-desc">
-            <dt>Upcoming</dt>
-            {events.length === 0 ? (
-              <p className="muted-line" style={{ fontSize: "0.85rem" }}>
-                No upcoming events.
-              </p>
-            ) : (
-              <ul className="mini-events">
-                {events.slice(0, 4).map((ev) => (
-                  <li key={ev.id}>
-                    <span className="me-date">
-                      {new Date(ev.event_date).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
-                    <span className="me-title">{ev.title}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+        </div>
+
+        <div className="panel events-card">
+          <h2 className="panel-title">Events ({events.length})</h2>
+          {events.length === 0 ? (
+            <p className="muted-line" style={{ fontSize: "0.85rem" }}>
+              No upcoming events.
+            </p>
+          ) : (
+            <ul className="mini-events">
+              {events.slice(0, 6).map((ev) => (
+                <li key={ev.id}>
+                  <span className="me-date">
+                    {new Date(ev.event_date).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                  <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
+                  <span className="me-title">{ev.title}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
@@ -480,7 +497,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           ["time", `Time Entries (${entries.length})`],
           ["tasks", "Tasks"],
           ["documents", "Documents"],
-          ["events", `Events (${events.length})`],
           ["invoices", `Invoices (${invoices.length})`],
           ["notes", "Notes"],
           ["timeline", "Case Timeline"],
@@ -649,32 +665,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             onSave={(v) => patch({ notes: v || null })}
             placeholder="Internal notes for this matter…"
           />
-        )}
-
-        {bodyTab === "events" && (
-          <>
-            <div className="panel-head" style={{ justifyContent: "flex-end" }}>
-              <span className="chip-note">from calendar (demo)</span>
-            </div>
-            {events.length === 0 ? (
-              <p className="muted-line">No upcoming events.</p>
-            ) : (
-              <ul className="event-list">
-                {events.map((ev) => (
-                  <li key={ev.id}>
-                    <span className="event-date">
-                      {new Date(ev.event_date).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
-                    <span className="event-title">{ev.title}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
         )}
 
         {bodyTab === "invoices" && (

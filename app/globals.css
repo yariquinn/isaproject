@@ -2703,10 +2703,27 @@ a.activity-row:hover .act-desc {
 /* Matter: client + details cards */
 .matter-cards {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
   margin-bottom: 1.5rem;
   align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .matter-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.cc-notes {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--dash-border);
+}
+.cc-notes dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  margin-bottom: 0.3rem;
 }
 .details-grid {
   display: grid;

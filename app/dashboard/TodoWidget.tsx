@@ -38,7 +38,8 @@ export default function TodoWidget({
       .select("*")
       .order("done")
       .order("created_at", { ascending: false });
-    q = matterId ? q.eq("matter_id", matterId) : q.is("matter_id", null);
+    // Matter view: only that matter's tasks. Global Tasks page: every task.
+    if (matterId) q = q.eq("matter_id", matterId);
     const [{ data }, { data: ms }] = await Promise.all([
       q,
       supabase.from("matters").select("id,name").order("name"),
