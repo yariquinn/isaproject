@@ -56,51 +56,55 @@ export default function Sidebar({ userName }: { userName: string }) {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-top">
-        <div className="sidebar-brand">
-          Isa Abdur-Rahman
-          <span>Employee Portal</span>
+      <div className="sidebar-inner">
+        <div className="sidebar-top">
+          <div className="sidebar-brand">
+            Isa Abdur-Rahman
+            <span>Employee Portal</span>
+          </div>
+          <ThemeToggle />
         </div>
-        <ThemeToggle />
-      </div>
 
-      <nav className="sidebar-nav">
-        {GROUPS.map((g, i) => (
-          <div className="nav-group" key={i}>
-            {g.label && <div className="nav-group-label">{g.label}</div>}
-            {g.items.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`${isActive(l.href) ? "active" : ""}${l.sub ? " sub" : ""}`}
-              >
-                {l.label}
-              </Link>
-            ))}
+        <nav className="sidebar-nav">
+          {GROUPS.map((g, i) => (
+            <div className="nav-group" key={i}>
+              {g.label && <div className="nav-group-label">{g.label}</div>}
+              {g.items.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  title={l.label}
+                  className={`${isActive(l.href) ? "active" : ""}${l.sub ? " sub" : ""}`}
+                >
+                  <span className="nav-ic">{l.label[0]}</span>
+                  <span className="nav-tx">{l.label}</span>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar-tracker">
+          <TimeTracker />
+        </div>
+
+        <div className="sidebar-foot">
+          <div className="user-card">
+            <div className="user-avatar">{initials}</div>
+            <div className="user-meta">
+              <span className="user-name">{userName}</span>
+              <span className="user-sub">Employee</span>
+            </div>
+            <form action={logoutAction}>
+              <button type="submit" className="signout-icon" title="Sign out" aria-label="Sign out">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
+            </form>
           </div>
-        ))}
-      </nav>
-
-      <div className="sidebar-tracker">
-        <TimeTracker />
-      </div>
-
-      <div className="sidebar-foot">
-        <div className="user-card">
-          <div className="user-avatar">{initials}</div>
-          <div className="user-meta">
-            <span className="user-name">{userName}</span>
-            <span className="user-sub">Employee</span>
-          </div>
-          <form action={logoutAction}>
-            <button type="submit" className="signout-icon" title="Sign out" aria-label="Sign out">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
-          </form>
         </div>
       </div>
     </aside>

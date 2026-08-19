@@ -83,6 +83,35 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "•";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+type NoteEntry = { time: string; who: string; initials: string; text: string };
+
+// Notes are stored as a running log of "[stamp · name]\nbody" blocks separated
+// by a blank line. Parse them back into structured entries for the feed.
+function parseNotes(raw: string | null): NoteEntry[] {
+  if (!raw || !raw.trim()) return [];
+  const re = /\[([^\]]+)\]\n([\s\S]*?)(?=\n\n\[|$)/g;
+  const out: NoteEntry[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw)) !== null) {
+    const header = m[1];
+    const text = m[2].trim();
+    const sep = header.lastIndexOf(" · ");
+    const time = sep === -1 ? header.trim() : header.slice(0, sep).trim();
+    const who = sep === -1 ? "" : header.slice(sep + 3).trim();
+    out.push({ time, who, initials: who ? initialsOf(who) : "•", text });
+  }
+  // Legacy free-text notes (no timestamp headers) show as one entry.
+  if (out.length === 0) out.push({ time: "", who: "", initials: "•", text: raw.trim() });
+  return out;
+}
+
 const KIND_LABEL: Record<string, string> = {
   matter_created: "Matter",
   matter_updated: "Matter",
@@ -413,9 +442,17 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <Link href="/dashboard/matters" className="back-link">
-        ← Matters
-      </Link>
+      <nav className="crumbs" aria-label="Breadcrumb">
+        <Link href="/dashboard/matters">Matters</Link>
+        <span className="crumb-sep">/</span>
+        {clientObj ? (
+          <Link href={`/dashboard/clients/${clientObj.id}`}>{clientObj.name}</Link>
+        ) : (
+          <span className="crumb-current">—</span>
+        )}
+        <span className="crumb-sep">/</span>
+        <span className="crumb-current">{matter.name}</span>
+      </nav>
       <div className="matter-head">
         <div className="matter-head-title">
           <h1 className="page-title editable-title">
@@ -426,70 +463,57 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               }}
             />
           </h1>
-          {matter.status === "closed" && (
-            <span className="closed-note">
-              Closed{" "}
-              <input
-                type="date"
-                className="closed-date-input"
-                value={
-                  matter.closed_at
-                    ? new Date(matter.closed_at).toISOString().slice(0, 10)
-                    : ""
-                }
-                onChange={(e) =>
-                  patch({
-                    closed_at: e.target.value
-                      ? new Date(e.target.value + "T12:00:00").toISOString()
-                      : null,
-                  })
-                }
-              />
-              {matter.closed_by ? ` · by ${matter.closed_by}` : ""}
+          <div className="matter-substrip">
+            <span
+              className={`status-pill status-${matter.status === "closed" ? "closed" : "active"}`}
+            >
+              {matter.status === "closed" ? "Closed" : "Active"}
             </span>
-          )}
+            <span className="strip-sep">·</span>
+            <span className="strip-item">
+              Opened{" "}
+              {new Date(matter.created_at).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
+            </span>
+            {matter.status === "closed" ? (
+              matter.closed_by && (
+                <>
+                  <span className="strip-sep">·</span>
+                  <span className="strip-item">Closed by {matter.closed_by}</span>
+                </>
+              )
+            ) : (
+              <>
+                <span className="strip-sep">·</span>
+                <span className="strip-prio">
+                  <span className="strip-label">Priority</span>
+                  <InlineSelect
+                    value={matter.priority}
+                    className={`prio-${matter.priority}`}
+                    options={PRIORITIES.map((p) => ({
+                      value: p.value,
+                      label: p.label,
+                    }))}
+                    onSave={(v) => patch({ priority: v })}
+                  />
+                </span>
+              </>
+            )}
+          </div>
         </div>
         <div className="matter-meta">
-          <div className="meta-chip">
-            <span className="meta-label">Status</span>
-            <InlineSelect
-              value={matter.status}
-              className={`pill-${matter.status}`}
-              options={[
-                { value: "open", label: "open" },
-                { value: "closed", label: "closed" },
-              ]}
-              onSave={(v) => changeStatus(v)}
-            />
-          </div>
-          {matter.status !== "closed" && (
-            <div className="meta-chip">
-              <span className="meta-label">Priority</span>
-              <InlineSelect
-                value={matter.priority}
-                className={`prio-${matter.priority}`}
-                options={PRIORITIES.map((p) => ({
-                  value: p.value,
-                  label: p.label,
-                }))}
-                onSave={(v) => patch({ priority: v })}
-              />
-            </div>
-          )}
-          <div className="meta-chip">
-            <span className="meta-label">Practice Area</span>
-            <InlineSelect
-              value={matter.practice_area ?? PRACTICE_AREAS[0]}
-              options={PRACTICE_AREAS.map((p) => ({ value: p, label: p }))}
-              onSave={(v) => patch({ practice_area: v })}
-            />
-          </div>
-          <div className="meta-chip">
-            <span className="meta-label">&nbsp;</span>
-            <button type="button" className="meta-delete" onClick={() => setConfirmDel(true)}>
-              Delete
-            </button>
-          </div>
+          <button
+            type="button"
+            className="ghost sm"
+            onClick={() => changeStatus(matter.status === "closed" ? "open" : "closed")}
+          >
+            {matter.status === "closed" ? "Reopen" : "Close matter"}
+          </button>
+          <button type="button" className="meta-delete" onClick={() => setConfirmDel(true)}>
+            Delete
+          </button>
         </div>
       </div>
 
@@ -635,6 +659,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 />
               </dd>
             </div>
+            <div>
+              <dt>Practice Area</dt>
+              <dd>
+                <InlineSelect
+                  value={matter.practice_area ?? PRACTICE_AREAS[0]}
+                  options={PRACTICE_AREAS.map((p) => ({ value: p, label: p }))}
+                  onSave={(v) => patch({ practice_area: v })}
+                />
+              </dd>
+            </div>
           </dl>
           <div className="details-desc">
             <dt>Description</dt>
@@ -724,11 +758,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         >
           <h2 className="panel-title">Notes</h2>
           <div className="notes-log">
-            {matter.notes ? (
-              <pre className="notes-log-text">{matter.notes}</pre>
-            ) : (
-              <p className="muted-line">No notes yet.</p>
-            )}
+            {(() => {
+              const noteEntries = parseNotes(matter.notes);
+              if (noteEntries.length === 0)
+                return <p className="muted-line">No notes yet.</p>;
+              return (
+                <ul className="note-feed">
+                  {noteEntries.map((n, i) => (
+                    <li className="note-item" key={i}>
+                      <span className="note-avatar" title={n.who || undefined}>
+                        {n.initials}
+                      </span>
+                      <div className="note-main">
+                        {n.time && <div className="note-time">{n.time}</div>}
+                        <p className="note-text">{n.text}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
           </div>
           <div className="notes-add">
             <textarea

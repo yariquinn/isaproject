@@ -319,12 +319,11 @@ section.block.alt {
   --dash-sidebar-muted: #9fb0c0;
   --dash-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow-sm: 0 1px 2px rgba(20, 30, 45, 0.05),
-    0 1px 3px rgba(20, 30, 45, 0.04);
-  --shadow-md: 0 2px 6px rgba(20, 30, 45, 0.06),
-    0 8px 24px rgba(20, 30, 45, 0.06);
+  --radius: 10px;
+  --radius-sm: 7px;
+  --shadow-sm: 0 1px 2px rgba(20, 30, 45, 0.04);
+  --shadow-md: 0 1px 3px rgba(20, 30, 45, 0.05),
+    0 6px 20px rgba(20, 30, 45, 0.05);
   --ring: 0 0 0 3px rgba(166, 124, 82, 0.18);
 }
 :root[data-theme="dark"] {
@@ -472,6 +471,7 @@ section.block.alt {
   color: var(--dash-fg);
   font-family: var(--dash-font);
   letter-spacing: -0.006em;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 .dash button,
@@ -484,18 +484,89 @@ section.block.alt {
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
     transform 0.05s ease, box-shadow 0.15s ease;
 }
+/* Collapsible sidebar: a slim rail that expands on hover, overlaying content
+   so the page doesn't reflow. */
 .sidebar {
-  width: 244px;
+  width: 70px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 40;
+}
+.sidebar-inner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 70px;
+  height: 100vh;
+  z-index: 45;
   background: var(--dash-sidebar);
   color: var(--dash-sidebar-fg);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 0.9rem;
-  position: sticky;
-  top: 0;
-  height: 100vh;
+  padding: 1.5rem 0.7rem;
+  overflow: hidden;
+  transition: width 0.18s ease, box-shadow 0.18s ease;
+}
+.sidebar:hover .sidebar-inner,
+.sidebar:focus-within .sidebar-inner {
+  width: 244px;
   overflow-y: auto;
+  padding: 1.5rem 0.9rem;
+  box-shadow: var(--shadow-md);
+}
+/* Collapsed state: hide the labels, show first-letter glyphs. */
+.nav-tx {
+  white-space: nowrap;
+}
+.sidebar .nav-tx,
+.sidebar .sidebar-brand,
+.sidebar .nav-group-label,
+.sidebar .user-meta,
+.sidebar .sidebar-tracker,
+.sidebar .signout-icon {
+  display: none;
+}
+.sidebar .nav-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.sidebar:hover .nav-tx,
+.sidebar:focus-within .nav-tx {
+  display: inline;
+}
+.sidebar:hover .sidebar-brand,
+.sidebar:focus-within .sidebar-brand,
+.sidebar:hover .nav-group-label,
+.sidebar:focus-within .nav-group-label {
+  display: block;
+}
+.sidebar:hover .user-meta,
+.sidebar:focus-within .user-meta {
+  display: flex;
+}
+.sidebar:hover .sidebar-tracker,
+.sidebar:focus-within .sidebar-tracker {
+  display: block;
+}
+.sidebar:hover .signout-icon,
+.sidebar:focus-within .signout-icon {
+  display: inline-flex;
+}
+.sidebar:hover .nav-ic,
+.sidebar:focus-within .nav-ic {
+  display: none;
+}
+/* Center the user avatar in the collapsed rail. */
+.sidebar .user-card {
+  justify-content: center;
+}
+.sidebar:hover .user-card,
+.sidebar:focus-within .user-card {
+  justify-content: flex-start;
 }
 .sidebar-brand {
   font-weight: 700;
@@ -875,7 +946,7 @@ section.block.alt {
    Content: titles, stats, panels, tables
    ============================================================ */
 .page-title {
-  font-size: 1.7rem;
+  font-size: 1.45rem;
   color: var(--dash-fg);
   margin-bottom: 1.25rem;
 }
@@ -937,12 +1008,12 @@ section.block.alt {
   border: 1px solid var(--dash-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  padding: 1.6rem;
+  padding: 1.35rem;
 }
 .panel-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--dash-fg);
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
 }
 .activity-list {
   list-style: none;
@@ -1358,6 +1429,77 @@ section.block.alt {
 }
 .detail-grid.grid-even .inline-select {
   width: 100%;
+}
+
+/* Breadcrumb: Matters / Client / Matter */
+.crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  margin-bottom: 1.1rem;
+}
+.crumbs a {
+  color: var(--dash-muted);
+}
+.crumbs a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.crumb-sep {
+  color: var(--dash-border);
+}
+.crumb-current {
+  color: var(--dash-fg);
+  font-weight: 600;
+}
+
+/* Sub-strip under the matter title: status + opened date + priority */
+.matter-substrip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--dash-muted);
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.status-active {
+  background: rgba(46, 125, 70, 0.12);
+  color: #2e7d46;
+}
+.status-closed {
+  background: var(--dash-border);
+  color: var(--dash-muted);
+}
+.strip-sep {
+  color: var(--dash-border);
+}
+.strip-prio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.strip-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dash-muted);
+}
+.strip-prio .inline-select {
+  height: 26px;
+  padding: 0 0.5rem;
+  font-size: 0.78rem;
+  border-radius: 7px;
 }
 
 /* Matter detail header: title + grouped meta controls */
@@ -2769,19 +2911,61 @@ a.activity-row:hover .act-desc {
   margin-bottom: 0.75rem;
   padding-right: 0.25rem;
 }
-.notes-log-text {
-  font-family: inherit;
-  font-size: 0.88rem;
-  line-height: 1.5;
+.note-feed {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.note-item {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+}
+.note-avatar {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.note-main {
+  min-width: 0;
+  flex: 1;
+}
+.note-time {
+  font-size: 0.66rem;
+  color: var(--dash-muted);
+  margin-bottom: 0.1rem;
+  font-variant-numeric: tabular-nums;
+}
+.note-text {
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: var(--dash-fg);
   white-space: pre-wrap;
   word-break: break-word;
-  color: var(--dash-fg);
-  margin: 0;
 }
 .notes-add {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+.notes-add .btn {
+  align-self: flex-end;
+  padding: 0.5rem 1.1rem;
+  border-radius: 8px;
+  font-family: var(--dash-font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 .notes-input {
   width: 100%;
