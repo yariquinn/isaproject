@@ -52,6 +52,16 @@ export default function MattersPage() {
     "active",
   );
   const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   async function load() {
     const [{ data: m }, { data: c }] = await Promise.all([
@@ -124,6 +134,23 @@ export default function MattersPage() {
       prev.map((m) => (m.id === id ? { ...m, ...changes } : m)),
     );
     await supabase.from("matters").update(changes).eq("id", id);
+  }
+
+  async function bulkPatch(changes: Partial<Matter>) {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setMatters((prev) =>
+      prev.map((m) => (selected.has(m.id) ? { ...m, ...changes } : m)),
+    );
+    await supabase.from("matters").update(changes).in("id", ids);
+  }
+
+  async function bulkStatus(status: string) {
+    const changes: Partial<Matter> =
+      status === "closed"
+        ? { status, closed_at: new Date().toISOString(), closed_by: userName, priority: "-" }
+        : { status, closed_at: null, closed_by: null };
+    await bulkPatch(changes);
   }
 
   // Changing status records who/when on close, clears it on reopen, and logs.
@@ -249,9 +276,51 @@ export default function MattersPage() {
         <p className="muted-line">No matters match these filters.</p>
       ) : (
         <div className="table-wrap printable">
+          {selected.size > 0 && (
+            <div className="bulk-bar">
+              <span className="bulk-count">{selected.size} selected</span>
+              <label>
+                Priority
+                <select defaultValue="" onChange={(e) => { if (e.target.value) bulkPatch({ priority: e.target.value }); e.target.value = ""; }}>
+                  <option value="">Set…</option>
+                  {PRIORITIES.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Status
+                <select defaultValue="" onChange={(e) => { if (e.target.value) bulkStatus(e.target.value); e.target.value = ""; }}>
+                  <option value="">Set…</option>
+                  <option value="open">open</option>
+                  <option value="closed">closed</option>
+                </select>
+              </label>
+              <label>
+                Assign
+                <select defaultValue="" onChange={(e) => { if (e.target.value) bulkPatch({ assigned_to: e.target.value }); e.target.value = ""; }}>
+                  <option value="">Set…</option>
+                  {ATTORNEYS.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
+            </div>
+          )}
           <table className="data-table">
             <thead>
               <tr>
+                <th className="check-col">
+                  <input
+                    type="checkbox"
+                    checked={rows.length > 0 && rows.every((m) => selected.has(m.id))}
+                    onChange={(e) =>
+                      setSelected(e.target.checked ? new Set(rows.map((m) => m.id)) : new Set())
+                    }
+                    aria-label="Select all"
+                  />
+                </th>
                 <th className="sortable" onClick={() => toggleSort("name")}>
                   Matter {sortArrow("name")}
                 </th>
@@ -267,7 +336,15 @@ export default function MattersPage() {
             </thead>
             <tbody>
               {rows.map((m) => (
-                <tr key={m.id}>
+                <tr key={m.id} className={selected.has(m.id) ? "row-selected" : undefined}>
+                  <td className="check-col">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(m.id)}
+                      onChange={() => toggleRow(m.id)}
+                      aria-label={`Select ${m.name}`}
+                    />
+                  </td>
                   <td className="strong-cell">
                     <Link href={`/dashboard/matters/${m.id}`} className="row-link">
                       {m.name}

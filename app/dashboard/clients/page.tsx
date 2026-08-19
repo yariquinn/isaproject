@@ -36,6 +36,24 @@ export default function ClientsPage() {
   const [activeMatters, setActiveMatters] = useState<
     Record<string, { id: string; name: string }[]>
   >({});
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  async function bulkPatch(changes: Partial<Client>) {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setClients((prev) =>
+      prev.map((c) => (selected.has(c.id) ? { ...c, ...changes } : c)),
+    );
+    await supabase.from("clients").update(changes).in("id", ids);
+  }
 
   // Guarded editing (mirrors the client record)
   const [prompt, setPrompt] = useState<{
@@ -300,9 +318,36 @@ export default function ClientsPage() {
         <p className="muted-line">No clients yet.</p>
       ) : (
         <div className="table-wrap printable">
+          {selected.size > 0 && (
+            <div className="bulk-bar">
+              <span className="bulk-count">{selected.size} selected</span>
+              <label>
+                Type
+                <select defaultValue="" onChange={(e) => { if (e.target.value) bulkPatch({ client_type: e.target.value }); e.target.value = ""; }}>
+                  <option value="">Set…</option>
+                  {CLIENT_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" className="ghost sm" onClick={() => bulkPatch({ archived: true })}>Archive</button>
+              <button type="button" className="ghost sm" onClick={() => bulkPatch({ archived: false })}>Unarchive</button>
+              <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
+            </div>
+          )}
           <table className="data-table">
             <thead>
               <tr>
+                <th className="check-col">
+                  <input
+                    type="checkbox"
+                    checked={rows.length > 0 && rows.every((c) => selected.has(c.id))}
+                    onChange={(e) =>
+                      setSelected(e.target.checked ? new Set(rows.map((c) => c.id)) : new Set())
+                    }
+                    aria-label="Select all"
+                  />
+                </th>
                 <th
                   className="sortable"
                   onClick={() => setSortAsc((s) => (s === true ? false : true))}
@@ -317,7 +362,15 @@ export default function ClientsPage() {
             </thead>
             <tbody>
               {rows.map((c) => (
-                <tr key={c.id}>
+                <tr key={c.id} className={selected.has(c.id) ? "row-selected" : undefined}>
+                  <td className="check-col">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(c.id)}
+                      onChange={() => toggleRow(c.id)}
+                      aria-label={`Select ${c.name}`}
+                    />
+                  </td>
                   <td className="strong-cell">
                     <Link
                       href={`/dashboard/clients/${c.id}`}

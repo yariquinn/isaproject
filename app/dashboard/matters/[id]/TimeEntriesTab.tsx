@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ACTIVITY_TYPES, ATTORNEYS, type TimeEntry } from "@/lib/types";
+
+type MatterLite = { id: string; name: string };
 
 function fmtHm(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -26,6 +28,39 @@ export default function TimeEntriesTab({
 }) {
   const [edit, setEdit] = useState<EditCell>(null);
   const [draft, setDraft] = useState<string>("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [matters, setMatters] = useState<MatterLite[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("matters")
+      .select("id,name")
+      .order("name")
+      .then(({ data }) => setMatters((data as MatterLite[]) ?? []));
+  }, []);
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  async function bulkUpdate(changes: Partial<TimeEntry>) {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    await supabase.from("time_entries").update(changes).in("id", ids);
+    setSelected(new Set());
+    onChanged();
+  }
+  async function bulkDelete() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    await supabase.from("time_entries").delete().in("id", ids);
+    setSelected(new Set());
+    onChanged();
+  }
 
   const rateVal = rate ?? 0;
   const amt = (e: TimeEntry) => (e.duration_seconds / 3600) * rateVal;
@@ -100,6 +135,46 @@ export default function TimeEntriesTab({
         {stat("Un-invoiced", unInvoiced, "warn")}
       </div>
 
+      {selected.size > 0 && (
+        <div className="bulk-bar">
+          <span className="bulk-count">{selected.size} selected</span>
+          <label>
+            Date
+            <input
+              type="date"
+              onChange={(e) => {
+                if (e.target.value)
+                  bulkUpdate({
+                    logged_at: new Date(e.target.value + "T12:00:00").toISOString(),
+                  });
+              }}
+            />
+          </label>
+          <label>
+            Move to matter
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) bulkUpdate({ matter_id: e.target.value });
+                e.target.value = "";
+              }}
+            >
+              <option value="">Select…</option>
+              {matters.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" className="ghost sm" onClick={() => bulkUpdate({ billable: true })}>Billable</button>
+          <button type="button" className="ghost sm" onClick={() => bulkUpdate({ billable: false })}>Non-billable</button>
+          <button type="button" className="ghost sm" onClick={() => bulkUpdate({ invoiced: true })}>Invoiced</button>
+          <button type="button" className="ghost sm danger" onClick={bulkDelete}>Delete</button>
+          <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
+        </div>
+      )}
+
       {entries.length === 0 ? (
         <p className="muted-line">No time logged to this matter yet.</p>
       ) : (
@@ -107,6 +182,16 @@ export default function TimeEntriesTab({
           <table className="data-table te-table">
             <thead>
               <tr>
+                <th className="check-col">
+                  <input
+                    type="checkbox"
+                    checked={entries.length > 0 && entries.every((e) => selected.has(e.id))}
+                    onChange={(ev) =>
+                      setSelected(ev.target.checked ? new Set(entries.map((e) => e.id)) : new Set())
+                    }
+                    aria-label="Select all"
+                  />
+                </th>
                 <th>Date</th>
                 <th>Activity</th>
                 <th>Description</th>
@@ -118,7 +203,15 @@ export default function TimeEntriesTab({
             </thead>
             <tbody>
               {entries.map((e) => (
-                <tr key={e.id}>
+                <tr key={e.id} className={selected.has(e.id) ? "row-selected" : undefined}>
+                  <td className="check-col">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(e.id)}
+                      onChange={() => toggleRow(e.id)}
+                      aria-label="Select entry"
+                    />
+                  </td>
                   {/* Date */}
                   <td>
                     {isEditing(e, "logged_at") ? (

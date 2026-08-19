@@ -2868,3 +2868,56 @@ a.activity-row:hover .act-desc {
   overflow-y: auto;
   margin-top: 0.5rem;
 }
+
+/* Bulk edit */
+.bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+  background: color-mix(in srgb, var(--accent) 10%, var(--dash-surface));
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+}
+.bulk-count {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--dash-fg);
+}
+.bulk-bar label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--dash-muted);
+  flex-direction: row;
+}
+.bulk-bar select,
+.bulk-bar input {
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+}
+.check-col {
+  width: 34px;
+  text-align: center;
+}
+.check-col input {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+.row-selected {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.ghost.danger {
+  color: #8a2b2b;
+}
+@media print {
+  .check-col, .bulk-bar { display: none !important; }
+}
