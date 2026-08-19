@@ -2703,15 +2703,55 @@ a.activity-row:hover .act-desc {
 /* Matter: client + details cards */
 .matter-cards {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.5rem;
   margin-bottom: 1.5rem;
   align-items: stretch;
 }
-@media (max-width: 1100px) {
-  .matter-cards {
-    grid-template-columns: 1fr 1fr;
-  }
+.matter-alert {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding: 0.7rem 1.1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--dash-border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--dash-surface));
+  border-radius: var(--radius);
+}
+.matter-alert-label {
+  flex: none;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.matter-alert-events {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  min-width: 0;
+}
+.matter-alert-events li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+}
+.task-badge {
+  display: inline-block;
+  margin-left: 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.12rem 0.5rem;
+  border-radius: 20px;
+  background: #f7efe2;
+  color: #8a5a1f;
+  border: 1px solid #e6d3b3;
+  vertical-align: middle;
 }
 .cc-notes {
   margin-top: 0.9rem;

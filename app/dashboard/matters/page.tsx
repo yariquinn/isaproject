@@ -54,6 +54,7 @@ export default function MattersPage() {
   );
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [pendingTasks, setPendingTasks] = useState<Record<string, number>>({});
   const [ncOpen, setNcOpen] = useState(false);
   const [nc, setNc] = useState({ name: "", client_type: "individual", email: "", phone: "" });
 
@@ -95,15 +96,21 @@ export default function MattersPage() {
   }
 
   async function load() {
-    const [{ data: m }, { data: c }] = await Promise.all([
+    const [{ data: m }, { data: c }, { data: td }] = await Promise.all([
       supabase
         .from("matters")
         .select("*")
         .order("created_at", { ascending: false }),
       supabase.from("clients").select("*").order("name"),
+      supabase.from("todos").select("matter_id").eq("done", false),
     ]);
     setMatters((m as Matter[]) ?? []);
     setClients((c as Client[]) ?? []);
+    const counts: Record<string, number> = {};
+    for (const t of (td as { matter_id: string | null }[]) ?? []) {
+      if (t.matter_id) counts[t.matter_id] = (counts[t.matter_id] ?? 0) + 1;
+    }
+    setPendingTasks(counts);
     setLoading(false);
   }
 
@@ -402,6 +409,11 @@ export default function MattersPage() {
                     <Link href={`/dashboard/matters/${m.id}`} className="row-link">
                       {m.name}
                     </Link>
+                    {pendingTasks[m.id] ? (
+                      <span className="task-badge" title="Pending tasks">
+                        {pendingTasks[m.id]} task{pendingTasks[m.id] === 1 ? "" : "s"}
+                      </span>
+                    ) : null}
                   </td>
                   <td>
                     {m.client_id ? (

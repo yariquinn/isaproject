@@ -368,6 +368,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
+      {events.length > 0 && (
+        <div className="matter-alert">
+          <span className="matter-alert-label">Upcoming</span>
+          <ul className="matter-alert-events">
+            {events.slice(0, 3).map((ev) => (
+              <li key={ev.id}>
+                <span className="me-date">
+                  {new Date(ev.event_date).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+                <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
+                <span className="me-title">{ev.title}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="matter-cards">
         <div className="panel client-card">
           <h2 className="panel-title">Client</h2>
@@ -465,30 +485,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               />
             </dd>
           </div>
-        </div>
-
-        <div className="panel events-card">
-          <h2 className="panel-title">Events ({events.length})</h2>
-          {events.length === 0 ? (
-            <p className="muted-line" style={{ fontSize: "0.85rem" }}>
-              No upcoming events.
-            </p>
-          ) : (
-            <ul className="mini-events">
-              {events.slice(0, 6).map((ev) => (
-                <li key={ev.id}>
-                  <span className="me-date">
-                    {new Date(ev.event_date).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                  <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
-                  <span className="me-title">{ev.title}</span>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       </div>
 
