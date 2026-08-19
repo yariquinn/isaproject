@@ -131,18 +131,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         </h1>
         <div className="matter-meta">
           <div className="meta-chip">
-            <span className="meta-label">Priority</span>
-            <InlineSelect
-              value={matter.priority}
-              className={`prio-${matter.priority}`}
-              options={PRIORITIES.map((p) => ({
-                value: p.value,
-                label: p.label,
-              }))}
-              onSave={(v) => patch({ priority: v })}
-            />
-          </div>
-          <div className="meta-chip">
             <span className="meta-label">Status</span>
             <InlineSelect
               value={matter.status}
@@ -152,6 +140,18 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 { value: "closed", label: "closed" },
               ]}
               onSave={(v) => changeStatus(v)}
+            />
+          </div>
+          <div className="meta-chip">
+            <span className="meta-label">Priority</span>
+            <InlineSelect
+              value={matter.priority}
+              className={`prio-${matter.priority}`}
+              options={PRIORITIES.map((p) => ({
+                value: p.value,
+                label: p.label,
+              }))}
+              onSave={(v) => patch({ priority: v })}
             />
           </div>
           <div className="meta-chip">

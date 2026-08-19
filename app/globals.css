@@ -1270,14 +1270,22 @@ section.block.alt {
 }
 .matter-meta {
   display: flex;
-  gap: 1.1rem;
+  gap: 0.9rem;
   flex-wrap: wrap;
   align-items: flex-end;
 }
 .meta-chip {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
+  width: 150px;
+}
+.meta-chip .inline-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 0.75rem;
+  text-align: center;
+  text-align-last: center;
 }
 .meta-label {
   font-size: 0.66rem;
