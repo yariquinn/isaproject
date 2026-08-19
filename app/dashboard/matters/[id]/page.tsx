@@ -7,6 +7,7 @@ import {
   ATTORNEYS,
   PRACTICE_AREAS,
   PRIORITIES,
+  type ActivityItem,
   type Client,
   type Matter,
   type TimeEntry,
@@ -25,12 +26,44 @@ function fmtHm(seconds: number): string {
   return `${h}h ${m}m`;
 }
 
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+const KIND_LABEL: Record<string, string> = {
+  matter_created: "Matter",
+  matter_updated: "Matter",
+  time_logged: "Time",
+};
+const KIND_GROUP: Record<string, string> = {
+  matter_created: "matter",
+  matter_updated: "matter",
+  time_logged: "time",
+};
+
 export default function MatterDetail({ params }: { params: { id: string } }) {
   const { userName } = usePortal();
   const [matter, setMatter] = useState<Matter | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  async function loadActivity() {
+    const { data } = await supabase
+      .from("activity_log")
+      .select("*")
+      .eq("matter_id", params.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setActivity((data as ActivityItem[]) ?? []);
+  }
 
   async function loadAll() {
     const [{ data: m }, { data: cs }, { data: e }] = await Promise.all([
@@ -45,6 +78,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     setMatter((m as Matter) ?? null);
     setClients((cs as Client[]) ?? []);
     setEntries((e as TimeEntry[]) ?? []);
+    await loadActivity();
     setLoading(false);
   }
 
@@ -81,6 +115,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             ? `${userName} closed matter ${matter.name}`
             : `${userName} reopened matter ${matter.name}`,
       });
+      loadActivity();
     }
   }
 
@@ -219,45 +254,72 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      <div className="panel" style={{ marginBottom: "1.5rem" }}>
-        <h2 className="panel-title">Description</h2>
-        <InlineTextarea
-          value={matter.description}
-          onSave={(v) => patch({ description: v || null })}
-          placeholder="Click to add a description…"
-        />
-      </div>
-
-      <div className="panel">
-        <h2 className="panel-title">Time Entries ({entries.length})</h2>
-        {entries.length === 0 ? (
-          <p className="muted-line">No time logged to this matter yet.</p>
-        ) : (
-          <div className="table-wrap" style={{ border: "none" }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Activity</th>
-                  <th>Description</th>
-                  <th>Lawyer</th>
-                  <th>Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((e) => (
-                  <tr key={e.id}>
-                    <td>{new Date(e.logged_at).toLocaleDateString()}</td>
-                    <td>{e.activity || "—"}</td>
-                    <td>{e.note || "—"}</td>
-                    <td>{e.lawyer}</td>
-                    <td>{fmtHm(e.duration_seconds)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="matter-body">
+        <div className="matter-body-main">
+          <div className="panel">
+            <h2 className="panel-title">Description</h2>
+            <InlineTextarea
+              value={matter.description}
+              onSave={(v) => patch({ description: v || null })}
+              placeholder="Click to add a description…"
+            />
           </div>
-        )}
+
+          <div className="panel">
+            <h2 className="panel-title">Time Entries ({entries.length})</h2>
+            {entries.length === 0 ? (
+              <p className="muted-line">No time logged to this matter yet.</p>
+            ) : (
+              <div className="table-wrap" style={{ border: "none" }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Activity</th>
+                      <th>Description</th>
+                      <th>Lawyer</th>
+                      <th>Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((e) => (
+                      <tr key={e.id}>
+                        <td>{new Date(e.logged_at).toLocaleDateString()}</td>
+                        <td>{e.activity || "—"}</td>
+                        <td>{e.note || "—"}</td>
+                        <td>{e.lawyer}</td>
+                        <td>{fmtHm(e.duration_seconds)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="panel matter-activity">
+          <h2 className="panel-title">Activity</h2>
+          <div className="panel-scroll tall">
+            {activity.length === 0 ? (
+              <p className="muted-line">No activity for this matter yet.</p>
+            ) : (
+              <ul className="activity-list">
+                {activity.map((a) => (
+                  <li key={a.id}>
+                    <span
+                      className={`act-tag tag-${KIND_GROUP[a.kind] ?? "matter"}`}
+                    >
+                      {KIND_LABEL[a.kind] ?? "Matter"}
+                    </span>
+                    <span className="act-desc">{a.description}</span>
+                    <span className="act-time">{timeAgo(a.created_at)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

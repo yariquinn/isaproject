@@ -31,8 +31,21 @@ export default function MattersPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY);
-  const [sortAsc, setSortAsc] = useState<boolean | null>(null);
+  const [sort, setSort] = useState<{
+    key: "name" | "priority";
+    dir: 1 | -1;
+  } | null>(null);
   const [query, setQuery] = useState("");
+
+  function toggleSort(key: "name" | "priority") {
+    setSort((s) =>
+      s && s.key === key
+        ? { key, dir: (s.dir === 1 ? -1 : 1) as 1 | -1 }
+        : { key, dir: 1 },
+    );
+  }
+  const sortArrow = (key: "name" | "priority") =>
+    !sort || sort.key !== key ? "↕" : sort.dir === 1 ? "↑" : "↓";
   const [statusFilter, setStatusFilter] = useState<"active" | "closed" | "all">(
     "active",
   );
@@ -81,11 +94,16 @@ export default function MattersPage() {
       }
       return true;
     });
-    if (sortAsc === null) return list;
-    return [...list].sort((a, b) =>
-      sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
-    );
-  }, [matters, clients, sortAsc, query, statusFilter, areaFilter, priorityFilter]);
+    if (!sort) return list;
+    const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    return [...list].sort((a, b) => {
+      const cmp =
+        sort.key === "name"
+          ? a.name.localeCompare(b.name)
+          : (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9);
+      return cmp * sort.dir;
+    });
+  }, [matters, clients, sort, query, statusFilter, areaFilter, priorityFilter]);
 
   const nameOf = (id: string | null) =>
     clients.find((c) => c.id === id)?.name ?? "";
@@ -245,17 +263,16 @@ export default function MattersPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th
-                  className="sortable"
-                  onClick={() => setSortAsc((s) => (s === true ? false : true))}
-                >
-                  Matter {sortAsc === null ? "↕" : sortAsc ? "↑" : "↓"}
+                <th className="sortable" onClick={() => toggleSort("name")}>
+                  Matter {sortArrow("name")}
                 </th>
                 <th>Client</th>
                 <th>Practice Area</th>
                 <th>Assigned To</th>
                 <th>Rate</th>
-                <th>Priority</th>
+                <th className="sortable" onClick={() => toggleSort("priority")}>
+                  Priority {sortArrow("priority")}
+                </th>
                 <th>Status</th>
               </tr>
             </thead>

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ActivityItem } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
+import TodoWidget from "./TodoWidget";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -138,6 +139,11 @@ export default function Overview() {
           <span className="stat-num">{hours}</span>
           <span className="stat-label">Hours Logged</span>
         </Link>
+      </div>
+
+      <div className="panel" style={{ marginBottom: "1.5rem" }}>
+        <h2 className="panel-title">To-Do</h2>
+        <TodoWidget compact />
       </div>
 
       <div className="panel">

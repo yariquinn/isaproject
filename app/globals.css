@@ -1270,29 +1270,30 @@ section.block.alt {
 }
 .matter-meta {
   display: flex;
-  gap: 0.9rem;
+  gap: 0.7rem;
   flex-wrap: wrap;
   align-items: flex-end;
 }
 .meta-chip {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  width: 150px;
+  gap: 0.3rem;
 }
 .meta-chip .inline-select {
-  width: 100%;
-  height: 38px;
-  padding: 0 0.75rem;
+  min-width: 96px;
+  height: 30px;
+  padding: 0 0.55rem;
+  font-size: 0.82rem;
   text-align: center;
   text-align-last: center;
 }
 .meta-label {
-  font-size: 0.66rem;
+  font-size: 0.58rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.09em;
   font-weight: 600;
   color: var(--dash-muted);
+  padding-left: 0.1rem;
 }
 .detail-grid.grid-6 .detail-item {
   min-width: 0;
@@ -1427,6 +1428,28 @@ section.block.alt {
 .panel-scroll::-webkit-scrollbar-thumb {
   background: var(--dash-border);
   border-radius: 8px;
+}
+
+/* Matter body: Description + Time Entries beside a scrollable Activity feed */
+.matter-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .matter-body {
+    grid-template-columns: 1fr;
+  }
+}
+.matter-body-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.panel-scroll.tall {
+  max-height: 560px;
 }
 
 /* Side-by-side panels on detail pages */
@@ -1717,6 +1740,72 @@ a.activity-row:hover .act-desc {
 }
 .dash-content {
   max-width: 1320px;
+}
+
+/* To-Do */
+.todo-add {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.todo-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--dash-border);
+}
+.todo-item:first-child {
+  border-top: none;
+}
+.todo-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  cursor: pointer;
+  color: var(--dash-fg);
+  font-size: 0.95rem;
+}
+.todo-item input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.todo-item.done .todo-title {
+  text-decoration: line-through;
+  color: var(--dash-muted);
+}
+.todo-del {
+  background: transparent;
+  border: none;
+  color: var(--dash-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.todo-item:hover .todo-del {
+  opacity: 1;
+}
+.todo-del:hover {
+  color: #8a2b2b;
+}
+.todo-divider {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--dash-muted);
+  font-weight: 600;
+  padding: 0.9rem 0 0.3rem;
+  border-top: 1px solid var(--dash-border);
+  margin-top: 0.3rem;
 }
 
 /* ============================================================

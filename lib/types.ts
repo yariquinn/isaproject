@@ -55,6 +55,14 @@ export type ActivityItem = {
   created_at: string;
 };
 
+export type Todo = {
+  id: string;
+  title: string;
+  done: boolean;
+  created_by: string | null;
+  created_at: string;
+};
+
 export const PRACTICE_AREAS = [
   "Real Estate",
   "Business Law",
