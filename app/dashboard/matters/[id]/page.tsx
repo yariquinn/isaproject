@@ -492,6 +492,13 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               <ul className="du-list">
                 {events.slice(0, 4).map((ev) => (
                   <li key={ev.id}>
+                    <span className="du-date">
+                      {new Date(ev.event_date).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className="du-title">{ev.title}</span>
                     <button
                       type="button"
                       className="du-check"
@@ -503,13 +510,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </button>
-                    <span className="du-date">
-                      {new Date(ev.event_date).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <span className="du-title">{ev.title}</span>
                   </li>
                 ))}
               </ul>

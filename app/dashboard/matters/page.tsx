@@ -283,12 +283,12 @@ export default function MattersPage() {
       </div>
 
       <div className="matter-filters">
-        <div className="seg">
+        <div className="filter-row" style={{ margin: 0 }}>
           {(["active", "closed", "all"] as const).map((s) => (
             <button
               key={s}
               type="button"
-              className={statusFilter === s ? "active" : undefined}
+              className={`filter-chip${statusFilter === s ? " active" : ""}`}
               onClick={() => setStatusFilter(s)}
             >
               {s === "active" ? "Active" : s === "closed" ? "Closed" : "All"}
