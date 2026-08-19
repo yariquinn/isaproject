@@ -1683,16 +1683,24 @@ th.sortable:hover {
    Sleek polish (dashboard-scoped)
    ============================================================ */
 .dash .btn {
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 1.2rem;
-  font-size: 0.9rem;
+  border-radius: 8px;
+  padding: 0.55rem 1.15rem;
+  font-family: inherit;
+  font-size: 0.875rem;
   font-weight: 600;
-  box-shadow: var(--shadow-sm);
+  letter-spacing: 0.01em;
+  border: none;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.08);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 .dash .btn:hover {
   background: #b5875c;
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(166, 124, 82, 0.28);
+}
+.dash .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.1);
 }
 .dash input:focus,
 .dash select:focus,
@@ -1762,6 +1770,59 @@ a.activity-row:hover .act-desc {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.1rem;
+  flex-wrap: wrap;
+}
+.todo-due-input {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--radius-sm);
+  background: var(--dash-bg);
+  color: var(--dash-fg);
+  cursor: pointer;
+}
+.todo-sub {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.15rem;
+}
+.todo-matter {
+  font-size: 0.72rem;
+  color: var(--dash-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+.todo-matter::before {
+  content: "⁃ ";
+}
+.todo-due {
+  font-size: 0.72rem;
+  color: var(--dash-muted);
+  flex-shrink: 0;
+}
+.todo-due.overdue {
+  color: #b4462e;
+  font-weight: 600;
+}
+.todo-assign-inline {
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.18rem 0.45rem;
+  border-radius: 20px;
+  background: var(--dash-bg);
+  color: var(--dash-muted);
+  border: 1px solid var(--dash-border);
+  cursor: pointer;
+}
+.todo-assign-inline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .todo-input {
   flex: 1;
@@ -1832,6 +1893,9 @@ a.activity-row:hover .act-desc {
 .todo-open {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   background: transparent;
   border: none;
   text-align: left;
@@ -1840,6 +1904,9 @@ a.activity-row:hover .act-desc {
   font-size: 0.92rem;
   font-family: inherit;
   padding: 0;
+}
+.todo-open .todo-title {
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

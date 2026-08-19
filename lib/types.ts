@@ -66,6 +66,7 @@ export type Todo = {
   assignee: string | null;
   created_by: string | null;
   matter_id: string | null;
+  due_date: string | null;
   created_at: string;
 };
 

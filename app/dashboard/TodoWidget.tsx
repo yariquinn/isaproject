@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { ATTORNEYS, type Todo } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
 
+type MatterLite = { id: string; name: string };
+
 export default function TodoWidget({
   compact = false,
   matterId,
@@ -14,12 +16,17 @@ export default function TodoWidget({
 }) {
   const { userName } = usePortal();
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [matters, setMatters] = useState<MatterLite[]>([]);
   const [text, setText] = useState("");
   const [assignee, setAssignee] = useState<string>(ATTORNEYS[0]);
+  const [newMatter, setNewMatter] = useState<string>("");
+  const [newDue, setNewDue] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Todo | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editAssignee, setEditAssignee] = useState<string>(ATTORNEYS[0]);
+  const [editMatter, setEditMatter] = useState<string>("");
+  const [editDue, setEditDue] = useState<string>("");
 
   async function load() {
     let q = supabase
@@ -28,8 +35,12 @@ export default function TodoWidget({
       .order("done")
       .order("created_at", { ascending: false });
     q = matterId ? q.eq("matter_id", matterId) : q.is("matter_id", null);
-    const { data } = await q;
+    const [{ data }, { data: ms }] = await Promise.all([
+      q,
+      supabase.from("matters").select("id,name").order("name"),
+    ]);
     setTodos((data as Todo[]) ?? []);
+    setMatters((ms as MatterLite[]) ?? []);
     setLoading(false);
   }
 
@@ -37,6 +48,9 @@ export default function TodoWidget({
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matterId]);
+
+  const matterName = (id: string | null) =>
+    id ? matters.find((m) => m.id === id)?.name ?? null : null;
 
   async function add() {
     const title = text.trim();
@@ -48,11 +62,14 @@ export default function TodoWidget({
         title,
         assignee,
         created_by: userName,
-        matter_id: matterId ?? null,
+        matter_id: matterId ?? (newMatter || null),
+        due_date: newDue || null,
       })
       .select("*")
       .single();
     if (data) setTodos((prev) => [data as Todo, ...prev]);
+    setNewMatter("");
+    setNewDue("");
   }
 
   async function toggle(t: Todo) {
@@ -64,6 +81,13 @@ export default function TodoWidget({
     await supabase.from("todos").update({ done: next }).eq("id", t.id);
   }
 
+  async function changeAssignee(t: Todo, value: string) {
+    setTodos((prev) =>
+      prev.map((x) => (x.id === t.id ? { ...x, assignee: value } : x)),
+    );
+    await supabase.from("todos").update({ assignee: value }).eq("id", t.id);
+  }
+
   async function remove(t: Todo) {
     setTodos((prev) => prev.filter((x) => x.id !== t.id));
     setSelected(null);
@@ -73,7 +97,12 @@ export default function TodoWidget({
   async function saveTodo() {
     if (!selected) return;
     const title = editTitle.trim() || selected.title;
-    const changes = { title, assignee: editAssignee };
+    const changes: Partial<Todo> = {
+      title,
+      assignee: editAssignee,
+      due_date: editDue || null,
+    };
+    if (!matterId) changes.matter_id = editMatter || null;
     setTodos((prev) =>
       prev.map((x) => (x.id === selected.id ? { ...x, ...changes } : x)),
     );
@@ -84,33 +113,65 @@ export default function TodoWidget({
   function openTodo(t: Todo) {
     setEditTitle(t.title);
     setEditAssignee(t.assignee ?? ATTORNEYS[0]);
+    setEditMatter(t.matter_id ?? "");
+    setEditDue(t.due_date ?? "");
     setSelected(t);
   }
 
   const open = todos.filter((t) => !t.done);
   const done = todos.filter((t) => t.done);
   const firstName = (n: string | null) => (n || "").split(" ")[0];
+  const fmtDue = (d: string) =>
+    new Date(d + "T00:00:00").toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  const todayStr = new Date().toISOString().slice(0, 10);
 
-  const Row = ({ t }: { t: Todo }) => (
-    <li className={`todo-item${t.done ? " done" : ""}`}>
-      <button
-        type="button"
-        className={`todo-check${t.done ? " on" : ""}`}
-        onClick={() => toggle(t)}
-        aria-label="Mark done"
-      >
-        {t.done ? "✓" : ""}
-      </button>
-      <button type="button" className="todo-open" onClick={() => openTodo(t)}>
-        <span className="todo-title">{t.title}</span>
-      </button>
-      {t.assignee && (
-        <span className="todo-assignee" title={t.assignee}>
-          {firstName(t.assignee)}
-        </span>
-      )}
-    </li>
-  );
+  const Row = ({ t }: { t: Todo }) => {
+    const mName = matterName(t.matter_id);
+    const overdue = !!t.due_date && !t.done && t.due_date < todayStr;
+    return (
+      <li className={`todo-item${t.done ? " done" : ""}`}>
+        <button
+          type="button"
+          className={`todo-check${t.done ? " on" : ""}`}
+          onClick={() => toggle(t)}
+          aria-label="Mark done"
+        >
+          {t.done ? "✓" : ""}
+        </button>
+        <button type="button" className="todo-open" onClick={() => openTodo(t)}>
+          <span className="todo-title">{t.title}</span>
+          {(mName || t.due_date) && (
+            <span className="todo-sub">
+              {mName && <span className="todo-matter">{mName}</span>}
+              {t.due_date && (
+                <span className={`todo-due${overdue ? " overdue" : ""}`}>
+                  Due {fmtDue(t.due_date)}
+                </span>
+              )}
+            </span>
+          )}
+        </button>
+        <select
+          className="todo-assign-inline"
+          value={(ATTORNEYS as readonly string[]).includes(t.assignee ?? "")
+            ? (t.assignee as string)
+            : ATTORNEYS[0]}
+          onChange={(e) => changeAssignee(t, e.target.value)}
+          aria-label="Assignee"
+          title={t.assignee ?? undefined}
+        >
+          {ATTORNEYS.map((a) => (
+            <option key={a} value={a}>
+              {firstName(a)}
+            </option>
+          ))}
+        </select>
+      </li>
+    );
+  };
 
   return (
     <div>
@@ -123,6 +184,28 @@ export default function TodoWidget({
           onKeyDown={(e) => {
             if (e.key === "Enter") add();
           }}
+        />
+        {!matterId && (
+          <select
+            className="todo-assign-select"
+            value={newMatter}
+            onChange={(e) => setNewMatter(e.target.value)}
+            aria-label="Matter"
+          >
+            <option value="">No matter</option>
+            {matters.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        )}
+        <input
+          className="todo-due-input"
+          type="date"
+          value={newDue}
+          onChange={(e) => setNewDue(e.target.value)}
+          aria-label="Due date"
         />
         <select
           className="todo-assign-select"
@@ -152,9 +235,7 @@ export default function TodoWidget({
               <Row key={t.id} t={t} />
             ))}
             {done.length > 0 && !compact && (
-              <li className="todo-divider">
-                Completed · {done.length}
-              </li>
+              <li className="todo-divider">Completed · {done.length}</li>
             )}
             {(compact ? [] : done).map((t) => (
               <Row key={t.id} t={t} />
@@ -173,6 +254,30 @@ export default function TodoWidget({
                 rows={3}
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
+              />
+            </label>
+            {!matterId && (
+              <label>
+                Matter
+                <select
+                  value={editMatter}
+                  onChange={(e) => setEditMatter(e.target.value)}
+                >
+                  <option value="">No matter</option>
+                  {matters.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label>
+              Due date
+              <input
+                type="date"
+                value={editDue}
+                onChange={(e) => setEditDue(e.target.value)}
               />
             </label>
             <label>
