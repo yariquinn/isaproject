@@ -134,6 +134,8 @@ export default function TodoWidget({
   const open = todos.filter((t) => !t.done);
   const done = todos.filter((t) => t.done);
   const firstName = (n: string | null) => (n || "").split(" ")[0];
+  const prioLabel = (v: string) =>
+    PRIORITIES.find((p) => p.value === v)?.label ?? v;
   const fmtDue = (d: string) =>
     new Date(d + "T00:00:00").toLocaleDateString(undefined, {
       month: "short",
@@ -154,16 +156,15 @@ export default function TodoWidget({
         >
           {t.done ? "✓" : ""}
         </button>
-        {t.priority && t.priority !== "-" && (
-          <span
-            className={`todo-prio prio-${t.priority}`}
-            title={`Priority: ${t.priority}`}
-          />
-        )}
         <button type="button" className="todo-open" onClick={() => openTodo(t)}>
           <span className="todo-title">{t.title}</span>
         </button>
         <span className="todo-row-meta">
+          {t.priority && t.priority !== "-" && (
+            <span className={`todo-prio-pill prio-${t.priority}`}>
+              {prioLabel(t.priority)} priority
+            </span>
+          )}
           {mName && <span className="todo-matter">{mName}</span>}
           {t.due_date && (
             <span className={`todo-due${overdue ? " overdue" : ""}`}>

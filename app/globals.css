@@ -1886,13 +1886,36 @@ a.activity-row:hover .act-desc {
   max-width: 240px;
 }
 .todo-due {
-  font-size: 0.72rem;
-  color: var(--dash-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dash-fg);
   flex-shrink: 0;
 }
 .todo-due.overdue {
-  color: #b4462e;
-  font-weight: 600;
+  color: #c0392b;
+}
+.todo-prio-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.18rem 0.6rem;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.todo-prio-pill.prio-high {
+  background: #fbecec;
+  color: #c0392b;
+  border: 1px solid #e3bcbc;
+}
+.todo-prio-pill.prio-medium {
+  background: #f7efe2;
+  color: #8a5a1f;
+  border: 1px solid #e6d3b3;
+}
+.todo-prio-pill.prio-low {
+  background: #eef1f4;
+  color: #586471;
+  border: 1px solid #dde2e8;
 }
 .todo-assign-inline {
   flex-shrink: 0;

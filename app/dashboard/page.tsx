@@ -191,13 +191,25 @@ export default function Overview() {
         </h1>
       </div>
 
-      <div className="quick-links">
-        <Link href="/dashboard/clients" className="ql-chip">Clients</Link>
-        <Link href="/dashboard/matters" className="ql-chip">Matters</Link>
-        <Link href="/dashboard/todo" className="ql-chip">Tasks</Link>
-        <Link href="/dashboard/calendar" className="ql-chip">Calendar</Link>
-        <Link href="/dashboard/billing" className="ql-chip">Billing</Link>
-        <Link href="/dashboard/documents" className="ql-chip">Documents</Link>
+      <div className="quick-actions">
+        <button type="button" className="qa-btn" onClick={() => setQa("invoice")}>
+          <span className="qa-icon"><Ic name="invoice" /></span>Create invoice
+        </button>
+        <button type="button" className="qa-btn" onClick={() => setQa("payment")}>
+          <span className="qa-icon"><Ic name="payment" /></span>Record payment
+        </button>
+        <button type="button" className="qa-btn" onClick={() => setQa("expense")}>
+          <span className="qa-icon"><Ic name="expense" /></span>Add expense
+        </button>
+        <button type="button" className="qa-btn" onClick={() => setQa("document")}>
+          <span className="qa-icon"><Ic name="document" /></span>Upload document
+        </button>
+        <Link href="/dashboard/matters" className="qa-btn">
+          <span className="qa-icon"><Ic name="matter" /></span>Add Matter
+        </Link>
+        <Link href="/dashboard/clients" className="qa-btn">
+          <span className="qa-icon"><Ic name="client" /></span>Add Client
+        </Link>
       </div>
 
       <div className="ov-stats-head">
@@ -235,27 +247,6 @@ export default function Overview() {
         <Link href="/dashboard/billing" className="stat">
           <span className="stat-num">${revenue.toFixed(0)}</span>
           <span className="stat-label">Revenue</span>
-        </Link>
-      </div>
-
-      <div className="quick-actions">
-        <button type="button" className="qa-btn" onClick={() => setQa("invoice")}>
-          <span className="qa-icon"><Ic name="invoice" /></span>Create invoice
-        </button>
-        <button type="button" className="qa-btn" onClick={() => setQa("payment")}>
-          <span className="qa-icon"><Ic name="payment" /></span>Record payment
-        </button>
-        <button type="button" className="qa-btn" onClick={() => setQa("expense")}>
-          <span className="qa-icon"><Ic name="expense" /></span>Add expense
-        </button>
-        <button type="button" className="qa-btn" onClick={() => setQa("document")}>
-          <span className="qa-icon"><Ic name="document" /></span>Upload document
-        </button>
-        <Link href="/dashboard/matters" className="qa-btn">
-          <span className="qa-icon"><Ic name="matter" /></span>Add Matter
-        </Link>
-        <Link href="/dashboard/clients" className="qa-btn">
-          <span className="qa-icon"><Ic name="client" /></span>Add Client
         </Link>
       </div>
 
