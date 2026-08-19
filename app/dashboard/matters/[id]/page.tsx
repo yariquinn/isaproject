@@ -121,6 +121,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [leftPct, setLeftPct] = useState(38);
   const [midPct, setMidPct] = useState(37);
   const [stackCards, setStackCards] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
 
   useEffect(() => {
     const l = Number(localStorage.getItem("matterCardsLeftPct"));
@@ -312,6 +313,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     await supabase.from("events").update({ completed: false }).eq("id", ev.id);
   }
 
+  // Notes are a running log: each submission is stamped and prepended so the
+  // newest note sits on top.
+  async function addNote() {
+    if (!matter) return;
+    const text = noteDraft.trim();
+    if (!text) return;
+    const stamp = new Date().toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    const who = userName ? ` · ${userName}` : "";
+    const entry = `[${stamp}${who}]\n${text}`;
+    const next = matter.notes ? `${entry}\n\n${matter.notes}` : entry;
+    setNoteDraft("");
+    await patch({ notes: next });
+  }
+
   async function saveClientField(
     clientId: string,
     field: "primary_contact" | "email" | "phone" | "address" | "contact_title",
@@ -475,21 +496,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       <div
         className="matter-cards"
         ref={cardsRef}
-        style={stackCards ? undefined : { display: "flex", gap: "1.5rem", alignItems: "stretch" }}
+        style={stackCards ? undefined : { display: "flex", gap: 0, alignItems: "stretch" }}
       >
         <div
           className="panel client-card"
-          style={stackCards ? undefined : { flex: `0 0 calc(${leftPct}% - 1rem)`, minWidth: 0, position: "relative" }}
+          style={stackCards ? undefined : { flex: `0 0 calc(${leftPct}% - 1rem)`, minWidth: 0 }}
         >
-          {!stackCards && (
-            <div
-              className="card-grip right"
-              onMouseDown={startCardResize("left")}
-              title="Drag to resize"
-              role="separator"
-              aria-orientation="vertical"
-            />
-          )}
           <h2 className="panel-title">Client</h2>
           {matter.client_id && clientObj ? (
             <>
@@ -589,28 +601,19 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           )}
         </div>
 
+        {!stackCards && (
+          <div
+            className="cards-resizer"
+            onMouseDown={startCardResize("left")}
+            title="Drag to resize"
+            role="separator"
+            aria-orientation="vertical"
+          />
+        )}
         <div
           className="panel details-card"
-          style={stackCards ? undefined : { flex: `0 0 calc(${midPct}% - 1rem)`, minWidth: 0, position: "relative" }}
+          style={stackCards ? undefined : { flex: `0 0 calc(${midPct}% - 1rem)`, minWidth: 0 }}
         >
-          {!stackCards && (
-            <>
-              <div
-                className="card-grip left"
-                onMouseDown={startCardResize("left")}
-                title="Drag to resize"
-                role="separator"
-                aria-orientation="vertical"
-              />
-              <div
-                className="card-grip right"
-                onMouseDown={startCardResize("mid")}
-                title="Drag to resize"
-                role="separator"
-                aria-orientation="vertical"
-              />
-            </>
-          )}
           <h2 className="panel-title">Details</h2>
           <dl className="details-grid">
             <div>
@@ -706,22 +709,44 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           )}
         </div>
 
+        {!stackCards && (
+          <div
+            className="cards-resizer"
+            onMouseDown={startCardResize("mid")}
+            title="Drag to resize"
+            role="separator"
+            aria-orientation="vertical"
+          />
+        )}
         <div
-          className="panel placeholder-card"
-          style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0, position: "relative" }}
+          className="panel notes-panel"
+          style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0 }}
         >
-          {!stackCards && (
-            <div
-              className="card-grip left"
-              onMouseDown={startCardResize("mid")}
-              title="Drag to resize"
-              role="separator"
-              aria-orientation="vertical"
+          <h2 className="panel-title">Notes</h2>
+          <div className="notes-log">
+            {matter.notes ? (
+              <pre className="notes-log-text">{matter.notes}</pre>
+            ) : (
+              <p className="muted-line">No notes yet.</p>
+            )}
+          </div>
+          <div className="notes-add">
+            <textarea
+              className="notes-input"
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              placeholder="Add a note…  (⌘/Ctrl+Enter to save)"
+              rows={2}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  addNote();
+                }
+              }}
             />
-          )}
-          <div className="ph-inner">
-            <span className="ph-title">New panel</span>
-            <span className="ph-sub">Tell Claude what to show here</span>
+            <button type="button" className="btn" onClick={addNote}>
+              Add note
+            </button>
           </div>
         </div>
       </div>
@@ -733,7 +758,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           ["documents", "Documents"],
           ["events", `Events (${upcomingEvents.length})`],
           ["invoices", `Invoices (${invoices.length})`],
-          ["notes", "Notes"],
           ["timeline", "Case Timeline"],
           ["activity", `Activity (${activity.length})`],
         ] as const).map(([key, label]) => (
@@ -956,14 +980,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               </>
             )}
           </>
-        )}
-
-        {bodyTab === "notes" && (
-          <InlineTextarea
-            value={matter.notes}
-            onSave={(v) => patch({ notes: v || null })}
-            placeholder="Internal notes for this matter…"
-          />
         )}
 
         {bodyTab === "invoices" && (
