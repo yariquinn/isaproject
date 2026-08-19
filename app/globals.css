@@ -1045,18 +1045,31 @@ section.block.alt {
   margin-bottom: 1.25rem;
 }
 .doc-tabs button {
-  background: transparent;
+  background: var(--dash-surface);
   border: 1px solid var(--dash-border);
-  color: var(--dash-fg);
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  color: var(--dash-muted);
+  padding: 0.5rem 1.05rem;
+  border-radius: 999px;
   cursor: pointer;
   font-size: 0.88rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.doc-tabs button:hover {
+  color: var(--dash-fg);
+  border-color: var(--accent);
 }
 .doc-tabs button.active {
   background: var(--navy);
   color: #fff;
   border-color: var(--navy);
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+}
+:root[data-theme="dark"] .doc-tabs button.active {
+  background: var(--accent);
+  border-color: var(--accent);
 }
 .drive-panel {
   background: var(--dash-surface);

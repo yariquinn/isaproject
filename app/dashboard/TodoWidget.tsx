@@ -159,7 +159,7 @@ export default function TodoWidget({
         <div className="todo-main">
           {t.priority && t.priority !== "-" && (
             <span className={`todo-prio-pill prio-${t.priority}`}>
-              {prioLabel(t.priority)}
+              {prioLabel(t.priority)} priority
             </span>
           )}
           <button type="button" className="todo-open" onClick={() => openTodo(t)}>
