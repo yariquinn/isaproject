@@ -26,7 +26,7 @@ export default function Collapsible({
           {title}
           {empty && !open && <span className="collapse-empty-tag">empty</span>}
         </button>
-        {open && action}
+        {action}
       </div>
       {open && children}
     </div>
