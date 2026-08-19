@@ -2305,9 +2305,10 @@ a.activity-row:hover .act-desc {
   padding-top: 0.5rem;
   padding-bottom: 0.7rem;
 }
-.active-matter-links {
+.active-matter-links,
+.active-matter-cell {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
 }
 .active-matter-chip {

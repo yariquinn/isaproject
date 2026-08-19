@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { ActivityItem, EventItem, Matter, TimeEntry } from "@/lib/types";
+import type { ActivityItem, EventItem, Invoice, Matter, TimeEntry } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
 
 function timeAgo(iso: string): string {
@@ -63,6 +63,7 @@ export default function Overview() {
   const [openM, setOpenM] = useState(0);
   const [closedM, setClosedM] = useState(0);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
@@ -75,11 +76,12 @@ export default function Overview() {
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [cRes, oRes, clRes, eRes, mRes, evRes, aRes] = await Promise.all([
+      const [cRes, oRes, clRes, eRes, iRes, mRes, evRes, aRes] = await Promise.all([
         supabase.from("clients").select("id", { count: "exact", head: true }),
         supabase.from("matters").select("id", { count: "exact", head: true }).eq("status", "open"),
         supabase.from("matters").select("id", { count: "exact", head: true }).eq("status", "closed"),
         supabase.from("time_entries").select("*"),
+        supabase.from("invoices").select("*"),
         supabase.from("matters").select("*"),
         supabase.from("events").select("*").gte("event_date", today).order("event_date").limit(6),
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100),
@@ -88,6 +90,7 @@ export default function Overview() {
       setOpenM(oRes.count ?? 0);
       setClosedM(clRes.count ?? 0);
       setEntries((eRes.data as TimeEntry[]) ?? []);
+      setInvoices((iRes.data as Invoice[]) ?? []);
       setMatters((mRes.data as Matter[]) ?? []);
       setEvents((evRes.data as EventItem[]) ?? []);
       setActivity((aRes.data as ActivityItem[]) ?? []);
@@ -95,24 +98,28 @@ export default function Overview() {
     })();
   }, []);
 
-  const rateOf = (id: string | null) => matters.find((m) => m.id === id);
-  const matterName = (id: string | null) => matters.find((m) => m.id === id)?.name ?? "—";
+  const totalHours = useMemo(
+    () => entries.reduce((s, e) => s + e.duration_seconds, 0) / 3600,
+    [entries],
+  );
 
   const { hours, revenue } = useMemo(() => {
     const start = periodStart(period);
     let secs = 0;
-    let rev = 0;
     for (const e of entries) {
       if (new Date(e.logged_at).getTime() < start) continue;
       secs += e.duration_seconds;
-      const m = rateOf(e.matter_id);
-      if (m && m.rate_type !== "flat" && m.hourly_rate) {
-        rev += (e.duration_seconds / 3600) * m.hourly_rate;
-      }
+    }
+    // Revenue reflects invoices marked paid within the period.
+    let rev = 0;
+    for (const i of invoices) {
+      if (i.status !== "paid") continue;
+      const when = i.issued_date ?? i.created_at;
+      if (new Date(when).getTime() < start) continue;
+      rev += i.amount ?? 0;
     }
     return { hours: secs / 3600, revenue: rev };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, matters, period]);
+  }, [entries, invoices, period]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -150,6 +157,10 @@ export default function Overview() {
           <span className="stat-num">{closedM}</span>
           <span className="stat-label">Closed Matters</span>
         </Link>
+        <Link href="/dashboard/time-entries" className="stat">
+          <span className="stat-num">{totalHours.toFixed(1)}</span>
+          <span className="stat-label">Hours Logged</span>
+        </Link>
       </div>
 
       <div className="overview-cols" style={{ marginTop: "1.5rem" }}>
@@ -179,7 +190,7 @@ export default function Overview() {
             </div>
           </div>
           <p className="muted-line" style={{ fontSize: "0.78rem", marginTop: "0.75rem" }}>
-            Revenue is estimated from logged time on hourly matters (demo).
+            Revenue reflects invoices marked paid in this period (demo).
           </p>
         </div>
 

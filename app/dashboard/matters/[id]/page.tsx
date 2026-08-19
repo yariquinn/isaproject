@@ -25,7 +25,6 @@ import {
 import { usePortal } from "../../PortalProvider";
 import TodoWidget from "../../TodoWidget";
 import Disclaimer from "../../Disclaimer";
-import Collapsible from "../../Collapsible";
 
 const TIMELINE_STEPS: Record<string, string[]> = {
   "LLC Formation": [
@@ -104,6 +103,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   );
   const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
   const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
+  const [bodyTab, setBodyTab] = useState<
+    "time" | "tasks" | "description" | "events" | "invoices" | "activity"
+  >("time");
 
   async function loadActivity() {
     const { data } = await supabase
@@ -499,25 +501,46 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      <div className="matter-body">
-        <div className="matter-body-main">
-          <Collapsible title="Description" empty={!matter.description}>
+      <div className="doc-tabs client-tabs">
+        {([
+          ["time", `Time Entries (${entries.length})`],
+          ["tasks", "Tasks"],
+          ["description", "Description"],
+          ["events", `Events (${events.length})`],
+          ["invoices", `Invoices (${invoices.length})`],
+          ["activity", "Activity"],
+        ] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={bodyTab === key ? "active" : undefined}
+            onClick={() => setBodyTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="panel">
+        {bodyTab === "description" && (
+          <>
+            <h2 className="panel-title">Description</h2>
             <InlineTextarea
               value={matter.description}
               onSave={(v) => patch({ description: v || null })}
               placeholder="Click to add a description…"
             />
-          </Collapsible>
+          </>
+        )}
 
-          <Collapsible
-            title={`Time Entries (${entries.length})`}
-            empty={entries.length === 0}
-            action={
+        {bodyTab === "time" && (
+          <>
+            <div className="panel-head">
+              <h2 className="panel-title">Time Entries ({entries.length})</h2>
               <button className="btn" type="button" onClick={() => setLogOpen(true)}>
                 + Log time
               </button>
-            }
-          >
+            </div>
             {entries.length === 0 ? (
               <p className="muted-line">No time logged to this matter yet.</p>
             ) : (
@@ -546,15 +569,22 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </table>
               </div>
             )}
-          </Collapsible>
-        </div>
+          </>
+        )}
 
-        <div className="matter-body-side">
-          <Collapsible
-            title="Events"
-            empty={events.length === 0}
-            action={<span className="chip-note">from calendar (demo)</span>}
-          >
+        {bodyTab === "tasks" && (
+          <>
+            <h2 className="panel-title">Tasks</h2>
+            <TodoWidget matterId={matter.id} compact />
+          </>
+        )}
+
+        {bodyTab === "events" && (
+          <>
+            <div className="panel-head">
+              <h2 className="panel-title">Events ({events.length})</h2>
+              <span className="chip-note">from calendar (demo)</span>
+            </div>
             {events.length === 0 ? (
               <p className="muted-line">No upcoming events.</p>
             ) : (
@@ -573,12 +603,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 ))}
               </ul>
             )}
-          </Collapsible>
+          </>
+        )}
 
-          <Collapsible
-            title={`Invoices (${invoices.length})`}
-            empty={invoices.length === 0}
-          >
+        {bodyTab === "invoices" && (
+          <>
+            <h2 className="panel-title">Invoices ({invoices.length})</h2>
             {invoices.length === 0 ? (
               <p className="muted-line">No invoices for this matter.</p>
             ) : (
@@ -586,22 +616,18 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 {invoices.map((i) => (
                   <li key={i.id}>
                     <span className="strong-cell">{i.number || "—"}</span>
-                    <span>
-                      {i.amount != null ? `$${i.amount.toFixed(2)}` : "—"}
-                    </span>
+                    <span>{i.amount != null ? `$${i.amount.toFixed(2)}` : "—"}</span>
                     <span className={`pill inv-${i.status}`}>{i.status}</span>
                   </li>
                 ))}
               </ul>
             )}
-          </Collapsible>
+          </>
+        )}
 
-          <div className="panel">
-            <h2 className="panel-title">Tasks</h2>
-            <TodoWidget matterId={matter.id} compact />
-          </div>
-
-          <Collapsible title="Activity" empty={activity.length === 0}>
+        {bodyTab === "activity" && (
+          <>
+            <h2 className="panel-title">Activity</h2>
             <div className="panel-scroll tall">
               {activity.length === 0 ? (
                 <p className="muted-line">No activity for this matter yet.</p>
@@ -609,11 +635,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 <ul className="activity-list">
                   {activity.map((a) => (
                     <li key={a.id}>
-                      <span
-                        className={`act-tag tag-${
-                          KIND_GROUP[a.kind] ?? "matter"
-                        }`}
-                      >
+                      <span className={`act-tag tag-${KIND_GROUP[a.kind] ?? "matter"}`}>
                         {KIND_LABEL[a.kind] ?? "Matter"}
                       </span>
                       <span className="act-desc">{a.description}</span>
@@ -623,8 +645,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </ul>
               )}
             </div>
-          </Collapsible>
-        </div>
+          </>
+        )}
       </div>
 
       {archivePrompt && (

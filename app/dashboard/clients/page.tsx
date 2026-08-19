@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
@@ -31,7 +31,6 @@ export default function ClientsPage() {
   const [activeMatters, setActiveMatters] = useState<
     Record<string, { id: string; name: string }[]>
   >({});
-  const [expanded, setExpanded] = useState<string | null>(null);
 
   // Guarded editing (mirrors the client record)
   const [prompt, setPrompt] = useState<{
@@ -296,8 +295,7 @@ export default function ClientsPage() {
             </thead>
             <tbody>
               {rows.map((c) => (
-                <Fragment key={c.id}>
-                <tr>
+                <tr key={c.id}>
                   <td className="strong-cell">
                     <Link
                       href={`/dashboard/clients/${c.id}`}
@@ -331,39 +329,22 @@ export default function ClientsPage() {
                   </td>
                   <td>
                     {activeMatters[c.id]?.length ? (
-                      <button
-                        type="button"
-                        className="pill pill-open active-pill"
-                        onClick={() =>
-                          setExpanded((e) => (e === c.id ? null : c.id))
-                        }
-                      >
-                        {activeMatters[c.id].length} Active{" "}
-                        {expanded === c.id ? "▾" : "▸"}
-                      </button>
-                    ) : (
-                      <span className="inline-placeholder">—</span>
-                    )}
-                  </td>
-                </tr>
-                {expanded === c.id && activeMatters[c.id]?.length ? (
-                  <tr className="expand-row">
-                    <td colSpan={5}>
-                      <div className="active-matter-links">
+                      <div className="active-matter-cell">
                         {activeMatters[c.id].map((m) => (
                           <Link
                             key={m.id}
                             href={`/dashboard/matters/${m.id}`}
                             className="active-matter-chip"
                           >
-                            {m.name} →
+                            {m.name}
                           </Link>
                         ))}
                       </div>
-                    </td>
-                  </tr>
-                ) : null}
-                </Fragment>
+                    ) : (
+                      <span className="inline-placeholder">—</span>
+                    )}
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
