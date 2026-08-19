@@ -72,10 +72,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     ? (totalSeconds / 3600) * matter.hourly_rate
     : null;
 
-  const clientOptions = [
-    { value: "", label: "— none —" },
-    ...clients.map((c) => ({ value: c.id, label: c.name })),
-  ];
+  const clientName =
+    clients.find((c) => c.id === matter.client_id)?.name ?? null;
   const attorneyOptions: { value: string; label: string }[] = ATTORNEYS.map(
     (a) => ({ value: a, label: a }),
   );
@@ -117,11 +115,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       <div className="detail-grid">
         <div className="detail-item">
           <span className="detail-label">Client</span>
-          <InlineSelect
-            value={matter.client_id ?? ""}
-            options={clientOptions}
-            onSave={(v) => patch({ client_id: v || null })}
-          />
+          {matter.client_id ? (
+            <Link
+              href={`/dashboard/clients/${matter.client_id}`}
+              className="row-link"
+            >
+              {clientName}
+            </Link>
+          ) : (
+            <span className="inline-placeholder">—</span>
+          )}
         </div>
         <div className="detail-item">
           <span className="detail-label">Practice Area</span>
