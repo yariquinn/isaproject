@@ -309,14 +309,14 @@ section.block.alt {
    Portal (backend) — theme tokens
    ============================================================ */
 :root {
-  --dash-bg: #f4f2ef;
+  --dash-bg: #f5f6f7;
   --dash-surface: #ffffff;
-  --dash-fg: #222c34;
-  --dash-muted: #737d87;
-  --dash-border: #ebe8e3;
-  --dash-sidebar: #1a2734;
-  --dash-sidebar-fg: #e9edf1;
-  --dash-sidebar-muted: #9fb0c0;
+  --dash-fg: #191c21;
+  --dash-muted: #697077;
+  --dash-border: #e7e8eb;
+  --dash-sidebar: #191b1f;
+  --dash-sidebar-fg: #eceef0;
+  --dash-sidebar-muted: #8b9098;
   --dash-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
   --radius: 10px;
@@ -327,14 +327,14 @@ section.block.alt {
   --ring: 0 0 0 3px rgba(166, 124, 82, 0.18);
 }
 :root[data-theme="dark"] {
-  --dash-bg: #17181c;
-  --dash-surface: #202127;
-  --dash-fg: #e8e8ec;
-  --dash-muted: #9a9aa4;
-  --dash-border: #2e2f36;
-  --dash-sidebar: #131418;
-  --dash-sidebar-fg: #d9dae0;
-  --dash-sidebar-muted: #8a8b93;
+  --dash-bg: #161719;
+  --dash-surface: #1f2023;
+  --dash-fg: #e8e9ec;
+  --dash-muted: #9a9ea6;
+  --dash-border: #2c2e33;
+  --dash-sidebar: #111214;
+  --dash-sidebar-fg: #d9dbdf;
+  --dash-sidebar-muted: #888c94;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.3);
   --ring: 0 0 0 3px rgba(166, 124, 82, 0.28);
@@ -465,6 +465,10 @@ section.block.alt {
    Dashboard shell
    ============================================================ */
 .dash {
+  /* Near-monochrome: a single restrained slate-ink accent, scoped to the
+     portal so the public marketing site keeps its brand brown. */
+  --accent: #384150;
+  --ring: 0 0 0 3px rgba(56, 65, 80, 0.18);
   display: flex;
   min-height: 100vh;
   background: var(--dash-bg);
@@ -473,6 +477,10 @@ section.block.alt {
   letter-spacing: -0.006em;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+:root[data-theme="dark"] .dash {
+  --accent: #7c8698;
+  --ring: 0 0 0 3px rgba(124, 134, 152, 0.22);
 }
 .dash button,
 .dash input,
@@ -1957,9 +1965,9 @@ th.sortable:hover {
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 .dash .btn:hover {
-  background: #b5875c;
+  background: color-mix(in srgb, var(--accent) 86%, #ffffff);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(166, 124, 82, 0.28);
+  box-shadow: 0 4px 12px rgba(25, 28, 33, 0.18);
 }
 .dash .btn:active {
   transform: translateY(0);
@@ -3276,7 +3284,7 @@ a.activity-row:hover .act-desc {
   align-items: center;
   justify-content: center;
 }
-.icon-add:hover { background: #b5875c; }
+.icon-add:hover { background: color-mix(in srgb, var(--accent) 86%, #ffffff); }
 .tl-card[draggable] { cursor: grab; }
 .tl-card[draggable]:active { cursor: grabbing; }
 
