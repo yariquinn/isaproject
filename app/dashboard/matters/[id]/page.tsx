@@ -449,6 +449,29 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               />
             </dd>
           </div>
+          <div className="details-desc">
+            <dt>Upcoming</dt>
+            {events.length === 0 ? (
+              <p className="muted-line" style={{ fontSize: "0.85rem" }}>
+                No upcoming events.
+              </p>
+            ) : (
+              <ul className="mini-events">
+                {events.slice(0, 4).map((ev) => (
+                  <li key={ev.id}>
+                    <span className="me-date">
+                      {new Date(ev.event_date).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
+                    <span className="me-title">{ev.title}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 

@@ -3469,3 +3469,31 @@ a.activity-row:hover .act-desc {
   font-size: 0.85rem;
   color: var(--dash-muted);
 }
+
+/* Matter Details: upcoming events mini-list */
+.mini-events {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.mini-events li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+}
+.me-date {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--dash-fg);
+  min-width: 3.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.me-title {
+  color: var(--dash-fg);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
