@@ -191,9 +191,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const MatterRow = ({ m }: { m: Matter }) => (
     <li>
       <Link href={`/dashboard/matters/${m.id}`}>{m.name}</Link>
-      <span className="muted-line">
-        {m.practice_area} · {m.assigned_to || "Unassigned"}
-      </span>
+      <span className="muted-line">{m.practice_area}</span>
       <span className={`pill pill-${m.status}`}>{m.status}</span>
     </li>
   );
