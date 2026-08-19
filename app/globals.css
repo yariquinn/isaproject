@@ -2286,6 +2286,33 @@ a.activity-row:hover .act-desc {
   flex-wrap: wrap;
   margin-bottom: 1.5rem;
 }
+.active-pill {
+  cursor: pointer;
+  font-family: inherit;
+}
+.expand-row td {
+  background: color-mix(in srgb, var(--dash-bg) 55%, transparent);
+  padding-top: 0.5rem;
+  padding-bottom: 0.7rem;
+}
+.active-matter-links {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.active-matter-chip {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  color: var(--dash-fg);
+}
+.active-matter-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+}
 .collapse-toggle {
   display: flex;
   align-items: center;

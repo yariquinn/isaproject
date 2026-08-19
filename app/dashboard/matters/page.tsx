@@ -52,7 +52,6 @@ export default function MattersPage() {
     "active",
   );
   const [areaFilter, setAreaFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all");
 
   async function load() {
     const [{ data: m }, { data: c }] = await Promise.all([
@@ -81,7 +80,6 @@ export default function MattersPage() {
       if (statusFilter === "active" && m.status === "closed") return false;
       if (statusFilter === "closed" && m.status !== "closed") return false;
       if (areaFilter !== "all" && m.practice_area !== areaFilter) return false;
-      if (priorityFilter !== "all" && m.priority !== priorityFilter) return false;
       if (q) {
         const hay = [
           m.name,
@@ -105,7 +103,7 @@ export default function MattersPage() {
           : (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9);
       return cmp * sort.dir;
     });
-  }, [matters, clients, sort, query, statusFilter, areaFilter, priorityFilter]);
+  }, [matters, clients, sort, query, statusFilter, areaFilter]);
 
   const nameOf = (id: string | null) =>
     clients.find((c) => c.id === id)?.name ?? "";
@@ -229,28 +227,6 @@ export default function MattersPage() {
               onClick={() => setAreaFilter(p)}
             >
               {p}
-            </button>
-          ))}
-        </div>
-        <div className="filter-row" style={{ margin: 0 }}>
-          <span className="filter-tag">Priority</span>
-          <button
-            type="button"
-            className={`filter-chip${priorityFilter === "all" ? " active" : ""}`}
-            onClick={() => setPriorityFilter("all")}
-          >
-            All
-          </button>
-          {PRIORITIES.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              className={`filter-chip${
-                priorityFilter === p.value ? " active" : ""
-              }`}
-              onClick={() => setPriorityFilter(p.value)}
-            >
-              {p.label}
             </button>
           ))}
         </div>

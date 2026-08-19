@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
@@ -28,7 +28,10 @@ export default function ClientsPage() {
   const [sortAsc, setSortAsc] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"open" | "archived" | "all">("open");
-  const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
+  const [activeMatters, setActiveMatters] = useState<
+    Record<string, { id: string; name: string }[]>
+  >({});
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   // Guarded editing (mirrors the client record)
   const [prompt, setPrompt] = useState<{
@@ -51,15 +54,16 @@ export default function ClientsPage() {
   async function load() {
     const [{ data }, { data: ms }] = await Promise.all([
       supabase.from("clients").select("*").order("created_at", { ascending: false }),
-      supabase.from("matters").select("client_id,status"),
+      supabase.from("matters").select("id,name,client_id,status"),
     ]);
     setClients((data as Client[]) ?? []);
-    const counts: Record<string, number> = {};
-    for (const m of (ms as { client_id: string | null; status: string }[]) ?? []) {
-      if (m.client_id && m.status !== "closed")
-        counts[m.client_id] = (counts[m.client_id] ?? 0) + 1;
+    const map: Record<string, { id: string; name: string }[]> = {};
+    for (const m of (ms as { id: string; name: string; client_id: string | null; status: string }[]) ?? []) {
+      if (m.client_id && m.status !== "closed") {
+        (map[m.client_id] ??= []).push({ id: m.id, name: m.name });
+      }
     }
-    setActiveCounts(counts);
+    setActiveMatters(map);
     setLoading(false);
   }
 
@@ -292,7 +296,8 @@ export default function ClientsPage() {
             </thead>
             <tbody>
               {rows.map((c) => (
-                <tr key={c.id}>
+                <Fragment key={c.id}>
+                <tr>
                   <td className="strong-cell">
                     <Link
                       href={`/dashboard/clients/${c.id}`}
@@ -325,15 +330,40 @@ export default function ClientsPage() {
                     />
                   </td>
                   <td>
-                    {activeCounts[c.id] ? (
-                      <span className="pill pill-open">
-                        {activeCounts[c.id]} active
-                      </span>
+                    {activeMatters[c.id]?.length ? (
+                      <button
+                        type="button"
+                        className="pill pill-open active-pill"
+                        onClick={() =>
+                          setExpanded((e) => (e === c.id ? null : c.id))
+                        }
+                      >
+                        {activeMatters[c.id].length} Active{" "}
+                        {expanded === c.id ? "▾" : "▸"}
+                      </button>
                     ) : (
                       <span className="inline-placeholder">—</span>
                     )}
                   </td>
                 </tr>
+                {expanded === c.id && activeMatters[c.id]?.length ? (
+                  <tr className="expand-row">
+                    <td colSpan={5}>
+                      <div className="active-matter-links">
+                        {activeMatters[c.id].map((m) => (
+                          <Link
+                            key={m.id}
+                            href={`/dashboard/matters/${m.id}`}
+                            className="active-matter-chip"
+                          >
+                            {m.name} →
+                          </Link>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ) : null}
+                </Fragment>
               ))}
             </tbody>
           </table>
