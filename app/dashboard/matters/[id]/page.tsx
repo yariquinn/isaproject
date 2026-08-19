@@ -90,7 +90,7 @@ function initialsOf(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-type NoteEntry = { time: string; who: string; initials: string; text: string };
+type NoteEntry = { header: string; time: string; who: string; initials: string; text: string };
 
 // Notes are stored as a running log of "[stamp · name]\nbody" blocks separated
 // by a blank line. Parse them back into structured entries for the feed.
@@ -105,11 +105,19 @@ function parseNotes(raw: string | null): NoteEntry[] {
     const sep = header.lastIndexOf(" · ");
     const time = sep === -1 ? header.trim() : header.slice(0, sep).trim();
     const who = sep === -1 ? "" : header.slice(sep + 3).trim();
-    out.push({ time, who, initials: who ? initialsOf(who) : "•", text });
+    out.push({ header, time, who, initials: who ? initialsOf(who) : "•", text });
   }
   // Legacy free-text notes (no timestamp headers) show as one entry.
-  if (out.length === 0) out.push({ time: "", who: "", initials: "•", text: raw.trim() });
+  if (out.length === 0)
+    out.push({ header: "", time: "", who: "", initials: "•", text: raw.trim() });
   return out;
+}
+
+function serializeNotes(entries: NoteEntry[]): string {
+  return entries
+    .map((e) => (e.header ? `[${e.header}]\n${e.text}` : e.text))
+    .filter((s) => s.trim())
+    .join("\n\n");
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -151,6 +159,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [midPct, setMidPct] = useState(37);
   const [stackCards, setStackCards] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
 
   useEffect(() => {
     const l = Number(localStorage.getItem("matterCardsLeftPct"));
@@ -362,6 +372,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     await patch({ notes: next });
   }
 
+  async function saveNoteEdit(i: number) {
+    if (!matter) return;
+    const entries = parseNotes(matter.notes);
+    const text = editText.trim();
+    const next = entries
+      .map((e, idx) => (idx === i ? { ...e, text } : e))
+      .filter((e) => e.text.trim());
+    setEditIdx(null);
+    setEditText("");
+    await patch({ notes: serializeNotes(next) || null });
+  }
+
+  async function deleteNote(i: number) {
+    if (!matter) return;
+    const entries = parseNotes(matter.notes).filter((_, idx) => idx !== i);
+    setEditIdx(null);
+    setEditText("");
+    await patch({ notes: serializeNotes(entries) || null });
+  }
+
   async function saveClientField(
     clientId: string,
     field: "primary_contact" | "email" | "phone" | "address" | "contact_title",
@@ -487,18 +517,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             ) : (
               <>
                 <span className="strip-sep">·</span>
-                <span className="strip-prio">
-                  <span className="strip-label">Priority</span>
-                  <InlineSelect
-                    value={matter.priority}
-                    className={`prio-${matter.priority}`}
-                    options={PRIORITIES.map((p) => ({
-                      value: p.value,
-                      label: p.label,
-                    }))}
-                    onSave={(v) => patch({ priority: v })}
-                  />
-                </span>
+                <InlineSelect
+                  value={matter.priority}
+                  className={`prio-${matter.priority}`}
+                  options={PRIORITIES.map((p) => ({ value: p.value, label: p.label }))}
+                  onSave={(v) => patch({ priority: v })}
+                />
               </>
             )}
           </div>
@@ -771,7 +795,74 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       </span>
                       <div className="note-main">
                         {n.time && <div className="note-time">{n.time}</div>}
-                        <p className="note-text">{n.text}</p>
+                        {editIdx === i ? (
+                          <div className="note-edit">
+                            <textarea
+                              className="notes-input"
+                              autoFocus
+                              rows={2}
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                                  e.preventDefault();
+                                  saveNoteEdit(i);
+                                }
+                                if (e.key === "Escape") {
+                                  setEditIdx(null);
+                                  setEditText("");
+                                }
+                              }}
+                            />
+                            <div className="note-edit-actions">
+                              <button
+                                type="button"
+                                className="note-del"
+                                onClick={() => deleteNote(i)}
+                              >
+                                Delete
+                              </button>
+                              <span className="note-edit-right">
+                                <button
+                                  type="button"
+                                  className="ghost sm"
+                                  onClick={() => {
+                                    setEditIdx(null);
+                                    setEditText("");
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn"
+                                  onClick={() => saveNoteEdit(i)}
+                                >
+                                  Save
+                                </button>
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="note-text">
+                            {n.text}
+                            <button
+                              type="button"
+                              className="note-edit-btn"
+                              title="Edit note"
+                              aria-label="Edit note"
+                              onClick={() => {
+                                setEditIdx(i);
+                                setEditText(n.text);
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                              </svg>
+                            </button>
+                          </p>
+                        )}
                       </div>
                     </li>
                   ))}

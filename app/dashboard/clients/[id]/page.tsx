@@ -182,25 +182,28 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           <h1 className="page-title editable-title">
             <InlineText value={client.name} onSave={(v) => { if (v) patch({ name: v }); }} />
           </h1>
-          <span className="type-pill">
-            {client.client_type === "business" ? "Business" : client.partner_name ? "Couple" : "Individual"}
-          </span>
         </div>
         <span className={`pill pill-${client.status}`}>{client.status}</span>
       </div>
 
-      <div className="detail-grid">
-        <div className="detail-item"><span className="detail-label">{client.client_type === "business" ? "Contact Person" : "Primary Contact"}</span>
-          <button type="button" className="contact-picker" onClick={openContactModal}>
-            {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
-          </button>
-        </div>
-        {client.client_type === "business" && (
-          <div className="detail-item"><span className="detail-label">Title</span><Guarded field="contact_title" label="title" /></div>
-        )}
-        <div className="detail-item"><span className="detail-label">Email</span><Guarded field="email" label="email" type="email" /></div>
-        <div className="detail-item"><span className="detail-label">Phone</span><Guarded field="phone" label="phone number" type="tel" /></div>
-        <div className="detail-item"><span className="detail-label">Address</span><Guarded field="address" label="address" /></div>
+      <div className="panel" style={{ marginBottom: "1.5rem" }}>
+        <h2 className="panel-title">Contact</h2>
+        <dl className="cc-fields">
+          <div>
+            <dt>{client.client_type === "business" ? "Contact person" : "Primary contact"}</dt>
+            <dd>
+              <button type="button" className="contact-picker" onClick={openContactModal}>
+                {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
+              </button>
+            </dd>
+          </div>
+          {client.client_type === "business" && (
+            <div><dt>Title</dt><dd><Guarded field="contact_title" label="title" /></dd></div>
+          )}
+          <div><dt>Email</dt><dd><Guarded field="email" label="email" type="email" /></dd></div>
+          <div><dt>Phone</dt><dd><Guarded field="phone" label="phone number" type="tel" /></dd></div>
+          <div><dt>Address</dt><dd><Guarded field="address" label="address" /></dd></div>
+        </dl>
       </div>
 
       {client.client_type !== "business" && client.partner_name && (
