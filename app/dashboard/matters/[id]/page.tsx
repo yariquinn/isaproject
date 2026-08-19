@@ -279,14 +279,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <div className="matter-topbar">
-        <Link href="/dashboard/matters" className="back-link">
-          ← Matters
-        </Link>
-        <button type="button" className="ghost sm danger" onClick={() => setConfirmDel(true)}>
-          Delete matter
-        </button>
-      </div>
+      <Link href="/dashboard/matters" className="back-link">
+        ← Matters
+      </Link>
       <div className="matter-head">
         <div className="matter-head-title">
           <h1 className="page-title editable-title">
@@ -354,6 +349,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               options={PRACTICE_AREAS.map((p) => ({ value: p, label: p }))}
               onSave={(v) => patch({ practice_area: v })}
             />
+          </div>
+          <div className="meta-chip">
+            <span className="meta-label">&nbsp;</span>
+            <button type="button" className="meta-delete" onClick={() => setConfirmDel(true)}>
+              Delete
+            </button>
           </div>
         </div>
       </div>

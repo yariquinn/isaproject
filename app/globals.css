@@ -1406,6 +1406,24 @@ section.block.alt {
   color: var(--dash-muted);
   text-align: center;
 }
+.meta-delete {
+  min-width: 96px;
+  height: 30px;
+  padding: 0 0.55rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--radius-sm);
+  background: var(--dash-surface);
+  color: #b4462e;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.meta-delete:hover {
+  background: #fbecec;
+  border-color: #e3bcbc;
+}
 .detail-grid.grid-6 .detail-item {
   min-width: 0;
 }
