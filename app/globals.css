@@ -308,24 +308,36 @@ section.block.alt {
    Portal (backend) — theme tokens
    ============================================================ */
 :root {
-  --dash-bg: #f6f4f1;
+  --dash-bg: #f4f2ef;
   --dash-surface: #ffffff;
-  --dash-fg: #26303a;
-  --dash-muted: #6b7580;
-  --dash-border: #e4e0da;
-  --dash-sidebar: #1c2b3a;
+  --dash-fg: #222c34;
+  --dash-muted: #737d87;
+  --dash-border: #ebe8e3;
+  --dash-sidebar: #1a2734;
   --dash-sidebar-fg: #e9edf1;
   --dash-sidebar-muted: #9fb0c0;
+  --dash-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(20, 30, 45, 0.05),
+    0 1px 3px rgba(20, 30, 45, 0.04);
+  --shadow-md: 0 2px 6px rgba(20, 30, 45, 0.06),
+    0 8px 24px rgba(20, 30, 45, 0.06);
+  --ring: 0 0 0 3px rgba(166, 124, 82, 0.18);
 }
 :root[data-theme="dark"] {
-  --dash-bg: #1e1f23;
-  --dash-surface: #26272c;
-  --dash-fg: #e7e7ea;
-  --dash-muted: #9a9aa3;
-  --dash-border: #34353b;
-  --dash-sidebar: #17181b;
-  --dash-sidebar-fg: #d7d8dd;
+  --dash-bg: #17181c;
+  --dash-surface: #202127;
+  --dash-fg: #e8e8ec;
+  --dash-muted: #9a9aa4;
+  --dash-border: #2e2f36;
+  --dash-sidebar: #131418;
+  --dash-sidebar-fg: #d9dae0;
   --dash-sidebar-muted: #8a8b93;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.3);
+  --ring: 0 0 0 3px rgba(166, 124, 82, 0.28);
 }
 
 /* ============================================================
@@ -457,17 +469,28 @@ section.block.alt {
   min-height: 100vh;
   background: var(--dash-bg);
   color: var(--dash-fg);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: var(--dash-font);
+  letter-spacing: -0.006em;
+  -webkit-font-smoothing: antialiased;
+}
+.dash button,
+.dash input,
+.dash select,
+.dash textarea {
+  font-family: var(--dash-font);
+}
+.dash button {
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    transform 0.05s ease, box-shadow 0.15s ease;
 }
 .sidebar {
-  width: 230px;
+  width: 244px;
   flex-shrink: 0;
   background: var(--dash-sidebar);
   color: var(--dash-sidebar-fg);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 1rem;
+  padding: 1.5rem 0.9rem;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -554,18 +577,22 @@ section.block.alt {
   color: var(--accent);
 }
 .sidebar-nav a {
-  color: var(--dash-sidebar-fg);
-  padding: 0.6rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.92rem;
+  color: var(--dash-sidebar-muted);
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .sidebar-nav a:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--dash-sidebar-fg);
   text-decoration: none;
 }
 .sidebar-nav a.active {
-  background: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .sidebar-foot {
   display: flex;
@@ -786,28 +813,37 @@ section.block.alt {
 .stat {
   background: var(--dash-surface);
   border: 1px solid var(--dash-border);
-  border-radius: 8px;
-  padding: 1.25rem 1.4rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.35rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+.stat:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 .stat-num {
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--dash-fg);
 }
 .stat-label {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--dash-muted);
+  font-weight: 600;
 }
 .panel {
   background: var(--dash-surface);
   border: 1px solid var(--dash-border);
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.6rem;
 }
 .panel-title {
   font-size: 1.1rem;
@@ -854,7 +890,8 @@ section.block.alt {
   overflow-x: auto;
   background: var(--dash-surface);
   border: 1px solid var(--dash-border);
-  border-radius: 8px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
 }
 .data-table {
   width: 100%;
@@ -863,17 +900,25 @@ section.block.alt {
 }
 .data-table th {
   text-align: left;
-  padding: 0.85rem 1rem;
-  font-size: 0.72rem;
+  padding: 0.8rem 1.1rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
+  font-weight: 600;
   color: var(--dash-muted);
   border-bottom: 1px solid var(--dash-border);
+  background: color-mix(in srgb, var(--dash-bg) 55%, transparent);
 }
 .data-table td {
-  padding: 0.85rem 1rem;
+  padding: 0.8rem 1.1rem;
   border-bottom: 1px solid var(--dash-border);
   color: var(--dash-fg);
+}
+.data-table tbody tr {
+  transition: background 0.12s ease;
+}
+.data-table tbody tr:hover {
+  background: color-mix(in srgb, var(--dash-bg) 60%, transparent);
 }
 .data-table tr:last-child td {
   border-bottom: none;
@@ -1489,6 +1534,70 @@ th.sortable:hover {
 .dur-inputs span {
   color: var(--dash-muted);
   font-size: 0.85rem;
+}
+
+/* ============================================================
+   Sleek polish (dashboard-scoped)
+   ============================================================ */
+.dash .btn {
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+.dash .btn:hover {
+  background: #b5875c;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.dash input:focus,
+.dash select:focus,
+.dash textarea:focus {
+  box-shadow: var(--ring);
+}
+.detail-item {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  gap: 0.4rem;
+}
+.detail-label {
+  font-weight: 600;
+}
+.modal {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--dash-border);
+}
+.page-title {
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.panel-title {
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+.greeting-title {
+  letter-spacing: -0.02em;
+}
+.filter-chip,
+.seg button {
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.stat-row {
+  gap: 1.1rem;
+}
+.activity-list li {
+  padding: 0.7rem 0;
+}
+.act-tag {
+  font-weight: 600;
+}
+.sidebar-brand {
+  letter-spacing: -0.01em;
+}
+.dash-content {
+  max-width: 1180px;
 }
 
 /* ============================================================

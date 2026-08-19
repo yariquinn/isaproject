@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { ACTIVITY_TYPES, type Matter, type Timer } from "@/lib/types";
+import { ACTIVITY_TYPES, ATTORNEYS, type Matter, type Timer } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
 
 function fmt(totalSeconds: number): string {
@@ -312,7 +312,7 @@ export default function TimeTracker() {
           matterLabel={matterName(logTarget.timer.matter_id)}
           defaultLawyer={
             matters.find((m) => m.id === logTarget.timer.matter_id)
-              ?.assigned_to || "Isa"
+              ?.assigned_to || ATTORNEYS[0]
           }
           seconds={logTarget.seconds}
           onCancel={() => setLogTarget(null)}
@@ -347,9 +347,22 @@ function LogModal({
   const [h, setH] = useState(Math.floor(seconds / 3600));
   const [m, setM] = useState(Math.floor((seconds % 3600) / 60));
   const [s, setS] = useState(seconds % 60);
+  const [decimal, setDecimal] = useState("");
 
   const totalSeconds = h * 3600 + m * 60 + s;
   const num = (v: string) => Math.max(0, Number(v.replace(/[^0-9]/g, "")) || 0);
+
+  // Convert a decimal number of hours (e.g. 1.5) into h / m / s.
+  function applyDecimal(raw: string) {
+    setDecimal(raw);
+    const hrs = parseFloat(raw);
+    if (!isNaN(hrs) && hrs >= 0) {
+      const secs = Math.round(hrs * 3600);
+      setH(Math.floor(secs / 3600));
+      setM(Math.floor((secs % 3600) / 60));
+      setS(secs % 60);
+    }
+  }
 
   return (
     <div className="modal-backdrop" onClick={onCancel}>
@@ -377,7 +390,16 @@ function LogModal({
         </label>
         <label>
           Lawyer
-          <input value={lawyer} onChange={(e) => setLawyer(e.target.value)} />
+          <select value={lawyer} onChange={(e) => setLawyer(e.target.value)}>
+            {(ATTORNEYS as readonly string[]).includes(lawyer) ? null : (
+              <option value={lawyer}>{lawyer}</option>
+            )}
+            {ATTORNEYS.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Duration (editable)
@@ -386,7 +408,10 @@ function LogModal({
               type="number"
               min={0}
               value={h}
-              onChange={(e) => setH(num(e.target.value))}
+              onChange={(e) => {
+                setH(num(e.target.value));
+                setDecimal("");
+              }}
             />
             <span>h</span>
             <input
@@ -394,7 +419,10 @@ function LogModal({
               min={0}
               max={59}
               value={m}
-              onChange={(e) => setM(Math.min(59, num(e.target.value)))}
+              onChange={(e) => {
+                setM(Math.min(59, num(e.target.value)));
+                setDecimal("");
+              }}
             />
             <span>m</span>
             <input
@@ -402,10 +430,25 @@ function LogModal({
               min={0}
               max={59}
               value={s}
-              onChange={(e) => setS(Math.min(59, num(e.target.value)))}
+              onChange={(e) => {
+                setS(Math.min(59, num(e.target.value)));
+                setDecimal("");
+              }}
             />
             <span>s</span>
           </div>
+        </label>
+        <label>
+          Or enter decimal hours (e.g. 1.5 = 1h 30m)
+          <input
+            type="number"
+            step="0.25"
+            min={0}
+            inputMode="decimal"
+            placeholder="1.5"
+            value={decimal}
+            onChange={(e) => applyDecimal(e.target.value)}
+          />
         </label>
         <div className="modal-actions">
           <button type="button" className="ghost" onClick={onCancel}>
