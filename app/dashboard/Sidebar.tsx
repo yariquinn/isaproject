@@ -56,9 +56,12 @@ export default function Sidebar({ userName }: { userName: string }) {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
-        Isa Abdur-Rahman
-        <span>Employee Portal</span>
+      <div className="sidebar-top">
+        <div className="sidebar-brand">
+          Isa Abdur-Rahman
+          <span>Employee Portal</span>
+        </div>
+        <ThemeToggle />
       </div>
 
       <nav className="sidebar-nav">
@@ -89,7 +92,6 @@ export default function Sidebar({ userName }: { userName: string }) {
             <span className="user-name">{userName}</span>
             <span className="user-sub">Employee</span>
           </div>
-          <ThemeToggle />
           <form action={logoutAction}>
             <button type="submit" className="signout-icon" title="Sign out" aria-label="Sign out">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -3289,3 +3289,15 @@ a.activity-row:hover .act-desc {
   font-size: 0.74rem;
   color: var(--dash-muted);
 }
+
+/* Sidebar header row with theme toggle */
+.sidebar-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.sidebar-top .sidebar-brand {
+  flex: 1;
+  min-width: 0;
+}
