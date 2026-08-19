@@ -156,17 +156,6 @@ export default function MattersPage() {
   const nameOf = (id: string | null) =>
     clients.find((c) => c.id === id)?.name ?? "";
 
-  const attorneyOptions = (current: string | null) => {
-    const base: { value: string; label: string }[] = ATTORNEYS.map((a) => ({
-      value: a,
-      label: a,
-    }));
-    if (current && !ATTORNEYS.includes(current as (typeof ATTORNEYS)[number])) {
-      base.push({ value: current, label: current });
-    }
-    return base;
-  };
-
   async function patch(id: string, changes: Partial<Matter>) {
     setMatters((prev) =>
       prev.map((m) => (m.id === id ? { ...m, ...changes } : m)),
@@ -386,7 +375,7 @@ export default function MattersPage() {
                 </th>
                 <th>Client</th>
                 <th>Practice Area</th>
-                <th>Assigned To</th>
+                <th>Tasks</th>
                 <th>Rate</th>
                 <th className="sortable" onClick={() => toggleSort("priority")}>
                   Priority {sortArrow("priority")}
@@ -409,11 +398,6 @@ export default function MattersPage() {
                     <Link href={`/dashboard/matters/${m.id}`} className="row-link">
                       {m.name}
                     </Link>
-                    {pendingTasks[m.id] ? (
-                      <span className="task-badge" title="Pending tasks">
-                        {pendingTasks[m.id]} task{pendingTasks[m.id] === 1 ? "" : "s"}
-                      </span>
-                    ) : null}
                   </td>
                   <td>
                     {m.client_id ? (
@@ -438,11 +422,13 @@ export default function MattersPage() {
                     />
                   </td>
                   <td>
-                    <InlineSelect
-                      value={m.assigned_to ?? ATTORNEYS[0]}
-                      options={attorneyOptions(m.assigned_to)}
-                      onSave={(v) => patch(m.id, { assigned_to: v })}
-                    />
+                    {pendingTasks[m.id] ? (
+                      <span className="task-badge" title="Pending tasks">
+                        {pendingTasks[m.id]} task{pendingTasks[m.id] === 1 ? "" : "s"}
+                      </span>
+                    ) : (
+                      <span className="inline-placeholder">—</span>
+                    )}
                   </td>
                   <td>
                     <InlineNumber
