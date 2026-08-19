@@ -1268,6 +1268,16 @@ section.block.alt {
 .matter-head .page-title {
   margin-bottom: 0;
 }
+.matter-head-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.closed-note {
+  font-size: 0.82rem;
+  color: var(--dash-muted);
+  font-weight: 500;
+}
 .matter-meta {
   display: flex;
   gap: 0.7rem;
@@ -1892,6 +1902,204 @@ a.activity-row:hover .act-desc {
   padding: 0.9rem 0 0.3rem;
   border-top: 1px solid var(--dash-border);
   margin-top: 0.3rem;
+}
+
+/* Portal switcher + sidebar sublinks */
+.portal-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--dash-sidebar-fg);
+  margin-bottom: 1rem;
+  cursor: default;
+}
+.portal-caret {
+  color: var(--dash-sidebar-muted);
+  font-size: 0.7rem;
+}
+.sidebar-nav a.sub {
+  margin-left: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--dash-sidebar-muted);
+}
+
+/* Disclaimer */
+.disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #fbf3e6;
+  border: 1px solid #ecdcbf;
+  color: #7a5a20;
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.85rem;
+}
+:root[data-theme="dark"] .disclaimer {
+  background: #2c2618;
+  border-color: #453a22;
+  color: #d3b479;
+}
+.disclaimer-tag {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Events */
+.event-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.event-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--dash-border);
+  font-size: 0.9rem;
+}
+.event-list li:first-child {
+  border-top: none;
+}
+.event-date {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--dash-fg);
+  min-width: 3.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.event-kind {
+  flex-shrink: 0;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.12rem 0.5rem;
+  border-radius: 20px;
+  border: 1px solid var(--dash-border);
+  color: var(--dash-muted);
+  background: var(--dash-bg);
+}
+.ev-deadline {
+  background: #fbecec;
+  color: #8a2b2b;
+  border-color: #e3bcbc;
+}
+.ev-closing {
+  background: #eaf0fb;
+  color: #2b5fa8;
+  border-color: #c4d5f2;
+}
+.ev-appointment {
+  background: #eaf4ec;
+  color: #285d38;
+  border-color: #bcdcc4;
+}
+.event-title {
+  color: var(--dash-fg);
+}
+.event-matter {
+  margin-left: auto;
+  font-size: 0.8rem;
+}
+
+/* Mini stats (overview hours & revenue) */
+.mini-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.mini-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* Activity login tag */
+.tag-login {
+  background: #ece9f6;
+  color: #4b3f8a;
+  border-color: #d3cbe8;
+}
+
+/* Invoice status pills */
+.pill.inv-draft {
+  background: var(--dash-bg);
+  color: var(--dash-muted);
+}
+.pill.inv-sent {
+  background: #eaf0fb;
+  color: #2b5fa8;
+  border-color: #c4d5f2;
+}
+.pill.inv-paid {
+  background: #eaf4ec;
+  color: #285d38;
+  border-color: #bcdcc4;
+}
+.pill.inv-overdue {
+  background: #fbecec;
+  color: #8a2b2b;
+  border-color: #e3bcbc;
+}
+
+/* Reports / intake */
+.report-placeholder {
+  margin-top: 0.9rem;
+  height: 90px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.intake-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.intake-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--dash-fg);
+}
+.intake-form input,
+.intake-form select,
+.intake-form textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 4px;
+  background: var(--dash-bg);
+  color: var(--dash-fg);
+}
+
+/* Centered primary-contact modal */
+.contact-modal h3 {
+  text-align: center;
+}
+.contact-modal .doc-tabs {
+  justify-content: center;
 }
 
 /* ============================================================

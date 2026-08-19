@@ -7,11 +7,10 @@ export function getAccessCode(): string {
   return process.env.BACKEND_ACCESS_CODE || "186730";
 }
 
-// Only these people may enter the backend (matched case-insensitively, with
-// surrounding whitespace ignored), in addition to the access code.
+// Only these people may enter the backend. The name is CASE-SENSITIVE and must
+// match exactly (surrounding whitespace is ignored), in addition to the code.
 export const ALLOWED_NAMES = ["Yari Corsino", "Isa Abdur-Rahman"];
 
 export function isAllowedName(name: string): boolean {
-  const normalized = name.trim().toLowerCase();
-  return ALLOWED_NAMES.some((n) => n.toLowerCase() === normalized);
+  return ALLOWED_NAMES.includes(name.trim());
 }

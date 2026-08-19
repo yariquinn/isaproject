@@ -7,6 +7,7 @@ import {
   ATTORNEYS,
   PRACTICE_AREAS,
   PRIORITIES,
+  RATE_TYPES,
   type Client,
   type Matter,
 } from "@/lib/types";
@@ -18,7 +19,8 @@ const EMPTY = {
   client_id: "",
   practice_area: PRACTICE_AREAS[0] as string,
   assigned_to: ATTORNEYS[0] as string,
-  priority: "medium",
+  priority: "-",
+  rate_type: "hourly",
   description: "",
   hourly_rate: "",
 };
@@ -132,6 +134,7 @@ export default function MattersPage() {
     if (status === "closed" && m.status !== "closed") {
       changes.closed_at = new Date().toISOString();
       changes.closed_by = userName;
+      changes.priority = "-";
     } else if (status !== "closed") {
       changes.closed_at = null;
       changes.closed_by = null;
@@ -161,6 +164,7 @@ export default function MattersPage() {
         practice_area: form.practice_area,
         assigned_to: form.assigned_to || null,
         priority: form.priority,
+        rate_type: form.rate_type,
         description: form.description.trim() || null,
         hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
       })
@@ -317,7 +321,7 @@ export default function MattersPage() {
                     <InlineNumber
                       value={m.hourly_rate}
                       prefix="$"
-                      suffix="/hr"
+                      suffix={m.rate_type === "flat" ? " flat" : "/hr"}
                       onSave={(v) => patch(m.id, { hourly_rate: v })}
                     />
                   </td>
@@ -423,7 +427,22 @@ export default function MattersPage() {
               </select>
             </label>
             <label>
-              Hourly Rate (USD)
+              Rate Type
+              <select
+                value={form.rate_type}
+                onChange={(e) =>
+                  setForm({ ...form, rate_type: e.target.value })
+                }
+              >
+                {RATE_TYPES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {form.rate_type === "flat" ? "Flat Rate (USD)" : "Hourly Rate (USD)"}
               <input
                 type="number"
                 value={form.hourly_rate}

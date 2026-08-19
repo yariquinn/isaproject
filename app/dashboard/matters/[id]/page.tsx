@@ -185,14 +185,25 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         ← Matters
       </Link>
       <div className="matter-head">
-        <h1 className="page-title editable-title">
-          <InlineText
-            value={matter.name}
-            onSave={(v) => {
-              if (v) patch({ name: v });
-            }}
-          />
-        </h1>
+        <div className="matter-head-title">
+          <h1 className="page-title editable-title">
+            <InlineText
+              value={matter.name}
+              onSave={(v) => {
+                if (v) patch({ name: v });
+              }}
+            />
+          </h1>
+          {matter.status === "closed" && (
+            <span className="closed-note">
+              Closed{" "}
+              {matter.closed_at
+                ? new Date(matter.closed_at).toLocaleDateString()
+                : ""}
+              {matter.closed_by ? ` · by ${matter.closed_by}` : ""}
+            </span>
+          )}
+        </div>
         <div className="matter-meta">
           <div className="meta-chip">
             <span className="meta-label">Status</span>
@@ -268,19 +279,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           <span className="detail-label">Billable</span>
           {billable != null ? `$${billable.toFixed(2)}` : "—"}
         </div>
-        {matter.status === "closed" && (
-          <div className="detail-item">
-            <span className="detail-label">Closed</span>
-            {matter.closed_at
-              ? new Date(matter.closed_at).toLocaleDateString()
-              : "—"}
-            {matter.closed_by ? (
-              <span className="muted-line" style={{ fontSize: "0.8rem" }}>
-                by {matter.closed_by}
-              </span>
-            ) : null}
-          </div>
-        )}
       </div>
 
       <div className="matter-body">
@@ -338,7 +336,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         <div className="matter-body-side">
           <div className="panel">
-            <h2 className="panel-title">To-Do</h2>
+            <h2 className="panel-title">Tasks</h2>
             <TodoWidget matterId={matter.id} compact />
           </div>
 

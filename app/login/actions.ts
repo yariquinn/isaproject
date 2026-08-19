@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AUTH_COOKIE, getAccessCode, isAllowedName } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 export type LoginState = { error: string | null };
 
@@ -24,6 +25,12 @@ export async function loginAction(
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 12, // 12 hours
+  });
+
+  // Record the sign-in in the activity feed (demo).
+  await supabase.from("activity_log").insert({
+    kind: "login",
+    description: `${name} signed in via access code`,
   });
 
   redirect("/dashboard");

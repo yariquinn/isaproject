@@ -352,7 +352,10 @@ export default function ClientsPage() {
       {/* Contact search / create modal */}
       {contactFor && (
         <div className="modal-backdrop" onClick={() => setContactFor(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal contact-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>Set primary contact — {contactFor.name}</h3>
             <div className="doc-tabs" style={{ marginBottom: "0.5rem" }}>
               <button

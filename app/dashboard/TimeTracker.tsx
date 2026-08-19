@@ -184,11 +184,6 @@ export default function TimeTracker() {
 
       {open && (
         <div className="tracker-body">
-          {timers.length === 0 && (
-            <div className="tracker-empty">
-              No timers running. Click “New timer” and choose a matter to begin.
-            </div>
-          )}
           {timers.map((t) => {
             const secs = elapsedOf(t, now);
             return (

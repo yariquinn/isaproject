@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 const PLACEHOLDER_DOCS = [
@@ -15,6 +16,9 @@ export default function DocumentsPage() {
     <div>
       <div className="page-head">
         <h1 className="page-title">Documents</h1>
+        <Link href="/dashboard/documents/templates" className="btn">
+          Templates
+        </Link>
       </div>
 
       <div className="doc-tabs">

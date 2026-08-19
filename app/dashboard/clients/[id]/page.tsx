@@ -372,7 +372,10 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       {/* Contact search / create modal */}
       {contactModal && (
         <div className="modal-backdrop" onClick={closeContactModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal contact-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>Set primary contact</h3>
             <div className="doc-tabs" style={{ marginBottom: "0.5rem" }}>
               <button
