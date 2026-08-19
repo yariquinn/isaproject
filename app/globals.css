@@ -1278,17 +1278,25 @@ section.block.alt {
 }
 .activity-search {
   font-family: inherit;
-  font-size: 0.88rem;
-  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  padding: 0.42rem 0.85rem 0.42rem 2rem;
   border: 1px solid var(--dash-border);
-  border-radius: 6px;
-  background: var(--dash-bg);
+  border-radius: 20px;
+  background-color: var(--dash-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888f97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.65rem center;
+  background-size: 15px;
   color: var(--dash-fg);
-  min-width: 200px;
+  min-width: 180px;
+}
+.activity-search::placeholder {
+  color: var(--dash-muted);
 }
 .activity-search:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: var(--ring);
 }
 .filter-row {
   display: flex;
