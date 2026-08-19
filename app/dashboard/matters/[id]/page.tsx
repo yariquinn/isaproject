@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   ACTIVITY_TYPES,
@@ -25,6 +25,13 @@ import {
 import { usePortal } from "../../PortalProvider";
 import TodoWidget from "../../TodoWidget";
 import Disclaimer from "../../Disclaimer";
+import Collapsible from "../../Collapsible";
+import TimeEntriesTab from "./TimeEntriesTab";
+
+const MATTER_DOCS = [
+  { name: "Engagement Letter.pdf", updated: "3d ago" },
+  { name: "Client Intake Form.pdf", updated: "1w ago" },
+];
 
 const TIMELINE_STEPS: Record<string, string[]> = {
   "LLC Formation": [
@@ -102,9 +109,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     "checklist",
   );
   const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
+  const [boardCols, setBoardCols] = useState<Record<string, number>>({});
+  const dragStep = useRef<string | null>(null);
   const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
   const [bodyTab, setBodyTab] = useState<
-    "time" | "tasks" | "description" | "events" | "invoices" | "activity"
+    "time" | "tasks" | "documents" | "events" | "invoices" | "notes" | "activity"
   >("time");
 
   async function loadActivity() {
@@ -207,6 +216,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     setArchivePrompt(null);
   }
 
+  async function saveBillingNotes(clientId: string, v: string) {
+    const next = v.trim() || null;
+    setClients((prev) =>
+      prev.map((c) => (c.id === clientId ? { ...c, billing_notes: next } : c)),
+    );
+    await supabase.from("clients").update({ billing_notes: next }).eq("id", clientId);
+  }
+
   async function logTime(f: {
     activity: string;
     lawyer: string;
@@ -250,7 +267,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     : null;
 
   const clientObj = clients.find((c) => c.id === matter.client_id) ?? null;
-  const clientName = clientObj?.name ?? null;
   const attorneyOptions: { value: string; label: string }[] = ATTORNEYS.map(
     (a) => ({ value: a, label: a }),
   );
@@ -315,18 +331,20 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               onSave={(v) => changeStatus(v)}
             />
           </div>
-          <div className="meta-chip">
-            <span className="meta-label">Priority</span>
-            <InlineSelect
-              value={matter.priority}
-              className={`prio-${matter.priority}`}
-              options={PRIORITIES.map((p) => ({
-                value: p.value,
-                label: p.label,
-              }))}
-              onSave={(v) => patch({ priority: v })}
-            />
-          </div>
+          {matter.status !== "closed" && (
+            <div className="meta-chip">
+              <span className="meta-label">Priority</span>
+              <InlineSelect
+                value={matter.priority}
+                className={`prio-${matter.priority}`}
+                options={PRIORITIES.map((p) => ({
+                  value: p.value,
+                  label: p.label,
+                }))}
+                onSave={(v) => patch({ priority: v })}
+              />
+            </div>
+          )}
           <div className="meta-chip">
             <span className="meta-label">Practice Area</span>
             <InlineSelect
@@ -335,115 +353,153 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               onSave={(v) => patch({ practice_area: v })}
             />
           </div>
+          <div className="meta-chip">
+            <span className="meta-label">Case Timeline</span>
+            <label className="switch switch-chip">
+              <input
+                type="checkbox"
+                checked={!!timelineType}
+                onChange={() => {
+                  const next = timelineType ? "" : CASE_TIMELINE_TEMPLATES[0];
+                  setTimelineType(next);
+                  patch({ case_timeline_type: next || null });
+                }}
+              />
+              <span className="switch-track" />
+            </label>
+          </div>
         </div>
       </div>
 
-      <div className="detail-grid grid-even">
-        <div className="detail-item">
-          <span className="detail-label">Client</span>
-          {matter.client_id ? (
+      <div className="matter-cards">
+        <div className="panel client-card">
+          <h2 className="panel-title">Client</h2>
+          {matter.client_id && clientObj ? (
             <>
-              <Link
-                href={`/dashboard/clients/${matter.client_id}`}
-                className="row-link"
-              >
-                {clientName}
-              </Link>
-              {(clientObj?.email || clientObj?.phone) && (
-                <span className="client-contact">
-                  {clientObj?.email && <span>{clientObj.email}</span>}
-                  {clientObj?.phone && <span>{clientObj.phone}</span>}
+              <div className="cc-name">
+                <Link
+                  href={`/dashboard/clients/${matter.client_id}`}
+                  className="row-link"
+                >
+                  {clientObj.name}
+                </Link>
+                <span className="type-pill">
+                  {clientObj.client_type === "business"
+                    ? "Business"
+                    : clientObj.partner_name
+                      ? "Couple"
+                      : "Individual"}
                 </span>
-              )}
+              </div>
+              <dl className="cc-fields">
+                <div>
+                  <dt>{clientObj.client_type === "business" ? "Contact" : "Primary contact"}</dt>
+                  <dd>
+                    {clientObj.primary_contact || "—"}
+                    {clientObj.contact_title ? `, ${clientObj.contact_title}` : ""}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd>{clientObj.email || "—"}</dd>
+                </div>
+                <div>
+                  <dt>Phone</dt>
+                  <dd>{clientObj.phone || "—"}</dd>
+                </div>
+                <div>
+                  <dt>Address</dt>
+                  <dd>{clientObj.address || "—"}</dd>
+                </div>
+                {clientObj.partner_name && (
+                  <div>
+                    <dt>Second contact</dt>
+                    <dd>
+                      {clientObj.partner_name}
+                      {clientObj.partner_phone ? ` · ${clientObj.partner_phone}` : ""}
+                    </dd>
+                  </div>
+                )}
+              </dl>
             </>
           ) : (
-            <span className="inline-placeholder">—</span>
+            <p className="muted-line">No client linked.</p>
           )}
         </div>
-        <div className="detail-item">
-          <span className="detail-label">Assigned To</span>
-          <InlineSelect
-            value={matter.assigned_to ?? ATTORNEYS[0]}
-            options={attorneyOptions}
-            onSave={(v) => patch({ assigned_to: v })}
-          />
-        </div>
-        <div className="detail-item">
-          <span className="detail-label">Rate</span>
-          <InlineNumber
-            value={matter.hourly_rate}
-            prefix="$"
-            suffix="/hr"
-            onSave={(v) => patch({ hourly_rate: v })}
-          />
-        </div>
-        <div className="detail-item">
-          <span className="detail-label">Time Logged</span>
-          {fmtHm(totalSeconds)}
-        </div>
-        <div className="detail-item">
-          <span className="detail-label">Billable</span>
-          {billable != null ? `$${billable.toFixed(2)}` : "—"}
+
+        <div className="panel details-card">
+          <h2 className="panel-title">Details</h2>
+          <dl className="cc-fields">
+            <div>
+              <dt>Assigned To</dt>
+              <dd>
+                <InlineSelect
+                  value={matter.assigned_to ?? ATTORNEYS[0]}
+                  options={attorneyOptions}
+                  onSave={(v) => patch({ assigned_to: v })}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Rate</dt>
+              <dd>
+                <InlineNumber
+                  value={matter.hourly_rate}
+                  prefix="$"
+                  suffix={matter.rate_type === "flat" ? " flat" : "/hr"}
+                  onSave={(v) => patch({ hourly_rate: v })}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Time Logged</dt>
+              <dd>{fmtHm(totalSeconds)}</dd>
+            </div>
+            <div>
+              <dt>Billable</dt>
+              <dd>{billable != null ? `$${billable.toFixed(2)}` : "—"}</dd>
+            </div>
+          </dl>
         </div>
       </div>
 
-      <div className="panel" style={{ marginBottom: "1.5rem" }}>
-        <div className="panel-head">
-          <h2 className="panel-title">Case Timeline</h2>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={!!timelineType}
-              onChange={() => {
-                const next = timelineType ? "" : CASE_TIMELINE_TEMPLATES[0];
-                setTimelineType(next);
-                patch({ case_timeline_type: next || null });
+      {timelineType && (
+        <div className="panel" style={{ marginBottom: "1.5rem" }}>
+          <div className="panel-head">
+            <h2 className="panel-title">Case Timeline</h2>
+            <select
+              className="inline-select"
+              value={timelineType}
+              onChange={(e) => {
+                setTimelineType(e.target.value);
+                patch({ case_timeline_type: e.target.value });
               }}
-            />
-            <span className="switch-track" />
-            {timelineType ? "On" : "Off"}
-          </label>
-        </div>
+            >
+              {CASE_TIMELINE_TEMPLATES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {timelineType && (
           <div className="timeline-body">
-            <div className="timeline-controls">
-              <select
-                className="inline-select"
-                value={timelineType}
-                onChange={(e) => {
-                  setTimelineType(e.target.value);
-                  patch({ case_timeline_type: e.target.value });
-                }}
-              >
-                {CASE_TIMELINE_TEMPLATES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              <div className="seg">
-                {(["checklist", "board", "tasks"] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    className={timelineView === v ? "active" : undefined}
-                    onClick={() => setTimelineView(v)}
-                  >
-                    {v === "checklist"
-                      ? "Checklist"
-                      : v === "board"
-                        ? "Board"
-                        : "Tasks"}
-                  </button>
-                ))}
-              </div>
+            <div className="seg" style={{ marginBottom: "0.9rem" }}>
+              {(["checklist", "board", "tasks"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  className={timelineView === v ? "active" : undefined}
+                  onClick={() => setTimelineView(v)}
+                >
+                  {v === "checklist"
+                    ? "Checklist"
+                    : v === "board"
+                      ? "Board"
+                      : "Tasks"}
+                </button>
+              ))}
             </div>
-
-            <Disclaimer>
-              Preview only — compare the three layouts, then tell me which to keep
-              (progress isn&rsquo;t saved yet).
-            </Disclaimer>
 
             {(() => {
               const steps = TIMELINE_STEPS[timelineType] ?? [];
@@ -469,15 +525,33 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               }
               if (timelineView === "board") {
                 const cols = ["To Do", "In Progress", "Done"];
+                const colOf = (s: string, i: number) => boardCols[s] ?? i % 3;
                 return (
                   <div className="tl-board">
                     {cols.map((col, ci) => (
-                      <div className="tl-col" key={col}>
+                      <div
+                        className="tl-col"
+                        key={col}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => {
+                          const s = dragStep.current;
+                          if (s != null) setBoardCols((p) => ({ ...p, [s]: ci }));
+                          dragStep.current = null;
+                        }}
+                      >
                         <div className="tl-col-head">{col}</div>
                         {steps
-                          .filter((_, i) => i % 3 === ci)
-                          .map((s) => (
-                            <div className="tl-card" key={s}>
+                          .map((s, i) => ({ s, i }))
+                          .filter(({ s, i }) => colOf(s, i) === ci)
+                          .map(({ s }) => (
+                            <div
+                              className="tl-card"
+                              key={s}
+                              draggable
+                              onDragStart={() => {
+                                dragStep.current = s;
+                              }}
+                            >
                               {s}
                             </div>
                           ))}
@@ -498,16 +572,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               );
             })()}
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="panel" style={{ marginBottom: "1.5rem" }}>
+        <h2 className="panel-title">Description</h2>
+        <InlineTextarea
+          value={matter.description}
+          onSave={(v) => patch({ description: v || null })}
+          placeholder="Click to add a description…"
+        />
       </div>
 
       <div className="doc-tabs client-tabs">
         {([
           ["time", `Time Entries (${entries.length})`],
           ["tasks", "Tasks"],
-          ["description", "Description"],
+          ["documents", "Documents"],
           ["events", `Events (${events.length})`],
           ["invoices", `Invoices (${invoices.length})`],
+          ["notes", "Notes"],
           ["activity", "Activity"],
         ] as const).map(([key, label]) => (
           <button
@@ -522,60 +606,55 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       </div>
 
       <div className="panel">
-        {bodyTab === "description" && (
-          <>
-            <h2 className="panel-title">Description</h2>
-            <InlineTextarea
-              value={matter.description}
-              onSave={(v) => patch({ description: v || null })}
-              placeholder="Click to add a description…"
-            />
-          </>
-        )}
-
         {bodyTab === "time" && (
-          <>
-            <div className="panel-head">
-              <h2 className="panel-title">Time Entries ({entries.length})</h2>
-              <button className="btn" type="button" onClick={() => setLogOpen(true)}>
-                + Log time
-              </button>
-            </div>
-            {entries.length === 0 ? (
-              <p className="muted-line">No time logged to this matter yet.</p>
-            ) : (
-              <div className="table-wrap" style={{ border: "none" }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Activity</th>
-                      <th>Description</th>
-                      <th>Lawyer</th>
-                      <th>Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.map((e) => (
-                      <tr key={e.id}>
-                        <td>{new Date(e.logged_at).toLocaleDateString()}</td>
-                        <td>{e.activity || "—"}</td>
-                        <td>{e.note || "—"}</td>
-                        <td>{e.lawyer}</td>
-                        <td>{fmtHm(e.duration_seconds)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
+          <TimeEntriesTab
+            entries={entries}
+            rate={matter.hourly_rate}
+            onAdd={() => setLogOpen(true)}
+            onChanged={loadAll}
+          />
         )}
 
         {bodyTab === "tasks" && (
           <>
             <h2 className="panel-title">Tasks</h2>
             <TodoWidget matterId={matter.id} compact />
+          </>
+        )}
+
+        {bodyTab === "documents" && (
+          <>
+            <h2 className="panel-title">Documents</h2>
+            <div className="table-wrap" style={{ border: "none" }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Document</th>
+                    <th>Updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {MATTER_DOCS.map((d) => (
+                    <tr key={d.name}>
+                      <td className="strong-cell">{d.name}</td>
+                      <td>{d.updated}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Disclaimer>Document storage is a placeholder for this mockup.</Disclaimer>
+          </>
+        )}
+
+        {bodyTab === "notes" && (
+          <>
+            <h2 className="panel-title">Notes</h2>
+            <InlineTextarea
+              value={matter.notes}
+              onSave={(v) => patch({ notes: v || null })}
+              placeholder="Internal notes for this matter…"
+            />
           </>
         )}
 
@@ -621,6 +700,20 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   </li>
                 ))}
               </ul>
+            )}
+            {clientObj && (
+              <div style={{ marginTop: "1.25rem" }}>
+                <Collapsible title="Billing Notes" empty={!clientObj.billing_notes}>
+                  <p className="field-note">
+                    How {clientObj.name} likes to be billed.
+                  </p>
+                  <InlineTextarea
+                    value={clientObj.billing_notes}
+                    onSave={(v) => saveBillingNotes(clientObj.id, v)}
+                    placeholder="e.g. Flat monthly retainer, invoice on the 1st…"
+                  />
+                </Collapsible>
+              </div>
             )}
           </>
         )}

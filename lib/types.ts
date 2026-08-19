@@ -35,6 +35,7 @@ export type Matter = {
   assigned_to: string | null;
   priority: string;
   case_timeline_type: string | null;
+  notes: string | null;
   closed_at: string | null;
   closed_by: string | null;
   created_at: string;
@@ -57,6 +58,8 @@ export type TimeEntry = {
   lawyer: string;
   duration_seconds: number;
   note: string | null;
+  billable: boolean;
+  invoiced: boolean;
   logged_at: string;
 };
 
