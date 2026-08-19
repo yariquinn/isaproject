@@ -59,8 +59,9 @@ export default function Sidebar({ userName }: { userName: string }) {
       <div className="sidebar-inner">
         <div className="sidebar-top">
           <div className="sidebar-brand">
-            Isa Abdur-Rahman
-            <span>Employee Portal</span>
+            <span className="brand-kicker">Law Offices of</span>
+            <span className="brand-name">Isa Abdur-Rahman</span>
+            <span className="brand-sub">Employee Portal</span>
           </div>
           <ThemeToggle />
         </div>

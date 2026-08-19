@@ -73,16 +73,6 @@ function fmtHm(seconds: number): string {
   return `${h}h ${m}m`;
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "•";
@@ -90,7 +80,17 @@ function initialsOf(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-type NoteEntry = { header: string; time: string; who: string; initials: string; text: string };
+type NoteEntry = { header: string; time: string; date: number; who: string; initials: string; text: string };
+
+function fmtStamp(d: Date): string {
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 // Notes are stored as a running log of "[stamp · name]\nbody" blocks separated
 // by a blank line. Parse them back into structured entries for the feed.
@@ -103,13 +103,22 @@ function parseNotes(raw: string | null): NoteEntry[] {
     const header = m[1];
     const text = m[2].trim();
     const sep = header.lastIndexOf(" · ");
-    const time = sep === -1 ? header.trim() : header.slice(0, sep).trim();
+    const rawTime = sep === -1 ? header.trim() : header.slice(0, sep).trim();
     const who = sep === -1 ? "" : header.slice(sep + 3).trim();
-    out.push({ header, time, who, initials: who ? initialsOf(who) : "•", text });
+    const d = new Date(rawTime);
+    const valid = !isNaN(d.getTime());
+    out.push({
+      header,
+      time: valid ? fmtStamp(d) : rawTime,
+      date: valid ? d.getTime() : 0,
+      who,
+      initials: who ? initialsOf(who) : "•",
+      text,
+    });
   }
   // Legacy free-text notes (no timestamp headers) show as one entry.
   if (out.length === 0)
-    out.push({ header: "", time: "", who: "", initials: "•", text: raw.trim() });
+    out.push({ header: "", time: "", date: 0, who: "", initials: "•", text: raw.trim() });
   return out;
 }
 
@@ -119,17 +128,6 @@ function serializeNotes(entries: NoteEntry[]): string {
     .filter((s) => s.trim())
     .join("\n\n");
 }
-
-const KIND_LABEL: Record<string, string> = {
-  matter_created: "Matter",
-  matter_updated: "Matter",
-  time_logged: "Time",
-};
-const KIND_GROUP: Record<string, string> = {
-  matter_created: "matter",
-  matter_updated: "matter",
-  time_logged: "time",
-};
 
 export default function MatterDetail({ params }: { params: { id: string } }) {
   const { userName } = usePortal();
@@ -358,13 +356,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     if (!matter) return;
     const text = noteDraft.trim();
     if (!text) return;
-    const stamp = new Date().toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    const stamp = new Date().toISOString();
     const who = userName ? ` · ${userName}` : "";
     const entry = `[${stamp}${who}]\n${text}`;
     const next = matter.notes ? `${entry}\n\n${matter.notes}` : entry;
@@ -786,88 +778,120 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             <div className="notes-log-scroll">
             {(() => {
               const noteEntries = parseNotes(matter.notes);
-              if (noteEntries.length === 0)
-                return <p className="muted-line">No notes yet.</p>;
+              type Feed =
+                | { type: "note"; key: string; idx: number; sort: number; time: string; who: string; initials: string; text: string }
+                | { type: "act"; key: string; sort: number; time: string; description: string };
+              const feed: Feed[] = [
+                ...noteEntries.map((n, idx) => ({
+                  type: "note" as const,
+                  key: `n${idx}`,
+                  idx,
+                  sort: n.date,
+                  time: n.time,
+                  who: n.who,
+                  initials: n.initials,
+                  text: n.text,
+                })),
+                ...activity.map((a) => ({
+                  type: "act" as const,
+                  key: `a${a.id}`,
+                  sort: new Date(a.created_at).getTime(),
+                  time: fmtStamp(new Date(a.created_at)),
+                  description: a.description,
+                })),
+              ].sort((x, y) => y.sort - x.sort);
+              if (feed.length === 0)
+                return <p className="muted-line">No notes or activity yet.</p>;
               return (
                 <ul className="note-feed">
-                  {noteEntries.map((n, i) => (
-                    <li className="note-item" key={i}>
-                      <span className="note-avatar" title={n.who || undefined}>
-                        {n.initials}
-                      </span>
-                      <div className="note-main">
-                        {n.time && <div className="note-time">{n.time}</div>}
-                        {editIdx === i ? (
-                          <div className="note-edit">
-                            <textarea
-                              className="notes-input"
-                              autoFocus
-                              rows={2}
-                              value={editText}
-                              onChange={(e) => setEditText(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                                  e.preventDefault();
-                                  saveNoteEdit(i);
-                                }
-                                if (e.key === "Escape") {
-                                  setEditIdx(null);
-                                  setEditText("");
-                                }
-                              }}
-                            />
-                            <div className="note-edit-actions">
-                              <button
-                                type="button"
-                                className="note-del"
-                                onClick={() => deleteNote(i)}
-                              >
-                                Delete
-                              </button>
-                              <span className="note-edit-right">
-                                <button
-                                  type="button"
-                                  className="ghost sm"
-                                  onClick={() => {
+                  {feed.map((item) =>
+                    item.type === "act" ? (
+                      <li className="note-item feed-activity" key={item.key}>
+                        <span className="feed-dot" aria-hidden="true" />
+                        <div className="note-main">
+                          <div className="note-time">{item.time}</div>
+                          <p className="feed-act-text">{item.description}</p>
+                        </div>
+                      </li>
+                    ) : (
+                      <li className="note-item" key={item.key}>
+                        <span className="note-avatar" title={item.who || undefined}>
+                          {item.initials}
+                        </span>
+                        <div className="note-main">
+                          {item.time && <div className="note-time">{item.time}</div>}
+                          {editIdx === item.idx ? (
+                            <div className="note-edit">
+                              <textarea
+                                className="notes-input"
+                                autoFocus
+                                rows={2}
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                                    e.preventDefault();
+                                    saveNoteEdit(item.idx);
+                                  }
+                                  if (e.key === "Escape") {
                                     setEditIdx(null);
                                     setEditText("");
-                                  }}
-                                >
-                                  Cancel
-                                </button>
+                                  }
+                                }}
+                              />
+                              <div className="note-edit-actions">
                                 <button
                                   type="button"
-                                  className="btn"
-                                  onClick={() => saveNoteEdit(i)}
+                                  className="note-del"
+                                  onClick={() => deleteNote(item.idx)}
                                 >
-                                  Save
+                                  Delete
                                 </button>
-                              </span>
+                                <span className="note-edit-right">
+                                  <button
+                                    type="button"
+                                    className="ghost sm"
+                                    onClick={() => {
+                                      setEditIdx(null);
+                                      setEditText("");
+                                    }}
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => saveNoteEdit(item.idx)}
+                                  >
+                                    Save
+                                  </button>
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <p className="note-text">
-                            {n.text}
-                            <button
-                              type="button"
-                              className="note-edit-btn"
-                              title="Edit note"
-                              aria-label="Edit note"
-                              onClick={() => {
-                                setEditIdx(i);
-                                setEditText(n.text);
-                              }}
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                              </svg>
-                            </button>
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  ))}
+                          ) : (
+                            <p className="note-text">
+                              {item.text}
+                              <button
+                                type="button"
+                                className="note-edit-btn"
+                                title="Edit note"
+                                aria-label="Edit note"
+                                onClick={() => {
+                                  setEditIdx(item.idx);
+                                  setEditText(item.text);
+                                }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 20h9" />
+                                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                </svg>
+                              </button>
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ),
+                  )}
                 </ul>
               );
             })()}
@@ -878,17 +902,27 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               className="notes-input"
               value={noteDraft}
               onChange={(e) => setNoteDraft(e.target.value)}
-              placeholder="Add a note…  (⌘/Ctrl+Enter to save)"
-              rows={2}
+              placeholder="Add a note…"
+              rows={1}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   addNote();
                 }
               }}
             />
-            <button type="button" className="btn" onClick={addNote}>
-              Add note
+            <button
+              type="button"
+              className="note-send"
+              title="Add note"
+              aria-label="Add note"
+              disabled={!noteDraft.trim()}
+              onClick={addNote}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
             </button>
           </div>
         </div>
@@ -902,7 +936,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           ["events", `Events (${upcomingEvents.length})`],
           ["invoices", `Invoices (${invoices.length})`],
           ["timeline", "Case Timeline"],
-          ["activity", `Activity (${activity.length})`],
         ] as const).map(([key, label]) => (
           <button
             key={key}
@@ -1157,27 +1190,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </>
         )}
 
-        {bodyTab === "activity" && (
-          <>
-            <div className="panel-scroll tall">
-              {activity.length === 0 ? (
-                <p className="muted-line">No activity for this matter yet.</p>
-              ) : (
-                <ul className="activity-list">
-                  {activity.map((a) => (
-                    <li key={a.id}>
-                      <span className={`act-tag tag-${KIND_GROUP[a.kind] ?? "matter"}`}>
-                        {KIND_LABEL[a.kind] ?? "Matter"}
-                      </span>
-                      <span className="act-desc">{a.description}</span>
-                      <span className="act-time">{timeAgo(a.created_at)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </>
-        )}
       </div>
 
       {confirmDel && (
