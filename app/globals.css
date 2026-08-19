@@ -3713,3 +3713,43 @@ a.activity-row:hover .act-desc {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Time-entry add row matches the Timesheet input style */
+.te-new-row td {
+  padding: 0.45rem 0.5rem;
+}
+.te-new-row td input,
+.te-new-row td select,
+.te-new-row td textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+}
+.te-new-row td input:focus,
+.te-new-row td select:focus,
+.te-new-row td textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+
+/* Events tab sections */
+.ev-section {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dash-fg);
+  margin-bottom: 0.6rem;
+}
+.ev-section.muted { color: var(--dash-muted); }
+.du-list.dim li { opacity: 0.75; }
+.du-title.done {
+  text-decoration: line-through;
+  color: var(--dash-muted);
+}

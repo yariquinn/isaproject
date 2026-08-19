@@ -103,6 +103,7 @@ export type EventItem = {
   title: string;
   event_date: string;
   kind: string;
+  completed: boolean;
   created_at: string;
 };
 

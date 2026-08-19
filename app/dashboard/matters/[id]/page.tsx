@@ -114,7 +114,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const dragStep = useRef<string | null>(null);
   const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
   const [bodyTab, setBodyTab] = useState<
-    "time" | "tasks" | "documents" | "invoices" | "notes" | "timeline" | "activity"
+    "time" | "tasks" | "documents" | "events" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
 
   async function loadActivity() {
@@ -236,15 +236,36 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   }
 
   async function completeEvent(ev: EventItem) {
-    await supabase.from("events").delete().eq("id", ev.id);
+    setEvents((prev) =>
+      prev.map((e) => (e.id === ev.id ? { ...e, completed: true } : e)),
+    );
+    await supabase.from("events").update({ completed: true }).eq("id", ev.id);
     await supabase.from("activity_log").insert({
       kind: "matter_updated",
       matter_id: matter?.id ?? null,
       client_id: matter?.client_id ?? null,
       description: `${userName} completed event: ${ev.title}`,
     });
-    setEvents((prev) => prev.filter((e) => e.id !== ev.id));
     loadActivity();
+  }
+
+  async function reopenEvent(ev: EventItem) {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === ev.id ? { ...e, completed: false } : e)),
+    );
+    await supabase.from("events").update({ completed: false }).eq("id", ev.id);
+  }
+
+  async function saveClientField(
+    clientId: string,
+    field: "primary_contact" | "email" | "phone" | "address" | "contact_title",
+    v: string,
+  ) {
+    const next = v.trim() || null;
+    setClients((prev) =>
+      prev.map((c) => (c.id === clientId ? { ...c, [field]: next } : c)),
+    );
+    await supabase.from("clients").update({ [field]: next }).eq("id", clientId);
   }
 
   async function saveBillingNotes(clientId: string, v: string) {
@@ -305,6 +326,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   const tlType = timelineType || CASE_TIMELINE_TEMPLATES[0];
   const clientObj = clients.find((c) => c.id === matter.client_id) ?? null;
+  const upcomingEvents = events.filter((e) => !e.completed);
+  const completedEvents = events.filter((e) => e.completed);
 
   return (
     <div>
@@ -405,21 +428,54 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 <div>
                   <dt>{clientObj.client_type === "business" ? "Contact" : "Primary contact"}</dt>
                   <dd>
-                    {clientObj.primary_contact || "—"}
-                    {clientObj.contact_title ? `, ${clientObj.contact_title}` : ""}
+                    <InlineText
+                      value={clientObj.primary_contact}
+                      onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
+                      placeholder="—"
+                    />
+                  </dd>
+                </div>
+                {clientObj.client_type === "business" && (
+                  <div>
+                    <dt>Title</dt>
+                    <dd>
+                      <InlineText
+                        value={clientObj.contact_title}
+                        onSave={(v) => saveClientField(clientObj.id, "contact_title", v)}
+                        placeholder="—"
+                      />
+                    </dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Email</dt>
+                  <dd>
+                    <InlineText
+                      value={clientObj.email}
+                      onSave={(v) => saveClientField(clientObj.id, "email", v)}
+                      placeholder="—"
+                    />
                   </dd>
                 </div>
                 <div>
-                  <dt>Email</dt>
-                  <dd>{clientObj.email || "—"}</dd>
-                </div>
-                <div>
                   <dt>Phone</dt>
-                  <dd>{clientObj.phone || "—"}</dd>
+                  <dd>
+                    <InlineText
+                      value={clientObj.phone}
+                      onSave={(v) => saveClientField(clientObj.id, "phone", v)}
+                      placeholder="—"
+                    />
+                  </dd>
                 </div>
                 <div>
                   <dt>Address</dt>
-                  <dd>{clientObj.address || "—"}</dd>
+                  <dd>
+                    <InlineText
+                      value={clientObj.address}
+                      onSave={(v) => saveClientField(clientObj.id, "address", v)}
+                      placeholder="—"
+                    />
+                  </dd>
                 </div>
                 {clientObj.partner_name && (
                   <div>
@@ -479,7 +535,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             </dd>
           </div>
 
-          {events.length > 0 && (
+          {upcomingEvents.length > 0 && (
             <div className="du">
               <div className="du-head">
                 <svg className="du-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -490,7 +546,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 <span className="du-label">Upcoming</span>
               </div>
               <ul className="du-list">
-                {events.slice(0, 4).map((ev) => (
+                {upcomingEvents.slice(0, 4).map((ev) => (
                   <li key={ev.id}>
                     <span className="du-date">
                       {new Date(ev.event_date).toLocaleDateString(undefined, {
@@ -523,6 +579,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           ["time", `Time Entries (${entries.length})`],
           ["tasks", "Tasks"],
           ["documents", "Documents"],
+          ["events", `Events (${upcomingEvents.length})`],
           ["invoices", `Invoices (${invoices.length})`],
           ["notes", "Notes"],
           ["timeline", "Case Timeline"],
@@ -682,6 +739,70 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               </table>
             </div>
             <Disclaimer>Document storage is a placeholder for this mockup.</Disclaimer>
+          </>
+        )}
+
+        {bodyTab === "events" && (
+          <>
+            <h3 className="ev-section">Upcoming ({upcomingEvents.length})</h3>
+            {upcomingEvents.length === 0 ? (
+              <p className="muted-line">No upcoming events.</p>
+            ) : (
+              <ul className="du-list">
+                {upcomingEvents.map((ev) => (
+                  <li key={ev.id}>
+                    <span className="du-date">
+                      {new Date(ev.event_date).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
+                    <span className="du-title">{ev.title}</span>
+                    <button
+                      type="button"
+                      className="du-check"
+                      title="Mark complete"
+                      aria-label="Mark complete"
+                      onClick={() => completeEvent(ev)}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {completedEvents.length > 0 && (
+              <>
+                <h3 className="ev-section muted" style={{ marginTop: "1.4rem" }}>
+                  Completed ({completedEvents.length})
+                </h3>
+                <ul className="du-list dim">
+                  {completedEvents.map((ev) => (
+                    <li key={ev.id}>
+                      <span className="du-date">
+                        {new Date(ev.event_date).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                      <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
+                      <span className="du-title done">{ev.title}</span>
+                      <button
+                        type="button"
+                        className="ghost sm"
+                        onClick={() => reopenEvent(ev)}
+                      >
+                        Reopen
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </>
         )}
 
