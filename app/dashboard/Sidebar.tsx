@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/clients", label: "Clients" },
   { href: "/dashboard/matters", label: "Matters" },
+  { href: "/dashboard/time-entries", label: "Time Entries" },
   { href: "/dashboard/documents", label: "Documents" },
 ];
 

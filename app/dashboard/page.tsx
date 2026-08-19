@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ActivityItem } from "@/lib/types";
@@ -47,6 +48,7 @@ export default function Overview() {
 
   const [clients, setClients] = useState(0);
   const [matters, setMatters] = useState(0);
+  const [closedMatters, setClosedMatters] = useState(0);
   const [loggedSeconds, setLoggedSeconds] = useState(0);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,13 +58,17 @@ export default function Overview() {
 
   useEffect(() => {
     (async () => {
-      const [clientsRes, mattersRes, entriesRes, activityRes] =
+      const [clientsRes, mattersRes, closedRes, entriesRes, activityRes] =
         await Promise.all([
           supabase.from("clients").select("id", { count: "exact", head: true }),
           supabase
             .from("matters")
             .select("id", { count: "exact", head: true })
             .eq("status", "open"),
+          supabase
+            .from("matters")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "closed"),
           supabase.from("time_entries").select("duration_seconds"),
           supabase
             .from("activity_log")
@@ -72,6 +78,7 @@ export default function Overview() {
         ]);
       setClients(clientsRes.count ?? 0);
       setMatters(mattersRes.count ?? 0);
+      setClosedMatters(closedRes.count ?? 0);
       setLoggedSeconds(
         (entriesRes.data ?? []).reduce(
           (sum, r: { duration_seconds: number }) => sum + r.duration_seconds,
@@ -114,18 +121,22 @@ export default function Overview() {
       </div>
 
       <div className="stat-row">
-        <div className="stat">
+        <Link href="/dashboard/clients" className="stat">
           <span className="stat-num">{clients}</span>
           <span className="stat-label">Clients</span>
-        </div>
-        <div className="stat">
+        </Link>
+        <Link href="/dashboard/matters?status=active" className="stat">
           <span className="stat-num">{matters}</span>
           <span className="stat-label">Open Matters</span>
-        </div>
-        <div className="stat">
+        </Link>
+        <Link href="/dashboard/matters?status=closed" className="stat">
+          <span className="stat-num">{closedMatters}</span>
+          <span className="stat-label">Closed Matters</span>
+        </Link>
+        <Link href="/dashboard/time-entries" className="stat">
           <span className="stat-num">{hours}</span>
           <span className="stat-label">Hours Logged</span>
-        </div>
+        </Link>
       </div>
 
       <div className="panel">

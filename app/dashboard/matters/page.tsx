@@ -46,6 +46,8 @@ export default function MattersPage() {
 
   useEffect(() => {
     load();
+    const s = new URLSearchParams(window.location.search).get("status");
+    if (s === "closed" || s === "all" || s === "active") setStatusFilter(s);
   }, []);
 
   const rows = useMemo(() => {
