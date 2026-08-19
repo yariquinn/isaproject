@@ -141,11 +141,7 @@ export default function Overview() {
         </Link>
       </div>
 
-      <div className="panel" style={{ marginBottom: "1.5rem" }}>
-        <h2 className="panel-title">To-Do</h2>
-        <TodoWidget compact />
-      </div>
-
+      <div className="overview-cols">
       <div className="panel">
         <div className="panel-head">
           <h2 className="panel-title">Recent Activity</h2>
@@ -213,6 +209,12 @@ export default function Overview() {
             </ul>
           )}
         </div>
+      </div>
+
+      <div className="panel">
+        <h2 className="panel-title">To-Do</h2>
+        <TodoWidget compact />
+      </div>
       </div>
     </div>
   );

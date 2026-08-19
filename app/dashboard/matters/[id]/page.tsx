@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
+  ACTIVITY_TYPES,
   ATTORNEYS,
   PRACTICE_AREAS,
   PRIORITIES,
@@ -19,6 +20,7 @@ import {
   InlineTextarea,
 } from "../../Inline";
 import { usePortal } from "../../PortalProvider";
+import TodoWidget from "../../TodoWidget";
 
 function fmtHm(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -54,6 +56,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logOpen, setLogOpen] = useState(false);
 
   async function loadActivity() {
     const { data } = await supabase
@@ -117,6 +120,32 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       });
       loadActivity();
     }
+  }
+
+  async function logTime(f: {
+    activity: string;
+    lawyer: string;
+    note: string;
+    seconds: number;
+  }) {
+    if (!matter) return;
+    await supabase.from("time_entries").insert({
+      matter_id: matter.id,
+      activity: f.activity,
+      lawyer: f.lawyer || "Isa",
+      duration_seconds: f.seconds,
+      note: f.note.trim() || null,
+    });
+    await supabase.from("activity_log").insert({
+      kind: "time_logged",
+      matter_id: matter.id,
+      client_id: matter.client_id,
+      description: `${userName} logged ${fmtHm(f.seconds)} to ${matter.name} (${
+        f.activity
+      })`,
+    });
+    setLogOpen(false);
+    loadAll();
   }
 
   if (loading) return <p className="muted-line">Loading…</p>;
@@ -266,7 +295,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </div>
 
           <div className="panel">
-            <h2 className="panel-title">Time Entries ({entries.length})</h2>
+            <div className="panel-head">
+              <h2 className="panel-title">Time Entries ({entries.length})</h2>
+              <button
+                className="btn"
+                type="button"
+                onClick={() => setLogOpen(true)}
+              >
+                + Log time
+              </button>
+            </div>
             {entries.length === 0 ? (
               <p className="muted-line">No time logged to this matter yet.</p>
             ) : (
@@ -298,27 +336,172 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        <div className="panel matter-activity">
-          <h2 className="panel-title">Activity</h2>
-          <div className="panel-scroll tall">
-            {activity.length === 0 ? (
-              <p className="muted-line">No activity for this matter yet.</p>
-            ) : (
-              <ul className="activity-list">
-                {activity.map((a) => (
-                  <li key={a.id}>
-                    <span
-                      className={`act-tag tag-${KIND_GROUP[a.kind] ?? "matter"}`}
-                    >
-                      {KIND_LABEL[a.kind] ?? "Matter"}
-                    </span>
-                    <span className="act-desc">{a.description}</span>
-                    <span className="act-time">{timeAgo(a.created_at)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+        <div className="matter-body-side">
+          <div className="panel">
+            <h2 className="panel-title">To-Do</h2>
+            <TodoWidget matterId={matter.id} compact />
           </div>
+
+          <div className="panel matter-activity">
+            <h2 className="panel-title">Activity</h2>
+            <div className="panel-scroll tall">
+              {activity.length === 0 ? (
+                <p className="muted-line">No activity for this matter yet.</p>
+              ) : (
+                <ul className="activity-list">
+                  {activity.map((a) => (
+                    <li key={a.id}>
+                      <span
+                        className={`act-tag tag-${
+                          KIND_GROUP[a.kind] ?? "matter"
+                        }`}
+                      >
+                        {KIND_LABEL[a.kind] ?? "Matter"}
+                      </span>
+                      <span className="act-desc">{a.description}</span>
+                      <span className="act-time">{timeAgo(a.created_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {logOpen && (
+        <MatterLogModal
+          matterName={matter.name}
+          defaultLawyer={matter.assigned_to || ATTORNEYS[0]}
+          onCancel={() => setLogOpen(false)}
+          onSubmit={logTime}
+        />
+      )}
+    </div>
+  );
+}
+
+function MatterLogModal({
+  matterName,
+  defaultLawyer,
+  onCancel,
+  onSubmit,
+}: {
+  matterName: string;
+  defaultLawyer: string;
+  onCancel: () => void;
+  onSubmit: (f: {
+    activity: string;
+    lawyer: string;
+    note: string;
+    seconds: number;
+  }) => void;
+}) {
+  const [activity, setActivity] = useState<string>(ACTIVITY_TYPES[0]);
+  const [lawyer, setLawyer] = useState(defaultLawyer);
+  const [note, setNote] = useState("");
+  const [h, setH] = useState(0);
+  const [m, setM] = useState(0);
+  const [decimal, setDecimal] = useState("");
+  const num = (v: string) => Math.max(0, Number(v.replace(/[^0-9]/g, "")) || 0);
+  const totalSeconds = h * 3600 + m * 60;
+
+  function applyDecimal(raw: string) {
+    setDecimal(raw);
+    const hrs = parseFloat(raw);
+    if (!isNaN(hrs) && hrs >= 0) {
+      const secs = Math.round(hrs * 3600);
+      setH(Math.floor(secs / 3600));
+      setM(Math.floor((secs % 3600) / 60));
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onCancel}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h3>Log time</h3>
+        <p className="modal-dur">{matterName}</p>
+        <label>
+          Activity
+          <select value={activity} onChange={(e) => setActivity(e.target.value)}>
+            {ACTIVITY_TYPES.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Description
+          <textarea
+            rows={3}
+            placeholder="What did you work on for the client?"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </label>
+        <label>
+          Lawyer
+          <select value={lawyer} onChange={(e) => setLawyer(e.target.value)}>
+            {(ATTORNEYS as readonly string[]).includes(lawyer) ? null : (
+              <option value={lawyer}>{lawyer}</option>
+            )}
+            {ATTORNEYS.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Duration
+          <div className="dur-inputs">
+            <input
+              type="number"
+              min={0}
+              value={h}
+              onChange={(e) => {
+                setH(num(e.target.value));
+                setDecimal("");
+              }}
+            />
+            <span>h</span>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={m}
+              onChange={(e) => {
+                setM(Math.min(59, num(e.target.value)));
+                setDecimal("");
+              }}
+            />
+            <span>m</span>
+          </div>
+        </label>
+        <label>
+          Or enter decimal hours (e.g. 1.5)
+          <input
+            type="number"
+            step="0.25"
+            min={0}
+            placeholder="1.5"
+            value={decimal}
+            onChange={(e) => applyDecimal(e.target.value)}
+          />
+        </label>
+        <div className="modal-actions">
+          <button type="button" className="ghost" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={totalSeconds === 0}
+            onClick={() => onSubmit({ activity, lawyer, note, seconds: totalSeconds })}
+          >
+            Save entry
+          </button>
         </div>
       </div>
     </div>
