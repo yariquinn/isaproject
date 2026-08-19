@@ -2019,13 +2019,19 @@ a.activity-row:hover .act-desc {
   gap: 0.15rem;
 }
 .todo-item {
-  display: flex;
+  display: grid;
   align-items: center;
   gap: 0.85rem;
   padding: 0.7rem 0.6rem;
-  border-radius: var(--radius-sm);
   border-bottom: 1px solid var(--dash-border);
   transition: background 0.12s ease;
+}
+.todo-list--full .todo-item,
+.todo-table-head {
+  grid-template-columns: 22px 8rem minmax(0, 1fr) 12rem 6rem 5.5rem;
+}
+.todo-list--compact .todo-item {
+  grid-template-columns: 22px 8rem minmax(0, 1fr) 6rem 5.5rem;
 }
 .todo-item:last-child {
   border-bottom: none;
@@ -2033,13 +2039,23 @@ a.activity-row:hover .act-desc {
 .todo-item:hover {
   background: color-mix(in srgb, var(--dash-bg) 55%, transparent);
 }
-.todo-main {
-  flex: 1;
+.todo-table-head {
+  display: grid;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0 0.6rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
+.todo-prio-cell,
+.todo-matter-cell,
+.todo-due-cell {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
 }
 .todo-check {
   flex-shrink: 0;
@@ -2872,14 +2888,25 @@ a.activity-row:hover .act-desc {
 }
 
 /* Time entries summary + editable table */
+.te-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.te-summary-title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
 .te-summary {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 2rem;
-  padding: 1rem 1.15rem;
-  border: 1px solid var(--dash-border);
-  border-radius: var(--radius);
+  padding: 0.5rem 0 1.1rem;
   margin-bottom: 1.1rem;
 }
 .te-stat { align-items: center; text-align: center; }
@@ -3593,4 +3620,70 @@ a.activity-row:hover .act-desc {
   padding: 0 0.5rem;
   font-size: 0.82rem;
   vertical-align: middle;
+}
+
+/* Details: sleek Upcoming block */
+.du {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--dash-border);
+}
+.du-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+.du-icon { color: #c0392b; }
+.du-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #c0392b;
+}
+.du-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.du-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+}
+.du-check {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--dash-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dash-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.du-check:hover {
+  background: #2e7d46;
+  border-color: #2e7d46;
+  color: #fff;
+}
+.du-date {
+  flex: none;
+  font-weight: 700;
+  color: var(--dash-fg);
+  min-width: 3.1rem;
+  font-variant-numeric: tabular-nums;
+}
+.du-title {
+  min-width: 0;
+  color: var(--dash-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

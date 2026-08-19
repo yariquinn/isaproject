@@ -123,10 +123,12 @@ export default function TimeEntriesTab({
   const rateVal = rate ?? 0;
   const amt = (e: TimeEntry) => (e.duration_seconds / 3600) * rateVal;
 
+  const periodFloor = periodStart(loggedPeriod);
   const sum = (pred: (e: TimeEntry) => boolean) => {
     let dollars = 0;
     let secs = 0;
     for (const e of entries) {
+      if (new Date(e.logged_at).getTime() < periodFloor) continue;
       if (!pred(e)) continue;
       dollars += amt(e);
       secs += e.duration_seconds;
@@ -172,25 +174,8 @@ export default function TimeEntriesTab({
 
   return (
     <>
-      <div className="te-summary">
-        {stat("Total", total)}
-        {stat("Billable", billable, "ok")}
-        {stat("Non-billable", nonBillable, "muted")}
-        {stat("Invoiced", invoiced, "ok")}
-        {stat("Un-invoiced", unInvoiced, "warn")}
-      </div>
-      <p className="te-total-hours">
-        Total logged:{" "}
-        <strong>
-          {(
-            entries
-              .filter(
-                (e) => new Date(e.logged_at).getTime() >= periodStart(loggedPeriod),
-              )
-              .reduce((s, e) => s + e.duration_seconds, 0) / 3600
-          ).toFixed(2)}
-        </strong>{" "}
-        hour(s)
+      <div className="te-summary-head">
+        <span className="te-summary-title">Summary</span>
         <select
           className="inline-select te-period"
           value={loggedPeriod}
@@ -202,7 +187,14 @@ export default function TimeEntriesTab({
             </option>
           ))}
         </select>
-      </p>
+      </div>
+      <div className="te-summary">
+        {stat("Total", total)}
+        {stat("Billable", billable, "ok")}
+        {stat("Non-billable", nonBillable, "muted")}
+        {stat("Invoiced", invoiced, "ok")}
+        {stat("Un-invoiced", unInvoiced, "warn")}
+      </div>
 
       {selected.size > 0 && (
         <div className="bulk-bar">

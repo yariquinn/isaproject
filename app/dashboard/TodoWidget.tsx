@@ -157,24 +157,34 @@ export default function TodoWidget({
         >
           {t.done ? "✓" : ""}
         </button>
-        <div className="todo-main">
+        <span className="todo-prio-cell">
           {t.priority && t.priority !== "-" && (
             <span className={`todo-prio-pill prio-${t.priority}`}>
               {prioLabel(t.priority)} priority
             </span>
           )}
-          <button type="button" className="todo-open" onClick={() => openTodo(t)}>
-            <span className="todo-title">{t.title}</span>
-          </button>
-          <span className="todo-row-meta">
-            {!matterId && mName && <span className="todo-matter">{mName}</span>}
-            {t.due_date && (
-              <span className={`todo-due${overdue ? " overdue" : ""}`}>
-                Due {fmtDue(t.due_date)}
-              </span>
+        </span>
+        <button type="button" className="todo-open" onClick={() => openTodo(t)}>
+          <span className="todo-title">{t.title}</span>
+        </button>
+        {!matterId && (
+          <span className="todo-matter-cell">
+            {mName ? (
+              <span className="todo-matter">{mName}</span>
+            ) : (
+              <span className="inline-placeholder">—</span>
             )}
           </span>
-        </div>
+        )}
+        <span className="todo-due-cell">
+          {t.due_date ? (
+            <span className={`todo-due${overdue ? " overdue" : ""}`}>
+              Due {fmtDue(t.due_date)}
+            </span>
+          ) : (
+            <span className="inline-placeholder">—</span>
+          )}
+        </span>
         <select
           className="todo-assign-inline"
           value={(ATTORNEYS as readonly string[]).includes(t.assignee ?? "")
@@ -295,13 +305,24 @@ export default function TodoWidget({
         </div>
       </div>
 
+      {!compact && todos.length > 0 && (
+        <div className="todo-table-head">
+          <span />
+          <span>Priority</span>
+          <span>Task</span>
+          {!matterId && <span>Matter</span>}
+          <span>Due</span>
+          <span>Assignee</span>
+        </div>
+      )}
+
       <div className={compact ? "panel-scroll" : undefined}>
         {loading ? (
           <p className="muted-line">Loading…</p>
         ) : todos.length === 0 ? (
           <p className="todo-empty">Nothing on your list — you&rsquo;re all caught up.</p>
         ) : (
-          <ul className="todo-list">
+          <ul className={`todo-list ${matterId ? "todo-list--compact" : "todo-list--full"}`}>
             {open.map((t) => (
               <Row key={t.id} t={t} />
             ))}
