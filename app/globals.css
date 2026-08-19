@@ -1910,34 +1910,36 @@ a.activity-row:hover .act-desc {
 }
 
 /* Portal switcher + sidebar sublinks */
-.portal-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0 0.15rem;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 0.75rem;
-  cursor: default;
+.sidebar-head {
+  padding: 0 0.35rem 0.5rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-.portal-switch::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
+.sidebar-portal {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
 }
-.portal-caret {
+.sidebar-firm {
+  font-size: 0.72rem;
   color: var(--dash-sidebar-muted);
-  font-size: 0.55rem;
+  margin-top: 0.15rem;
+}
+.nav-group + .nav-group {
+  margin-top: 0.35rem;
+}
+.nav-group-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dash-sidebar-muted);
+  padding: 0.7rem 0.75rem 0.3rem;
 }
 .sidebar-nav a.sub {
-  margin-left: 0.75rem;
-  font-size: 0.82rem;
-  color: var(--dash-sidebar-muted);
+  padding-left: 1.5rem;
+  font-size: 0.84rem;
 }
 
 /* Disclaimer */

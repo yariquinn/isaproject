@@ -6,53 +6,73 @@ import ThemeToggle from "./ThemeToggle";
 import TimeTracker from "./TimeTracker";
 import { logoutAction } from "./actions";
 
-const LINKS = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/clients", label: "Clients" },
-  { href: "/dashboard/matters", label: "Matters" },
-  { href: "/dashboard/time-entries", label: "Time Entries" },
-  { href: "/dashboard/todo", label: "Tasks" },
-  { href: "/dashboard/deadlines", label: "Deadlines" },
-  { href: "/dashboard/calendar", label: "Calendar" },
-  { href: "/dashboard/billing", label: "Billing" },
-  { href: "/dashboard/intake", label: "Intake" },
-  { href: "/dashboard/reports", label: "Reports" },
-  { href: "/dashboard/documents", label: "Documents" },
-  { href: "/dashboard/documents/templates", label: "Templates", sub: true },
-  { href: "/dashboard/esignature", label: "E-Signature" },
+const GROUPS: {
+  label?: string;
+  items: { href: string; label: string; sub?: boolean }[];
+}[] = [
+  {
+    items: [
+      { href: "/dashboard", label: "Overview" },
+      { href: "/dashboard/clients", label: "Clients" },
+      { href: "/dashboard/matters", label: "Matters" },
+      { href: "/dashboard/time-entries", label: "Time Entries" },
+      { href: "/dashboard/todo", label: "Tasks" },
+    ],
+  },
+  {
+    label: "Schedule",
+    items: [
+      { href: "/dashboard/deadlines", label: "Deadlines" },
+      { href: "/dashboard/calendar", label: "Calendar" },
+    ],
+  },
+  {
+    label: "Business",
+    items: [
+      { href: "/dashboard/billing", label: "Billing" },
+      { href: "/dashboard/intake", label: "Intake" },
+      { href: "/dashboard/reports", label: "Reports" },
+    ],
+  },
+  {
+    label: "Documents",
+    items: [
+      { href: "/dashboard/documents", label: "Documents" },
+      { href: "/dashboard/documents/templates", label: "Templates", sub: true },
+      { href: "/dashboard/esignature", label: "E-Signature" },
+    ],
+  },
 ];
 
 export default function Sidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
+  const isActive = (href: string) =>
+    href === "/dashboard"
+      ? pathname === "/dashboard"
+      : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <aside className="sidebar">
-      <div className="portal-switch" title="Client portal coming soon">
-        <span>Employee Portal</span>
-        <span className="portal-caret">▾</span>
-      </div>
-
-      <div className="sidebar-brand">
-        Isa Abdur-Rahman
-        <span>PLLC</span>
+      <div className="sidebar-head">
+        <div className="sidebar-portal">Employee Portal</div>
+        <div className="sidebar-firm">Isa Abdur-Rahman, PLLC</div>
       </div>
 
       <nav className="sidebar-nav">
-        {LINKS.map((l) => {
-          const active =
-            l.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname === l.href || pathname.startsWith(l.href + "/");
-          return (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`${active ? "active" : ""}${l.sub ? " sub" : ""}`}
-            >
-              {l.label}
-            </Link>
-          );
-        })}
+        {GROUPS.map((g, i) => (
+          <div className="nav-group" key={i}>
+            {g.label && <div className="nav-group-label">{g.label}</div>}
+            {g.items.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`${isActive(l.href) ? "active" : ""}${l.sub ? " sub" : ""}`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        ))}
       </nav>
 
       <div className="sidebar-tracker">
