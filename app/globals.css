@@ -1241,6 +1241,26 @@ section.block.alt {
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+/* Six info boxes on one neat row on wide screens; collapse without orphans. */
+.detail-grid.grid-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+@media (max-width: 1180px) {
+  .detail-grid.grid-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .detail-grid.grid-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.detail-grid.grid-6 .detail-item {
+  min-width: 0;
+}
+.detail-grid.grid-6 .inline-select {
+  width: 100%;
+}
 .detail-item {
   background: var(--dash-surface);
   border: 1px solid var(--dash-border);
@@ -1597,7 +1617,7 @@ th.sortable:hover {
   letter-spacing: -0.01em;
 }
 .dash-content {
-  max-width: 1180px;
+  max-width: 1320px;
 }
 
 /* ============================================================

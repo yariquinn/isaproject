@@ -112,7 +112,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         />
       </div>
 
-      <div className="detail-grid">
+      <div className="detail-grid grid-6">
         <div className="detail-item">
           <span className="detail-label">Client</span>
           {matter.client_id ? (
