@@ -3,12 +3,17 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Client } from "@/lib/types";
+import { CLIENT_TYPES, type Client } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
 
 const EMPTY = {
   name: "",
+  client_type: "individual",
   primary_contact: "",
+  contact_title: "",
+  partner_name: "",
+  partner_email: "",
+  partner_phone: "",
   email: "",
   phone: "",
   address: "",
@@ -183,11 +188,19 @@ export default function ClientsPage() {
   async function addClient() {
     if (!form.name.trim()) return;
     setSaving(true);
+    const isBiz = form.client_type === "business";
     const { data: created } = await supabase
       .from("clients")
       .insert({
         name: form.name.trim(),
-        primary_contact: form.primary_contact.trim() || null,
+        client_type: form.client_type,
+        primary_contact: isBiz
+          ? form.primary_contact.trim() || null
+          : form.name.trim() || null,
+        contact_title: isBiz ? form.contact_title.trim() || null : null,
+        partner_name: !isBiz ? form.partner_name.trim() || null : null,
+        partner_email: !isBiz ? form.partner_email.trim() || null : null,
+        partner_phone: !isBiz ? form.partner_phone.trim() || null : null,
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
         address: form.address.trim() || null,
@@ -303,6 +316,11 @@ export default function ClientsPage() {
                     >
                       {c.name}
                     </Link>
+                    {c.client_type === "business" ? (
+                      <span className="type-pill">Business</span>
+                    ) : c.partner_name ? (
+                      <span className="type-pill soft">Couple</span>
+                    ) : null}
                   </td>
                   <td>
                     <Guarded
@@ -515,22 +533,59 @@ export default function ClientsPage() {
         <div className="modal-backdrop" onClick={() => setAddOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Add Client</h3>
+
+            <div className="seg seg-full" style={{ marginBottom: "0.9rem" }}>
+              {CLIENT_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  className={form.client_type === t.value ? "active" : undefined}
+                  onClick={() => setForm({ ...form, client_type: t.value })}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
             <label>
-              Name
+              {form.client_type === "business" ? "Business name" : "Full name"}
               <input
+                autoFocus
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </label>
-            <label>
-              Primary Contact
-              <input
-                value={form.primary_contact}
-                onChange={(e) =>
-                  setForm({ ...form, primary_contact: e.target.value })
+                placeholder={
+                  form.client_type === "business"
+                    ? "e.g. Crescent Faith LLC"
+                    : "e.g. Marcus Vale"
                 }
               />
             </label>
+
+            {form.client_type === "business" && (
+              <div className="field-pair">
+                <label>
+                  Contact person
+                  <input
+                    value={form.primary_contact}
+                    onChange={(e) =>
+                      setForm({ ...form, primary_contact: e.target.value })
+                    }
+                    placeholder="e.g. Yusuf Bello"
+                  />
+                </label>
+                <label>
+                  Title
+                  <input
+                    value={form.contact_title}
+                    onChange={(e) =>
+                      setForm({ ...form, contact_title: e.target.value })
+                    }
+                    placeholder="e.g. Managing Member"
+                  />
+                </label>
+              </div>
+            )}
+
             <label>
               Email
               <input
@@ -552,6 +607,44 @@ export default function ClientsPage() {
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
               />
             </label>
+
+            {form.client_type !== "business" && (
+              <div className="couple-fields">
+                <p className="field-note">
+                  Spouse / partner (optional — for a joint matter)
+                </p>
+                <label>
+                  Partner name
+                  <input
+                    value={form.partner_name}
+                    onChange={(e) =>
+                      setForm({ ...form, partner_name: e.target.value })
+                    }
+                  />
+                </label>
+                <div className="field-pair">
+                  <label>
+                    Partner email
+                    <input
+                      value={form.partner_email}
+                      onChange={(e) =>
+                        setForm({ ...form, partner_email: e.target.value })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Partner phone
+                    <input
+                      value={form.partner_phone}
+                      onChange={(e) =>
+                        setForm({ ...form, partner_phone: e.target.value })
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
             <label>
               Notes
               <textarea

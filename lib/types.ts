@@ -1,7 +1,12 @@
 export type Client = {
   id: string;
   name: string;
+  client_type: string; // "individual" | "business"
   primary_contact: string | null;
+  contact_title: string | null; // business: contact person's title
+  partner_name: string | null; // individual: second contact (spouse/partner)
+  partner_email: string | null;
+  partner_phone: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
@@ -11,6 +16,11 @@ export type Client = {
   billing_notes: string | null;
   created_at: string;
 };
+
+export const CLIENT_TYPES = [
+  { value: "individual", label: "Individual" },
+  { value: "business", label: "Business" },
+] as const;
 
 export type Matter = {
   id: string;

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ActivityItem, Client, Matter } from "@/lib/types";
@@ -17,11 +18,12 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-type GuardField = "email" | "phone" | "address" | "primary_contact";
+type GuardField = "email" | "phone" | "address" | "primary_contact" | "contact_title";
 const NEW_FORM = { name: "", email: "", phone: "", address: "" };
 
 export default function ClientDetail({ params }: { params: { id: string } }) {
   const { userName } = usePortal();
+  const router = useRouter();
   const [client, setClient] = useState<Client | null>(null);
   const [allClients, setAllClients] = useState<Client[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
@@ -105,6 +107,31 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     await logChange(`${userName} changed the primary contact to ${newForm.name.trim()} (new client created)`);
     setContactModal(false);
   }
+  async function splitPartner() {
+    if (!client?.partner_name) return;
+    const { data: created } = await supabase
+      .from("clients")
+      .insert({
+        name: client.partner_name,
+        client_type: "individual",
+        primary_contact: client.partner_name,
+        email: client.partner_email,
+        phone: client.partner_phone,
+        address: client.address,
+      })
+      .select("*")
+      .single();
+    if (created) {
+      const nc = created as Client;
+      await supabase.from("activity_log").insert({
+        kind: "client_added",
+        client_id: nc.id,
+        description: `${userName} created a separate record for ${client.partner_name} (split from ${client.name})`,
+      });
+      router.push(`/dashboard/clients/${nc.id}`);
+    }
+  }
+
   function openContactModal() {
     setContactTab("search");
     setContactQuery("");
@@ -154,19 +181,41 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <h1 className="page-title editable-title">
           <InlineText value={client.name} onSave={(v) => { if (v) patch({ name: v }); }} />
         </h1>
+        <span className="type-pill">
+          {client.client_type === "business" ? "Business" : client.partner_name ? "Couple" : "Individual"}
+        </span>
         <span className={`pill pill-${client.status}`}>{client.status}</span>
       </div>
 
       <div className="detail-grid">
-        <div className="detail-item"><span className="detail-label">Primary Contact</span>
+        <div className="detail-item"><span className="detail-label">{client.client_type === "business" ? "Contact Person" : "Primary Contact"}</span>
           <button type="button" className="contact-picker" onClick={openContactModal}>
             {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
           </button>
         </div>
+        {client.client_type === "business" && (
+          <div className="detail-item"><span className="detail-label">Title</span><Guarded field="contact_title" label="title" /></div>
+        )}
         <div className="detail-item"><span className="detail-label">Email</span><Guarded field="email" label="email" type="email" /></div>
         <div className="detail-item"><span className="detail-label">Phone</span><Guarded field="phone" label="phone number" type="tel" /></div>
         <div className="detail-item"><span className="detail-label">Address</span><Guarded field="address" label="address" /></div>
       </div>
+
+      {client.client_type !== "business" && client.partner_name && (
+        <div className="panel" style={{ marginBottom: "1.5rem" }}>
+          <div className="panel-head">
+            <h2 className="panel-title">Second Contact</h2>
+            <button type="button" className="ghost sm" onClick={splitPartner} title="Create a standalone client record for this person">
+              Create separate record →
+            </button>
+          </div>
+          <div className="detail-grid">
+            <div className="detail-item"><span className="detail-label">Name</span><span className="inline-view static">{client.partner_name}</span></div>
+            <div className="detail-item"><span className="detail-label">Email</span><span className="inline-view static">{client.partner_email || "—"}</span></div>
+            <div className="detail-item"><span className="detail-label">Phone</span><span className="inline-view static">{client.partner_phone || "—"}</span></div>
+          </div>
+        </div>
+      )}
 
       <div className="panel" style={{ marginBottom: "1.5rem" }}>
         <h2 className="panel-title">Notes</h2>
