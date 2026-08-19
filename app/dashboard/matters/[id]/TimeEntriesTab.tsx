@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ACTIVITY_TYPES, ATTORNEYS, type TimeEntry } from "@/lib/types";
+import { usePortal } from "../../PortalProvider";
 
 type MatterLite = { id: string; name: string };
 
@@ -51,6 +52,7 @@ export default function TimeEntriesTab({
   }) => void;
   onChanged: () => void;
 }) {
+  const { userName } = usePortal();
   const [edit, setEdit] = useState<EditCell>(null);
   const [draft, setDraft] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -106,7 +108,14 @@ export default function TimeEntriesTab({
   async function bulkDelete() {
     const ids = [...selected];
     if (ids.length === 0) return;
+    const doomed = entries.filter((e) => selected.has(e.id));
+    const mId = doomed[0]?.matter_id ?? null;
     await supabase.from("time_entries").delete().in("id", ids);
+    await supabase.from("activity_log").insert({
+      kind: "time_logged",
+      matter_id: mId,
+      description: `${userName} deleted ${ids.length} time ${ids.length === 1 ? "entry" : "entries"}`,
+    });
     setSelected(new Set());
     onChanged();
   }

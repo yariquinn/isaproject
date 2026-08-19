@@ -220,11 +220,31 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   async function deleteMatter() {
     if (!matter) return;
     const id = matter.id;
+    const name = matter.name;
+    const clientId = matter.client_id;
     for (const table of ["time_entries", "events", "invoices", "todos", "activity_log"]) {
       await supabase.from(table).delete().eq("matter_id", id);
     }
     await supabase.from("matters").delete().eq("id", id);
+    // Log after deletion, without matter_id so it survives on the client/global feed.
+    await supabase.from("activity_log").insert({
+      kind: "matter_updated",
+      client_id: clientId,
+      description: `${userName} deleted matter ${name}`,
+    });
     router.push("/dashboard/matters");
+  }
+
+  async function completeEvent(ev: EventItem) {
+    await supabase.from("events").delete().eq("id", ev.id);
+    await supabase.from("activity_log").insert({
+      kind: "matter_updated",
+      matter_id: matter?.id ?? null,
+      client_id: matter?.client_id ?? null,
+      description: `${userName} completed event: ${ev.title}`,
+    });
+    setEvents((prev) => prev.filter((e) => e.id !== ev.id));
+    loadActivity();
   }
 
   async function saveBillingNotes(clientId: string, v: string) {
@@ -370,10 +390,28 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
       {events.length > 0 && (
         <div className="matter-alert">
-          <span className="matter-alert-label">Upcoming</span>
+          <span className="matter-alert-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </span>
+          <span className="matter-alert-label">Deadlines</span>
           <ul className="matter-alert-events">
             {events.slice(0, 3).map((ev) => (
               <li key={ev.id}>
+                <button
+                  type="button"
+                  className="alert-complete"
+                  title="Mark complete"
+                  aria-label="Mark complete"
+                  onClick={() => completeEvent(ev)}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </button>
                 <span className="me-date">
                   {new Date(ev.event_date).toLocaleDateString(undefined, {
                     month: "short",
@@ -496,7 +534,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           ["invoices", `Invoices (${invoices.length})`],
           ["notes", "Notes"],
           ["timeline", "Case Timeline"],
-          ["activity", "Activity"],
+          ["activity", `Activity (${activity.length})`],
         ] as const).map(([key, label]) => (
           <button
             key={key}
