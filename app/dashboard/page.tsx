@@ -99,6 +99,10 @@ function Ic({ name }: { name: string }) {
       return (
         <svg {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
       );
+    case "timesheet":
+      return (
+        <svg {...p}><rect x="3" y="4" width="18" height="16" rx="2" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="9" y1="10" x2="9" y2="20" /></svg>
+      );
     default:
       return null;
   }
@@ -204,6 +208,9 @@ export default function Overview() {
         <button type="button" className="qa-btn" onClick={() => setQa("document")}>
           <span className="qa-icon"><Ic name="document" /></span>Upload document
         </button>
+        <Link href="/dashboard/billing?tab=timesheet" className="qa-btn">
+          <span className="qa-icon"><Ic name="timesheet" /></span>Timesheet
+        </Link>
         <Link href="/dashboard/matters" className="qa-btn">
           <span className="qa-icon"><Ic name="matter" /></span>Add Matter
         </Link>

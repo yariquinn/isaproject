@@ -152,6 +152,9 @@ export default function TimeEntriesTab({
         {stat("Invoiced", invoiced, "ok")}
         {stat("Un-invoiced", unInvoiced, "warn")}
       </div>
+      <p className="te-total-hours">
+        Total logged: <strong>{total.hours.toFixed(2)}</strong> hour(s)
+      </p>
 
       {selected.size > 0 && (
         <div className="bulk-bar">
@@ -218,7 +221,7 @@ export default function TimeEntriesTab({
             </thead>
             <tbody>
               {/* Excel-style blank row: fill it in and press Enter to add */}
-              <tr className="te-new-row" onKeyDown={(ev) => { if (ev.key === "Enter") commitNew(); }}>
+              <tr className="te-new-row" onKeyDown={(ev) => { if (ev.key === "Enter" && !ev.shiftKey) commitNew(); }}>
                 <td className="check-col" aria-hidden="true"></td>
                 <td>
                   <input type="date" value={nDate} onChange={(e) => setNDate(e.target.value)} aria-label="New entry date" />
@@ -231,7 +234,21 @@ export default function TimeEntriesTab({
                   </select>
                 </td>
                 <td>
-                  <input value={nNote} onChange={(e) => setNNote(e.target.value)} placeholder="Description…" aria-label="New entry description" />
+                  <textarea
+                    className="te-grow"
+                    rows={1}
+                    value={nNote}
+                    placeholder="Description…"
+                    aria-label="New entry description"
+                    onChange={(e) => {
+                      setNNote(e.target.value);
+                      e.target.style.height = "auto";
+                      e.target.style.height = e.target.scrollHeight + "px";
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) e.preventDefault();
+                    }}
+                  />
                 </td>
                 <td>
                   <select value={nLawyer} onChange={(e) => setNLawyer(e.target.value)} aria-label="New entry lawyer">

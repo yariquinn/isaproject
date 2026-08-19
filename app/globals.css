@@ -2813,10 +2813,20 @@ a.activity-row:hover .act-desc {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--dash-muted);
-  align-self: flex-start;
+  align-self: center;
   padding: 0.1rem 0.5rem;
   border-radius: 20px;
   background: var(--dash-bg);
+}
+.te-total-hours {
+  text-align: center;
+  font-size: 0.92rem;
+  color: var(--dash-muted);
+  margin: -0.4rem 0 1rem;
+}
+.te-total-hours strong {
+  color: var(--dash-fg);
+  font-size: 1.05rem;
 }
 .te-stat.ok .te-stat-label { background: #e7f4ec; color: #256b3f; }
 .te-stat.warn .te-stat-label { background: #fdf0dd; color: #8a5a12; }
@@ -3384,4 +3394,13 @@ a.activity-row:hover .act-desc {
   outline: none;
   border-color: var(--accent);
   box-shadow: var(--ring);
+}
+
+/* Time-entry new-row description grows with content */
+.te-new-row td .te-grow {
+  width: 100%;
+  min-height: 2.1rem;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
 }

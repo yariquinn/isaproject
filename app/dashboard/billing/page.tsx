@@ -38,6 +38,8 @@ export default function BillingPage() {
 
   useEffect(() => {
     load();
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t === "timesheet" || t === "time" || t === "invoices") setTab(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
