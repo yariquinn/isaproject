@@ -1911,24 +1911,28 @@ a.activity-row:hover .act-desc {
 
 /* Portal switcher + sidebar sublinks */
 .portal-switch {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.7rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--dash-sidebar-fg);
-  margin-bottom: 1rem;
+  gap: 0.35rem;
+  padding: 0 0.15rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
   cursor: default;
+}
+.portal-switch::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 .portal-caret {
   color: var(--dash-sidebar-muted);
-  font-size: 0.7rem;
+  font-size: 0.55rem;
 }
 .sidebar-nav a.sub {
   margin-left: 0.75rem;
