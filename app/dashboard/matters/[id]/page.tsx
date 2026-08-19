@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
-  ACTIVITY_TYPES,
-  ATTORNEYS,
   CASE_TIMELINE_TEMPLATES,
   PRACTICE_AREAS,
   PRIORITIES,
@@ -103,7 +101,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [logOpen, setLogOpen] = useState(false);
   const [timelineType, setTimelineType] = useState<string>("");
   const [timelineView, setTimelineView] = useState<"checklist" | "board" | "tasks">(
     "checklist",
@@ -113,7 +110,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const dragStep = useRef<string | null>(null);
   const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
   const [bodyTab, setBodyTab] = useState<
-    "time" | "tasks" | "documents" | "events" | "invoices" | "notes" | "activity"
+    "time" | "tasks" | "documents" | "events" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
 
   async function loadActivity() {
@@ -224,11 +221,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     await supabase.from("clients").update({ billing_notes: next }).eq("id", clientId);
   }
 
-  async function logTime(f: {
+  async function addEntry(f: {
     activity: string;
     lawyer: string;
     note: string;
     seconds: number;
+    date: string;
   }) {
     if (!matter) return;
     await supabase.from("time_entries").insert({
@@ -237,6 +235,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       lawyer: f.lawyer || "Isa",
       duration_seconds: f.seconds,
       note: f.note.trim() || null,
+      logged_at: f.date
+        ? new Date(f.date + "T12:00:00").toISOString()
+        : new Date().toISOString(),
     });
     await supabase.from("activity_log").insert({
       kind: "time_logged",
@@ -246,7 +247,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         f.activity
       })`,
     });
-    setLogOpen(false);
     loadAll();
   }
 
@@ -261,24 +261,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       </div>
     );
 
-  const totalSeconds = entries.reduce((s, e) => s + e.duration_seconds, 0);
-  const billable = matter.hourly_rate
-    ? (totalSeconds / 3600) * matter.hourly_rate
-    : null;
-
+  const tlType = timelineType || CASE_TIMELINE_TEMPLATES[0];
   const clientObj = clients.find((c) => c.id === matter.client_id) ?? null;
-  const attorneyOptions: { value: string; label: string }[] = ATTORNEYS.map(
-    (a) => ({ value: a, label: a }),
-  );
-  if (
-    matter.assigned_to &&
-    !ATTORNEYS.includes(matter.assigned_to as (typeof ATTORNEYS)[number])
-  ) {
-    attorneyOptions.push({
-      value: matter.assigned_to,
-      label: matter.assigned_to,
-    });
-  }
 
   return (
     <div>
@@ -353,21 +337,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               onSave={(v) => patch({ practice_area: v })}
             />
           </div>
-          <div className="meta-chip">
-            <span className="meta-label">Case Timeline</span>
-            <label className="switch switch-chip">
-              <input
-                type="checkbox"
-                checked={!!timelineType}
-                onChange={() => {
-                  const next = timelineType ? "" : CASE_TIMELINE_TEMPLATES[0];
-                  setTimelineType(next);
-                  patch({ case_timeline_type: next || null });
-                }}
-              />
-              <span className="switch-track" />
-            </label>
-          </div>
         </div>
       </div>
 
@@ -429,17 +398,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         <div className="panel details-card">
           <h2 className="panel-title">Details</h2>
-          <dl className="cc-fields">
-            <div>
-              <dt>Assigned To</dt>
-              <dd>
-                <InlineSelect
-                  value={matter.assigned_to ?? ATTORNEYS[0]}
-                  options={attorneyOptions}
-                  onSave={(v) => patch({ assigned_to: v })}
-                />
-              </dd>
-            </div>
+          <dl className="details-grid">
             <div>
               <dt>Rate</dt>
               <dd>
@@ -451,68 +410,80 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 />
               </dd>
             </div>
-            <div>
-              <dt>Time Logged</dt>
-              <dd>{fmtHm(totalSeconds)}</dd>
-            </div>
-            <div>
-              <dt>Billable</dt>
-              <dd>{billable != null ? `$${billable.toFixed(2)}` : "—"}</dd>
-            </div>
-            <div className="cc-desc">
-              <dt>Description</dt>
-              <dd>
-                <InlineTextarea
-                  value={matter.description}
-                  onSave={(v) => patch({ description: v || null })}
-                  placeholder="Click to add a description…"
-                />
-              </dd>
-            </div>
           </dl>
+          <div className="details-desc">
+            <dt>Description</dt>
+            <dd>
+              <InlineTextarea
+                value={matter.description}
+                onSave={(v) => patch({ description: v || null })}
+                placeholder="Click to add a description…"
+              />
+            </dd>
+          </div>
         </div>
       </div>
 
-      {timelineType && (
-        <div className="panel" style={{ marginBottom: "1.5rem" }}>
-          <div className="panel-head">
-            <h2 className="panel-title">Case Timeline</h2>
-            <select
-              className="inline-select"
-              value={timelineType}
-              onChange={(e) => {
-                setTimelineType(e.target.value);
-                patch({ case_timeline_type: e.target.value });
-              }}
-            >
-              {CASE_TIMELINE_TEMPLATES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="doc-tabs client-tabs">
+        {([
+          ["time", `Time Entries (${entries.length})`],
+          ["tasks", "Tasks"],
+          ["documents", "Documents"],
+          ["events", `Events (${events.length})`],
+          ["invoices", `Invoices (${invoices.length})`],
+          ["notes", "Notes"],
+          ["timeline", "Case Timeline"],
+          ["activity", "Activity"],
+        ] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={bodyTab === key ? "active" : undefined}
+            onClick={() => setBodyTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
+      <div className="panel">
+        {bodyTab === "timeline" && (
           <div className="timeline-body">
-            <div className="seg" style={{ marginBottom: "0.9rem" }}>
-              {(["checklist", "board", "tasks"] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  className={timelineView === v ? "active" : undefined}
-                  onClick={() => setTimelineView(v)}
-                >
-                  {v === "checklist"
-                    ? "Checklist"
-                    : v === "board"
-                      ? "Board"
-                      : "Tasks"}
-                </button>
-              ))}
+            <div className="timeline-controls" style={{ marginBottom: "0.9rem" }}>
+              <select
+                className="inline-select"
+                value={tlType}
+                onChange={(e) => {
+                  setTimelineType(e.target.value);
+                  patch({ case_timeline_type: e.target.value });
+                }}
+              >
+                {CASE_TIMELINE_TEMPLATES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <div className="seg">
+                {(["checklist", "board", "tasks"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    className={timelineView === v ? "active" : undefined}
+                    onClick={() => setTimelineView(v)}
+                  >
+                    {v === "checklist"
+                      ? "Checklist"
+                      : v === "board"
+                        ? "Board"
+                        : "Tasks"}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {(() => {
-              const steps = TIMELINE_STEPS[timelineType] ?? [];
+              const steps = TIMELINE_STEPS[tlType] ?? [];
               if (timelineView === "checklist") {
                 return (
                   <ul className="tl-checklist">
@@ -582,50 +553,23 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               );
             })()}
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="doc-tabs client-tabs">
-        {([
-          ["time", `Time Entries (${entries.length})`],
-          ["tasks", "Tasks"],
-          ["documents", "Documents"],
-          ["events", `Events (${events.length})`],
-          ["invoices", `Invoices (${invoices.length})`],
-          ["notes", "Notes"],
-          ["activity", "Activity"],
-        ] as const).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            className={bodyTab === key ? "active" : undefined}
-            onClick={() => setBodyTab(key)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="panel">
         {bodyTab === "time" && (
           <TimeEntriesTab
             entries={entries}
             rate={matter.hourly_rate}
-            onAdd={() => setLogOpen(true)}
+            onAddEntry={addEntry}
             onChanged={loadAll}
           />
         )}
 
         {bodyTab === "tasks" && (
-          <>
-            <h2 className="panel-title">Tasks</h2>
-            <TodoWidget matterId={matter.id} compact />
-          </>
+          <TodoWidget matterId={matter.id} compact />
         )}
 
         {bodyTab === "documents" && (
           <>
-            <h2 className="panel-title">Documents</h2>
             <div className="table-wrap" style={{ border: "none" }}>
               <table className="data-table">
                 <thead>
@@ -649,20 +593,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
         {bodyTab === "notes" && (
-          <>
-            <h2 className="panel-title">Notes</h2>
-            <InlineTextarea
-              value={matter.notes}
-              onSave={(v) => patch({ notes: v || null })}
-              placeholder="Internal notes for this matter…"
-            />
-          </>
+          <InlineTextarea
+            value={matter.notes}
+            onSave={(v) => patch({ notes: v || null })}
+            placeholder="Internal notes for this matter…"
+          />
         )}
 
         {bodyTab === "events" && (
           <>
-            <div className="panel-head">
-              <h2 className="panel-title">Events ({events.length})</h2>
+            <div className="panel-head" style={{ justifyContent: "flex-end" }}>
               <span className="chip-note">from calendar (demo)</span>
             </div>
             {events.length === 0 ? (
@@ -702,7 +642,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </Collapsible>
               </div>
             )}
-            <h2 className="panel-title">Invoices ({invoices.length})</h2>
             {invoices.length === 0 ? (
               <p className="muted-line">No invoices for this matter.</p>
             ) : (
@@ -721,7 +660,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "activity" && (
           <>
-            <h2 className="panel-title">Activity</h2>
             <div className="panel-scroll tall">
               {activity.length === 0 ? (
                 <p className="muted-line">No activity for this matter yet.</p>
@@ -763,141 +701,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {logOpen && (
-        <MatterLogModal
-          matterName={matter.name}
-          defaultLawyer={matter.assigned_to || ATTORNEYS[0]}
-          onCancel={() => setLogOpen(false)}
-          onSubmit={logTime}
-        />
-      )}
-    </div>
-  );
-}
-
-function MatterLogModal({
-  matterName,
-  defaultLawyer,
-  onCancel,
-  onSubmit,
-}: {
-  matterName: string;
-  defaultLawyer: string;
-  onCancel: () => void;
-  onSubmit: (f: {
-    activity: string;
-    lawyer: string;
-    note: string;
-    seconds: number;
-  }) => void;
-}) {
-  const [activity, setActivity] = useState<string>(ACTIVITY_TYPES[0]);
-  const [lawyer, setLawyer] = useState(defaultLawyer);
-  const [note, setNote] = useState("");
-  const [h, setH] = useState(0);
-  const [m, setM] = useState(0);
-  const [decimal, setDecimal] = useState("");
-  const num = (v: string) => Math.max(0, Number(v.replace(/[^0-9]/g, "")) || 0);
-  const totalSeconds = h * 3600 + m * 60;
-
-  function applyDecimal(raw: string) {
-    setDecimal(raw);
-    const hrs = parseFloat(raw);
-    if (!isNaN(hrs) && hrs >= 0) {
-      const secs = Math.round(hrs * 3600);
-      setH(Math.floor(secs / 3600));
-      setM(Math.floor((secs % 3600) / 60));
-    }
-  }
-
-  return (
-    <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Log time</h3>
-        <p className="modal-dur">{matterName}</p>
-        <label>
-          Activity
-          <select value={activity} onChange={(e) => setActivity(e.target.value)}>
-            {ACTIVITY_TYPES.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Description
-          <textarea
-            rows={3}
-            placeholder="What did you work on for the client?"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </label>
-        <label>
-          Lawyer
-          <select value={lawyer} onChange={(e) => setLawyer(e.target.value)}>
-            {(ATTORNEYS as readonly string[]).includes(lawyer) ? null : (
-              <option value={lawyer}>{lawyer}</option>
-            )}
-            {ATTORNEYS.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Duration
-          <div className="dur-inputs">
-            <input
-              type="number"
-              min={0}
-              value={h}
-              onChange={(e) => {
-                setH(num(e.target.value));
-                setDecimal("");
-              }}
-            />
-            <span>h</span>
-            <input
-              type="number"
-              min={0}
-              max={59}
-              value={m}
-              onChange={(e) => {
-                setM(Math.min(59, num(e.target.value)));
-                setDecimal("");
-              }}
-            />
-            <span>m</span>
-          </div>
-        </label>
-        <label>
-          Or enter decimal hours (e.g. 1.5)
-          <input
-            type="number"
-            step="0.25"
-            min={0}
-            placeholder="1.5"
-            value={decimal}
-            onChange={(e) => applyDecimal(e.target.value)}
-          />
-        </label>
-        <div className="modal-actions">
-          <button type="button" className="ghost" onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={totalSeconds === 0}
-            onClick={() => onSubmit({ activity, lawyer, note, seconds: totalSeconds })}
-          >
-            Save entry
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

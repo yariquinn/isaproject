@@ -15,21 +15,52 @@ const money = (n: number) => `$${n.toFixed(2)}`;
 
 type EditCell = { id: string; field: keyof TimeEntry } | null;
 
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
 export default function TimeEntriesTab({
   entries,
   rate,
-  onAdd,
+  onAddEntry,
   onChanged,
 }: {
   entries: TimeEntry[];
   rate: number | null;
-  onAdd: () => void;
+  onAddEntry: (f: {
+    activity: string;
+    lawyer: string;
+    note: string;
+    seconds: number;
+    date: string;
+  }) => void;
   onChanged: () => void;
 }) {
   const [edit, setEdit] = useState<EditCell>(null);
   const [draft, setDraft] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [matters, setMatters] = useState<MatterLite[]>([]);
+
+  // Excel-style blank entry row at the top.
+  const [nDate, setNDate] = useState<string>(todayStr());
+  const [nActivity, setNActivity] = useState<string>(ACTIVITY_TYPES[0]);
+  const [nNote, setNNote] = useState<string>("");
+  const [nLawyer, setNLawyer] = useState<string>(ATTORNEYS[0]);
+  const [nDur, setNDur] = useState<string>("");
+
+  function commitNew() {
+    const hrs = parseFloat(nDur);
+    if (isNaN(hrs) || hrs <= 0) return;
+    onAddEntry({
+      activity: nActivity,
+      lawyer: nLawyer,
+      note: nNote,
+      seconds: Math.round(hrs * 3600),
+      date: nDate,
+    });
+    setNNote("");
+    setNDur("");
+    setNDate(todayStr());
+    setNActivity(ACTIVITY_TYPES[0]);
+  }
 
   useEffect(() => {
     supabase
@@ -114,19 +145,6 @@ export default function TimeEntriesTab({
 
   return (
     <>
-      <div className="panel-head">
-        <h2 className="panel-title">Time Entries ({entries.length})</h2>
-        <button
-          className="icon-add"
-          type="button"
-          onClick={onAdd}
-          title="Log time"
-          aria-label="Log time"
-        >
-          +
-        </button>
-      </div>
-
       <div className="te-summary">
         {stat("Total", total)}
         {stat("Billable", billable, "ok")}
@@ -175,10 +193,7 @@ export default function TimeEntriesTab({
         </div>
       )}
 
-      {entries.length === 0 ? (
-        <p className="muted-line">No time logged to this matter yet.</p>
-      ) : (
-        <div className="table-wrap" style={{ border: "none" }}>
+      <div className="table-wrap" style={{ border: "none" }}>
           <table className="data-table te-table">
             <thead>
               <tr>
@@ -202,6 +217,34 @@ export default function TimeEntriesTab({
               </tr>
             </thead>
             <tbody>
+              {/* Excel-style blank row: fill it in and press Enter to add */}
+              <tr className="te-new-row" onKeyDown={(ev) => { if (ev.key === "Enter") commitNew(); }}>
+                <td className="check-col" aria-hidden="true"></td>
+                <td>
+                  <input type="date" value={nDate} onChange={(e) => setNDate(e.target.value)} aria-label="New entry date" />
+                </td>
+                <td>
+                  <select value={nActivity} onChange={(e) => setNActivity(e.target.value)} aria-label="New entry activity">
+                    {ACTIVITY_TYPES.map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <input value={nNote} onChange={(e) => setNNote(e.target.value)} placeholder="Description…" aria-label="New entry description" />
+                </td>
+                <td>
+                  <select value={nLawyer} onChange={(e) => setNLawyer(e.target.value)} aria-label="New entry lawyer">
+                    {ATTORNEYS.map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <input type="number" step="0.25" min={0} value={nDur} placeholder="hrs" onChange={(e) => setNDur(e.target.value)} onBlur={commitNew} aria-label="New entry hours" />
+                </td>
+                <td colSpan={2} className="te-new-hint">press Enter to add</td>
+              </tr>
               {entries.map((e) => (
                 <tr key={e.id} className={selected.has(e.id) ? "row-selected" : undefined}>
                   <td className="check-col">
@@ -357,7 +400,6 @@ export default function TimeEntriesTab({
             </tbody>
           </table>
         </div>
-      )}
     </>
   );
 }
