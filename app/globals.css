@@ -2654,6 +2654,13 @@ a.activity-row:hover .act-desc {
   color: var(--dash-fg);
   word-break: break-word;
 }
+.cc-fields > div.cc-desc {
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--dash-border);
+}
 .switch-chip {
   gap: 0;
 }
@@ -2867,7 +2874,8 @@ a.activity-row:hover .act-desc {
 .ov-box {
   display: flex;
   flex-direction: column;
-  height: 380px;
+  height: calc(100vh - 470px);
+  min-height: 320px;
 }
 .ov-scroll {
   flex: 1;

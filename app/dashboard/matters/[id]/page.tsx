@@ -459,6 +459,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               <dt>Billable</dt>
               <dd>{billable != null ? `$${billable.toFixed(2)}` : "—"}</dd>
             </div>
+            <div className="cc-desc">
+              <dt>Description</dt>
+              <dd>
+                <InlineTextarea
+                  value={matter.description}
+                  onSave={(v) => patch({ description: v || null })}
+                  placeholder="Click to add a description…"
+                />
+              </dd>
+            </div>
           </dl>
         </div>
       </div>
@@ -574,15 +584,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
-
-      <div className="panel" style={{ marginBottom: "1.5rem" }}>
-        <h2 className="panel-title">Description</h2>
-        <InlineTextarea
-          value={matter.description}
-          onSave={(v) => patch({ description: v || null })}
-          placeholder="Click to add a description…"
-        />
-      </div>
 
       <div className="doc-tabs client-tabs">
         {([
