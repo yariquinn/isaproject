@@ -55,7 +55,7 @@ export default function Sidebar({ userName }: { userName: string }) {
     <aside className="sidebar">
       <div className="sidebar-brand">
         Isa Abdur-Rahman
-        <span>PLLC · Portal</span>
+        <span>Employee Portal</span>
       </div>
 
       <nav className="sidebar-nav">
