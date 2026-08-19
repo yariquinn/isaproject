@@ -3753,3 +3753,24 @@ a.activity-row:hover .act-desc {
   text-decoration: line-through;
   color: var(--dash-muted);
 }
+
+/* Checked-off events stay in the Details box but collapse: the title dims and
+   strikes through, and the check turns solid green to show it's done. */
+.du-item-done {
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+.du-item-done .du-date {
+  font-weight: 600;
+  color: var(--dash-muted);
+}
+.du-check.checked {
+  background: #2e7d46;
+  border-color: #2e7d46;
+  color: #fff;
+}
+.du-check.checked:hover {
+  background: transparent;
+  border-color: var(--dash-border);
+  color: var(--dash-muted);
+}

@@ -535,16 +535,18 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             </dd>
           </div>
 
-          {upcomingEvents.length > 0 && (
+          {events.length > 0 && (
             <div className="du">
-              <div className="du-head">
-                <svg className="du-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <span className="du-label">Upcoming</span>
-              </div>
+              {upcomingEvents.length > 0 && (
+                <div className="du-head">
+                  <svg className="du-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <span className="du-label">Upcoming</span>
+                </div>
+              )}
               <ul className="du-list">
                 {upcomingEvents.slice(0, 4).map((ev) => (
                   <li key={ev.id}>
@@ -561,6 +563,28 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       title="Mark complete"
                       aria-label="Mark complete"
                       onClick={() => completeEvent(ev)}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+                {completedEvents.map((ev) => (
+                  <li key={ev.id} className="du-item-done">
+                    <span className="du-date">
+                      {new Date(ev.event_date).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className="du-title done" title={ev.title}>{ev.title}</span>
+                    <button
+                      type="button"
+                      className="du-check checked"
+                      title="Checked off — click to reopen"
+                      aria-label="Checked off — click to reopen"
+                      onClick={() => reopenEvent(ev)}
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
