@@ -367,6 +367,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const clientObj = clients.find((c) => c.id === matter.client_id) ?? null;
   const upcomingEvents = events.filter((e) => !e.completed);
   const completedEvents = events.filter((e) => e.completed);
+  // In the Details box, keep a completed deadline visible for one week after its
+  // date, then let it drop off (the Events tab still keeps the full history).
+  const detailsCompleted = completedEvents.filter(
+    (e) => new Date(e.event_date).getTime() >= Date.now() - 7 * 86400000,
+  );
 
   return (
     <div>
@@ -593,7 +598,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             </dd>
           </div>
 
-          {events.length > 0 && (
+          {(upcomingEvents.length > 0 || detailsCompleted.length > 0) && (
             <div className="du">
               {upcomingEvents.length > 0 && (
                 <div className="du-head">
@@ -628,7 +633,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     </button>
                   </li>
                 ))}
-                {completedEvents.map((ev) => (
+                {detailsCompleted.map((ev) => (
                   <li key={ev.id} className="du-item-done">
                     <span className="du-date">
                       {new Date(ev.event_date).toLocaleDateString(undefined, {
