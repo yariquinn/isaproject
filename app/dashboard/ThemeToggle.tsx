@@ -22,8 +22,14 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button className="theme-toggle" onClick={toggle} type="button">
-      {dark ? "☀︎ Light mode" : "☾ Dark mode"}
+    <button
+      className="theme-icon"
+      onClick={toggle}
+      type="button"
+      title={dark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      {dark ? "☀︎" : "☾"}
     </button>
   );
 }

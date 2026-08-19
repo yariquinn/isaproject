@@ -30,7 +30,7 @@ export default function TimeTracker() {
   const [timers, setTimers] = useState<Timer[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [now, setNow] = useState(() => Date.now());
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [picking, setPicking] = useState(false);
   const [pickQuery, setPickQuery] = useState("");
   const [logTarget, setLogTarget] = useState<LogTarget>(null);
@@ -167,35 +167,50 @@ export default function TimeTracker() {
   }
 
   const runningCount = timers.filter((t) => t.is_running).length;
+  const runningTimer = timers.find((t) => t.is_running);
 
   return (
     <div className="tracker">
-      <div className="tracker-head">
-        <button
-          className="tracker-toggle"
-          onClick={() => setOpen((o) => !o)}
-          type="button"
-        >
-          {open ? "▾" : "▸"} Time Tracker
-          {runningCount > 0 && <span className="tracker-live">● running</span>}
-        </button>
-        <button
-          className="tracker-add"
-          onClick={() => {
-            const m = currentMatterId
-              ? matters.find((x) => x.id === currentMatterId)
-              : null;
-            if (m) startForMatter(m);
-            else setPicking(true);
-          }}
-          type="button"
-        >
-          + New timer
-        </button>
-      </div>
+      <button
+        className={`tracker-icon${runningCount > 0 ? " on" : ""}`}
+        onClick={() => setOpen((o) => !o)}
+        type="button"
+        title="Time tracker"
+        aria-label="Time tracker"
+      >
+        <span className="tracker-icon-glyph">◷</span>
+        {runningCount > 0 ? (
+          <span className="tracker-icon-time">{fmt(elapsedOf(runningTimer!, now))}</span>
+        ) : (
+          <span className="tracker-icon-label">Timer</span>
+        )}
+        {runningCount > 0 && <span className="tracker-dot" />}
+      </button>
 
       {open && (
+        <div className="tracker-pop">
+          <div className="tracker-pop-head">
+            <span className="tracker-pop-title">Time Tracker</span>
+            <button
+              className="tracker-add"
+              onClick={() => {
+                const m = currentMatterId
+                  ? matters.find((x) => x.id === currentMatterId)
+                  : null;
+                if (m) startForMatter(m);
+                else setPicking(true);
+              }}
+              type="button"
+            >
+              + New
+            </button>
+          </div>
         <div className="tracker-body">
+          {timers.length === 0 && (
+            <p className="muted-line" style={{ fontSize: "0.8rem", padding: "0.25rem 0" }}>
+              No timers yet.
+            </p>
+          )}
           {timers.map((t) => {
             const secs = elapsedOf(t, now);
             return (
@@ -239,6 +254,7 @@ export default function TimeTracker() {
               </div>
             );
           })}
+        </div>
         </div>
       )}
 

@@ -9,8 +9,14 @@ const PLACEHOLDER_DOCS = [
   { name: "Crescent Center — Title Report.pdf", matter: "Crescent Center Purchase", updated: "1w ago" },
 ];
 
+const ESIGN_DOCS = [
+  { name: "Okafor — Last Will & Testament", matter: "Okafor Estate Plan", signer: "Ada Okafor", status: "signed" },
+  { name: "Okafor — Durable Power of Attorney", matter: "Okafor Estate Plan", signer: "Chike Okafor", status: "awaiting" },
+  { name: "Greenpoint — Operating Agreement", matter: "Greenpoint Formation", signer: "Marcus Vale", status: "sent" },
+];
+
 export default function DocumentsPage() {
-  const [tab, setTab] = useState<"documents" | "drive">("documents");
+  const [tab, setTab] = useState<"documents" | "esign">("documents");
 
   return (
     <div>
@@ -30,11 +36,11 @@ export default function DocumentsPage() {
           Documents
         </button>
         <button
-          className={tab === "drive" ? "active" : undefined}
-          onClick={() => setTab("drive")}
+          className={tab === "esign" ? "active" : undefined}
+          onClick={() => setTab("esign")}
           type="button"
         >
-          Google Drive
+          E-Signature
         </button>
       </div>
 
@@ -63,17 +69,38 @@ export default function DocumentsPage() {
           </p>
         </div>
       ) : (
-        <div className="drive-panel">
-          <div className="drive-icon">▲</div>
-          <h2>Connect Google Drive</h2>
-          <p>
-            View and manage matter documents directly from Google Drive. This
-            connection will be set up later.
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Document</th>
+                <th>Matter</th>
+                <th>Signer</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ESIGN_DOCS.map((d) => (
+                <tr key={d.name}>
+                  <td className="strong-cell">{d.name}</td>
+                  <td>{d.matter}</td>
+                  <td>{d.signer}</td>
+                  <td>
+                    <span className={`pill esign-${d.status}`}>
+                      {d.status === "signed"
+                        ? "Signed"
+                        : d.status === "awaiting"
+                          ? "Awaiting"
+                          : "Sent"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="muted-line" style={{ marginTop: "1rem" }}>
+            E-signature sending is a placeholder for this mockup.
           </p>
-          <button className="btn" type="button" disabled>
-            Open Google Drive
-          </button>
-          <p className="muted-line">Not connected yet.</p>
         </div>
       )}
     </div>

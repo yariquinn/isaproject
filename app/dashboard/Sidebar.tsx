@@ -15,32 +15,28 @@ const GROUPS: {
       { href: "/dashboard", label: "Overview" },
       { href: "/dashboard/clients", label: "Clients" },
       { href: "/dashboard/matters", label: "Matters" },
-      { href: "/dashboard/time-entries", label: "Time Entries" },
-      { href: "/dashboard/todo", label: "Tasks" },
     ],
   },
   {
-    label: "Schedule",
     items: [
-      { href: "/dashboard/deadlines", label: "Deadlines" },
-      { href: "/dashboard/calendar", label: "Calendar" },
+      { href: "/dashboard/todo", label: "Tasks" },
+      { href: "/dashboard/reports", label: "Reports", sub: true },
     ],
   },
   {
-    label: "Business",
     items: [
       { href: "/dashboard/billing", label: "Billing" },
       { href: "/dashboard/intake", label: "Intake" },
-      { href: "/dashboard/reports", label: "Reports" },
     ],
   },
   {
-    label: "Documents",
     items: [
-      { href: "/dashboard/documents", label: "Documents" },
-      { href: "/dashboard/documents/templates", label: "Templates", sub: true },
-      { href: "/dashboard/esignature", label: "E-Signature" },
+      { href: "/dashboard/calendar", label: "Calendar" },
+      { href: "/dashboard/deadlines", label: "Deadlines", sub: true },
     ],
+  },
+  {
+    items: [{ href: "/dashboard/documents", label: "Documents" }],
   },
 ];
 
@@ -80,10 +76,11 @@ export default function Sidebar({ userName }: { userName: string }) {
       </div>
 
       <div className="sidebar-foot">
-        <ThemeToggle />
         <div className="sidebar-user">
-          Signed in as
-          <strong>{userName}</strong>
+          <span>
+            Signed in as <strong>{userName}</strong>
+          </span>
+          <ThemeToggle />
         </div>
         <form action={logoutAction}>
           <button type="submit" className="logout-btn">
