@@ -55,6 +55,14 @@ function periodStart(key: string): number {
   return new Date(now.getFullYear(), 0, 1).getTime();
 }
 
+// Quick actions that are demo-only (open an explainer modal).
+const DEMO_ACTIONS: Record<string, { label: string; icon: string; note: string }> = {
+  invoice: { label: "Create invoice", icon: "🧾", note: "Invoice creation would open here. Invoicing is a demo in this mockup." },
+  payment: { label: "Record payment", icon: "💵", note: "Recording a payment would mark an invoice paid. This is a demo action." },
+  expense: { label: "Add expense", icon: "🧮", note: "Expense entry would open here. Expenses are a demo in this mockup." },
+  document: { label: "Upload document", icon: "📄", note: "Document upload would open here. Storage is a demo in this mockup." },
+};
+
 export default function Overview() {
   const { userName } = usePortal();
   const firstName = userName.split(" ")[0] || userName;
@@ -72,6 +80,7 @@ export default function Overview() {
   const [filter, setFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<string>("month");
+  const [qa, setQa] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -98,11 +107,6 @@ export default function Overview() {
     })();
   }, []);
 
-  const totalHours = useMemo(
-    () => entries.reduce((s, e) => s + e.duration_seconds, 0) / 3600,
-    [entries],
-  );
-
   const { hours, revenue } = useMemo(() => {
     const start = periodStart(period);
     let secs = 0;
@@ -110,7 +114,6 @@ export default function Overview() {
       if (new Date(e.logged_at).getTime() < start) continue;
       secs += e.duration_seconds;
     }
-    // Revenue reflects invoices marked paid within the period.
     let rev = 0;
     for (const i of invoices) {
       if (i.status !== "paid") continue;
@@ -144,7 +147,22 @@ export default function Overview() {
         </h1>
       </div>
 
-      <div className="stat-row">
+      <div className="ov-stats-head">
+        <span className="ov-stats-title">Snapshot</span>
+        <select
+          className="inline-select"
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+        >
+          {PERIODS.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="stat-row ov-stats">
         <Link href="/dashboard/clients" className="stat">
           <span className="stat-num">{clients}</span>
           <span className="stat-label">Clients</span>
@@ -157,46 +175,41 @@ export default function Overview() {
           <span className="stat-num">{closedM}</span>
           <span className="stat-label">Closed Matters</span>
         </Link>
-        <Link href="/dashboard/time-entries" className="stat">
-          <span className="stat-num">{totalHours.toFixed(1)}</span>
+        <Link href="/dashboard/billing" className="stat">
+          <span className="stat-num">{hours.toFixed(1)}</span>
           <span className="stat-label">Hours Logged</span>
+        </Link>
+        <Link href="/dashboard/billing" className="stat">
+          <span className="stat-num">${revenue.toFixed(0)}</span>
+          <span className="stat-label">Revenue</span>
         </Link>
       </div>
 
-      <div className="overview-cols" style={{ marginTop: "1.5rem" }}>
-        <div className="panel">
-          <div className="panel-head">
-            <h2 className="panel-title">Hours &amp; Revenue</h2>
-            <select
-              className="inline-select"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-            >
-              {PERIODS.map((p) => (
-                <option key={p.key} value={p.key}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="mini-stats">
-            <div>
-              <span className="stat-num">{hours.toFixed(1)}</span>
-              <span className="stat-label">Hours Logged</span>
-            </div>
-            <div>
-              <span className="stat-num">${revenue.toFixed(0)}</span>
-              <span className="stat-label">Revenue</span>
-            </div>
-          </div>
-          <p className="muted-line" style={{ fontSize: "0.78rem", marginTop: "0.75rem" }}>
-            Revenue reflects invoices marked paid in this period (demo).
-          </p>
-        </div>
+      <div className="quick-actions">
+        <button type="button" className="qa-btn" onClick={() => setQa("invoice")}>
+          <span className="qa-icon">🧾</span>Create invoice
+        </button>
+        <button type="button" className="qa-btn" onClick={() => setQa("payment")}>
+          <span className="qa-icon">💵</span>Record payment
+        </button>
+        <button type="button" className="qa-btn" onClick={() => setQa("expense")}>
+          <span className="qa-icon">🧮</span>Add expense
+        </button>
+        <button type="button" className="qa-btn" onClick={() => setQa("document")}>
+          <span className="qa-icon">📄</span>Upload document
+        </button>
+        <Link href="/dashboard/matters" className="qa-btn">
+          <span className="qa-icon">📁</span>Add Matter
+        </Link>
+        <Link href="/dashboard/clients" className="qa-btn">
+          <span className="qa-icon">👤</span>Add Client
+        </Link>
+      </div>
 
-        <div className="panel">
+      <div className="overview-cols equal">
+        <div className="panel ov-box">
           <h2 className="panel-title">Upcoming Events</h2>
-          <div className="panel-scroll">
+          <div className="ov-scroll">
             {loading ? (
               <p className="muted-line">Loading…</p>
             ) : events.length === 0 ? (
@@ -225,75 +238,89 @@ export default function Overview() {
             )}
           </div>
         </div>
-      </div>
 
-      <div className="panel" style={{ marginTop: "1.5rem" }}>
-        <div className="panel-head">
-          <h2 className="panel-title">Recent Activity</h2>
-          <input
-            className="activity-search"
-            type="search"
-            placeholder="Search activity…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="filter-row">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              className={`filter-chip${filter === f.key ? " active" : ""}`}
-              onClick={() => setFilter(f.key)}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="panel-scroll">
-          {loading ? (
-            <p className="muted-line">Loading…</p>
-          ) : filtered.length === 0 ? (
-            <p className="muted-line">No matching activity.</p>
-          ) : (
-            <ul className="activity-list">
-              {filtered.map((a) => {
-                const meta = KIND_META[a.kind] ?? { group: "time", label: "Activity" };
-                const href =
-                  meta.group === "client"
-                    ? a.client_id
-                      ? `/dashboard/clients/${a.client_id}`
-                      : null
-                    : meta.group === "matter" || meta.group === "time"
-                      ? a.matter_id
-                        ? `/dashboard/matters/${a.matter_id}`
+        <div className="panel ov-box">
+          <div className="panel-head">
+            <h2 className="panel-title">Recent Activity</h2>
+            <input
+              className="activity-search"
+              type="search"
+              placeholder="Search…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          <div className="filter-row">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                className={`filter-chip${filter === f.key ? " active" : ""}`}
+                onClick={() => setFilter(f.key)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="ov-scroll">
+            {loading ? (
+              <p className="muted-line">Loading…</p>
+            ) : filtered.length === 0 ? (
+              <p className="muted-line">No matching activity.</p>
+            ) : (
+              <ul className="activity-list">
+                {filtered.map((a) => {
+                  const meta = KIND_META[a.kind] ?? { group: "time", label: "Activity" };
+                  const href =
+                    meta.group === "client"
+                      ? a.client_id
+                        ? `/dashboard/clients/${a.client_id}`
                         : null
-                      : null;
-                const inner = (
-                  <>
-                    <span className={`act-tag tag-${meta.group}`}>{meta.label}</span>
-                    <span className="act-desc">{a.description}</span>
-                    <span className="act-time">{timeAgo(a.created_at)}</span>
-                  </>
-                );
-                return (
-                  <li key={a.id}>
-                    {href ? (
-                      <Link href={href} className="activity-row">
-                        {inner}
-                      </Link>
-                    ) : (
-                      <span className="activity-row static">{inner}</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                      : meta.group === "matter" || meta.group === "time"
+                        ? a.matter_id
+                          ? `/dashboard/matters/${a.matter_id}`
+                          : null
+                        : null;
+                  const inner = (
+                    <>
+                      <span className={`act-tag tag-${meta.group}`}>{meta.label}</span>
+                      <span className="act-desc">{a.description}</span>
+                      <span className="act-time">{timeAgo(a.created_at)}</span>
+                    </>
+                  );
+                  return (
+                    <li key={a.id}>
+                      {href ? (
+                        <Link href={href} className="activity-row">
+                          {inner}
+                        </Link>
+                      ) : (
+                        <span className="activity-row static">{inner}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
+
+      {qa && DEMO_ACTIONS[qa] && (
+        <div className="modal-backdrop" onClick={() => setQa(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>
+              {DEMO_ACTIONS[qa].icon} {DEMO_ACTIONS[qa].label}
+            </h3>
+            <p className="modal-dur">{DEMO_ACTIONS[qa].note}</p>
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={() => setQa(null)}>
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

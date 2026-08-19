@@ -20,7 +20,7 @@ const GROUPS: {
   {
     items: [
       { href: "/dashboard/todo", label: "Tasks" },
-      { href: "/dashboard/reports", label: "Reports", sub: true },
+      { href: "/dashboard/reports", label: "Reports" },
     ],
   },
   {
