@@ -283,6 +283,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       <div className="detail-cols">
       <div className="panel">
         <h2 className="panel-title">Matters ({matters.length})</h2>
+        <div className="panel-scroll">
         {matters.length === 0 ? (
           <p className="muted-line">No matters for this client yet.</p>
         ) : (
@@ -311,10 +312,12 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
           </>
         )}
+        </div>
       </div>
 
       <div className="panel">
         <h2 className="panel-title">Activity</h2>
+        <div className="panel-scroll">
         {activity.length === 0 ? (
           <p className="muted-line">No activity for this client yet.</p>
         ) : (
@@ -328,6 +331,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             ))}
           </ul>
         )}
+        </div>
       </div>
       </div>
 
