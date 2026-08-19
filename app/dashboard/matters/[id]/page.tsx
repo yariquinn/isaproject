@@ -8,6 +8,7 @@ import {
   CASE_TIMELINE_TEMPLATES,
   PRACTICE_AREAS,
   PRIORITIES,
+  RATE_TYPES,
   type ActivityItem,
   type Client,
   type EventItem,
@@ -420,12 +421,20 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           <dl className="details-grid">
             <div>
               <dt>Rate</dt>
-              <dd>
+              <dd className="rate-dd">
                 <InlineNumber
                   value={matter.hourly_rate}
                   prefix="$"
-                  suffix={matter.rate_type === "flat" ? " flat" : "/hr"}
                   onSave={(v) => patch({ hourly_rate: v })}
+                />
+                <InlineSelect
+                  value={matter.rate_type || "hourly"}
+                  className="rate-type-select"
+                  options={RATE_TYPES.map((r) => ({
+                    value: r.value,
+                    label: r.value === "flat" ? "flat" : "/hr",
+                  }))}
+                  onSave={(v) => patch({ rate_type: v })}
                 />
               </dd>
             </div>
