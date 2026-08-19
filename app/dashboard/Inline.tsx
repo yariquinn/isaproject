@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
-/** Click-to-edit text field. Saves on Enter or blur; Esc cancels. */
+/** Click-to-edit text field. Saves on Enter or blur; Esc cancels.
+ * `format` styles the read-only display only — editing always uses the raw value. */
 export function InlineText({
   value,
   onSave,
   placeholder = "—",
   type = "text",
+  format,
 }: {
   value: string | null;
   onSave: (v: string) => void | Promise<void>;
   placeholder?: string;
   type?: string;
+  format?: (v: string) => ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value ?? "");
@@ -47,7 +50,11 @@ export function InlineText({
   }
   return (
     <span className="inline-view" onClick={begin} title="Click to edit">
-      {value || <span className="inline-placeholder">{placeholder}</span>}
+      {value ? (
+        format ? format(value) : value
+      ) : (
+        <span className="inline-placeholder">{placeholder}</span>
+      )}
     </span>
   );
 }

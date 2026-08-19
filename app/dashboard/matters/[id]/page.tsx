@@ -458,12 +458,21 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       <div
         className="matter-cards"
         ref={cardsRef}
-        style={stackCards ? undefined : { display: "flex", gap: 0, alignItems: "stretch" }}
+        style={stackCards ? undefined : { display: "flex", gap: "1.5rem", alignItems: "stretch" }}
       >
         <div
           className="panel client-card"
-          style={stackCards ? undefined : { flex: `0 0 calc(${leftPct}% - 0.75rem)`, minWidth: 0 }}
+          style={stackCards ? undefined : { flex: `0 0 calc(${leftPct}% - 0.75rem)`, minWidth: 0, position: "relative" }}
         >
+          {!stackCards && (
+            <div
+              className="card-grip right"
+              onMouseDown={startCardResize}
+              title="Drag to resize"
+              role="separator"
+              aria-orientation="vertical"
+            />
+          )}
           <h2 className="panel-title">Client</h2>
           {matter.client_id && clientObj ? (
             <>
@@ -525,6 +534,17 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       value={clientObj.address}
                       onSave={(v) => saveClientField(clientObj.id, "address", v)}
                       placeholder="—"
+                      format={(v) => {
+                        const i = v.indexOf(",");
+                        if (i === -1) return v;
+                        return (
+                          <>
+                            {v.slice(0, i).trim()}
+                            <br />
+                            {v.slice(i + 1).trim()}
+                          </>
+                        );
+                      }}
                     />
                   </dd>
                 </div>
@@ -552,19 +572,19 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           )}
         </div>
 
-        {!stackCards && (
-          <div
-            className="cards-resizer"
-            onMouseDown={startCardResize}
-            title="Drag to resize"
-            role="separator"
-            aria-orientation="vertical"
-          />
-        )}
         <div
           className="panel details-card"
-          style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0 }}
+          style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0, position: "relative" }}
         >
+          {!stackCards && (
+            <div
+              className="card-grip left"
+              onMouseDown={startCardResize}
+              title="Drag to resize"
+              role="separator"
+              aria-orientation="vertical"
+            />
+          )}
           <h2 className="panel-title">Details</h2>
           <dl className="details-grid">
             <div>

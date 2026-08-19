@@ -2729,18 +2729,24 @@ a.activity-row:hover .act-desc {
   margin-bottom: 1.5rem;
   align-items: stretch;
 }
-/* Draggable divider between the Client and Details cards */
-.cards-resizer {
-  flex: none;
-  width: 10px;
-  margin: 0 0.4rem;
-  align-self: stretch;
+/* Resize grips on the inner edge of each card — drag either to reallocate the
+   width between the Client and Details cards. */
+.card-grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16px;
   cursor: col-resize;
-  position: relative;
-  border-radius: 6px;
+  z-index: 2;
   touch-action: none;
 }
-.cards-resizer::before {
+.card-grip.right {
+  right: -0.75rem;
+}
+.card-grip.left {
+  left: -0.75rem;
+}
+.card-grip::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -2752,7 +2758,7 @@ a.activity-row:hover .act-desc {
   background: var(--dash-border);
   transition: background 0.15s ease, height 0.15s ease;
 }
-.cards-resizer:hover::before {
+.card-grip:hover::before {
   background: var(--dash-muted);
   height: 64px;
 }
