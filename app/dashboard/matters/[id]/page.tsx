@@ -644,7 +644,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         >
           <h2 className="panel-title">Details</h2>
           <dl className="details-grid">
-            <div>
+            <div style={{ gridColumn: "1 / -1" }}>
               <dt>Rate</dt>
               <dd className="rate-dd">
                 <InlineNumber
@@ -809,7 +809,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       <li className="note-item feed-activity" key={item.key}>
                         <span className="feed-dot" aria-hidden="true" />
                         <div className="note-main">
-                          <div className="note-time">{item.time}</div>
+                          <div className="note-time">
+                            {item.time}
+                            <span className="feed-tag feed-tag-activity">Activity</span>
+                          </div>
                           <p className="feed-act-text">{item.description}</p>
                         </div>
                       </li>
@@ -819,7 +822,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                           {item.initials}
                         </span>
                         <div className="note-main">
-                          {item.time && <div className="note-time">{item.time}</div>}
+                          <div className="note-time">
+                            {item.time}
+                            <span className="feed-tag feed-tag-comment">Comment</span>
+                          </div>
                           {editIdx === item.idx ? (
                             <div className="note-edit">
                               <textarea

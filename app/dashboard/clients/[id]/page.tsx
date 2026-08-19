@@ -170,7 +170,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     <li>
       <Link href={`/dashboard/matters/${m.id}`}>{m.name}</Link>
       <span className="muted-line">{m.practice_area}</span>
-      <span className={`pill pill-${m.status}`}>{m.status}</span>
+      <span className={`pill pill-${m.status}`}>{m.status === "closed" ? "Closed" : "Active"}</span>
     </li>
   );
 
@@ -186,7 +186,8 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <span className={`pill pill-${client.status}`}>{client.status}</span>
       </div>
 
-      <div className="panel" style={{ marginBottom: "1.5rem" }}>
+      <div className="detail-cols" style={{ marginBottom: "1.5rem" }}>
+        <div className="panel">
         <h2 className="panel-title">Contact</h2>
         <dl className="cc-fields">
           <div>
@@ -204,6 +205,11 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           <div><dt>Phone</dt><dd><Guarded field="phone" label="phone number" type="tel" /></dd></div>
           <div><dt>Address</dt><dd><Guarded field="address" label="address" /></dd></div>
         </dl>
+        </div>
+        <div className="panel">
+          <h2 className="panel-title">Notes</h2>
+          <InlineTextarea value={client.notes} onSave={(v) => patch({ notes: v || null })} placeholder="Click to add notes…" />
+        </div>
       </div>
 
       {client.client_type !== "business" && client.partner_name && (
@@ -221,11 +227,6 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
-
-      <div className="panel" style={{ marginBottom: "1.5rem" }}>
-        <h2 className="panel-title">Notes</h2>
-        <InlineTextarea value={client.notes} onSave={(v) => patch({ notes: v || null })} placeholder="Click to add notes…" />
-      </div>
 
       <div className="detail-cols">
         <div className="panel">

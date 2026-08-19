@@ -303,17 +303,19 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      <div className="seg" style={{ marginBottom: "1.25rem" }}>
-        {(["open", "archived", "all"] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            className={view === v ? "active" : undefined}
-            onClick={() => setView(v)}
-          >
-            {v === "open" ? "Open" : v === "archived" ? "Archived" : "All"}
-          </button>
-        ))}
+      <div className="matter-filters" style={{ marginBottom: "1.25rem" }}>
+        <div className="filter-row" style={{ margin: 0 }}>
+          {(["open", "archived", "all"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={`filter-chip${view === v ? " active" : ""}`}
+              onClick={() => setView(v)}
+            >
+              {v === "open" ? "Active" : v === "archived" ? "Archived" : "All"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (

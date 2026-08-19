@@ -3026,6 +3026,25 @@ a.activity-row:hover .act-desc {
   color: var(--dash-muted);
   line-height: 1.4;
 }
+.feed-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.08rem 0.42rem;
+  border-radius: 20px;
+  vertical-align: middle;
+}
+.feed-tag-comment {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.feed-tag-activity {
+  background: var(--dash-border);
+  color: var(--dash-muted);
+}
 .notes-input {
   width: 100%;
   font-family: inherit;
@@ -3128,13 +3147,11 @@ a.activity-row:hover .act-desc {
 }
 .details-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.9rem 1rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem 1.5rem;
 }
-@media (max-width: 1100px) {
-  .details-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.details-grid dt {
+  white-space: nowrap;
 }
 .details-grid > div {
   display: flex;
@@ -3470,6 +3487,26 @@ a.activity-row:hover .act-desc {
   min-height: 0;
   overflow-y: auto;
   margin-top: 0.5rem;
+}
+.user-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+.user-actions .signout-icon {
+  margin-left: 0;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.settings-label {
+  font-weight: 600;
+  color: var(--dash-fg);
+  font-size: 0.9rem;
 }
 
 /* Bulk edit */

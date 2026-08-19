@@ -155,19 +155,6 @@ export default function DocumentsPage() {
       ) : (
         <>
           <div className="es-head">
-            <div className="es-tabs">
-              {(["all", "awaiting", "signed"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  className={esTab === t ? "active" : undefined}
-                  onClick={() => setEsTab(t)}
-                >
-                  {t === "all" ? "All" : t === "awaiting" ? "Awaiting" : "Signed"}
-                  <span className="es-count">{counts[t]}</span>
-                </button>
-              ))}
-            </div>
             <label className="es-filter">
               Client
               <select

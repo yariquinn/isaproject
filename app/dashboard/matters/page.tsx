@@ -340,8 +340,8 @@ export default function MattersPage() {
                 Status
                 <select defaultValue="" onChange={(e) => { if (e.target.value) bulkStatus(e.target.value); e.target.value = ""; }}>
                   <option value="">Set…</option>
-                  <option value="open">open</option>
-                  <option value="closed">closed</option>
+                  <option value="open">Active</option>
+                  <option value="closed">Closed</option>
                 </select>
               </label>
               <label>
@@ -454,8 +454,8 @@ export default function MattersPage() {
                       value={m.status}
                       className={`pill-${m.status}${m.status === "closed" ? " closed-strong" : ""}`}
                       options={[
-                        { value: "open", label: "open" },
-                        { value: "closed", label: "closed" },
+                        { value: "open", label: "Active" },
+                        { value: "closed", label: "Closed" },
                       ]}
                       onSave={(v) => changeStatus(m, v)}
                     />
