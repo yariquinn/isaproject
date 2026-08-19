@@ -32,6 +32,7 @@ const KIND_META: Record<
   client_added: { group: "client", label: "Client" },
   client_updated: { group: "client", label: "Client" },
   matter_created: { group: "matter", label: "Matter" },
+  matter_updated: { group: "matter", label: "Matter" },
   time_logged: { group: "time", label: "Time" },
 };
 
@@ -164,26 +165,48 @@ export default function Overview() {
           ))}
         </div>
 
-        {loading ? (
-          <p className="muted-line">Loading…</p>
-        ) : filtered.length === 0 ? (
-          <p className="muted-line">No matching activity.</p>
-        ) : (
-          <ul className="activity-list">
-            {filtered.map((a) => {
-              const meta = KIND_META[a.kind] ?? { group: "time", label: "Time" };
-              return (
-                <li key={a.id}>
-                  <span className={`act-tag tag-${meta.group}`}>
-                    {meta.label}
-                  </span>
-                  <span className="act-desc">{a.description}</span>
-                  <span className="act-time">{timeAgo(a.created_at)}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <div className="panel-scroll">
+          {loading ? (
+            <p className="muted-line">Loading…</p>
+          ) : filtered.length === 0 ? (
+            <p className="muted-line">No matching activity.</p>
+          ) : (
+            <ul className="activity-list">
+              {filtered.map((a) => {
+                const meta =
+                  KIND_META[a.kind] ?? { group: "time", label: "Time" };
+                const href =
+                  meta.group === "client"
+                    ? a.client_id
+                      ? `/dashboard/clients/${a.client_id}`
+                      : null
+                    : a.matter_id
+                      ? `/dashboard/matters/${a.matter_id}`
+                      : null;
+                const inner = (
+                  <>
+                    <span className={`act-tag tag-${meta.group}`}>
+                      {meta.label}
+                    </span>
+                    <span className="act-desc">{a.description}</span>
+                    <span className="act-time">{timeAgo(a.created_at)}</span>
+                  </>
+                );
+                return (
+                  <li key={a.id}>
+                    {href ? (
+                      <Link href={href} className="activity-row">
+                        {inner}
+                      </Link>
+                    ) : (
+                      <span className="activity-row static">{inner}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -20,6 +20,9 @@ export type Matter = {
   description: string | null;
   hourly_rate: number | null;
   assigned_to: string | null;
+  priority: string;
+  closed_at: string | null;
+  closed_by: string | null;
   created_at: string;
 };
 
@@ -59,6 +62,12 @@ export const PRACTICE_AREAS = [
 ] as const;
 
 export const ATTORNEYS = ["Isa Abdur-Rahman", "Yari Corsino"] as const;
+
+export const PRIORITIES = [
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+] as const;
 
 export const ACTIVITY_TYPES = [
   "Email",

@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { ATTORNEYS, PRACTICE_AREAS, type Client, type Matter } from "@/lib/types";
+import {
+  ATTORNEYS,
+  PRACTICE_AREAS,
+  PRIORITIES,
+  type Client,
+  type Matter,
+} from "@/lib/types";
 import { InlineNumber, InlineSelect } from "../Inline";
 import { usePortal } from "../PortalProvider";
 
@@ -12,6 +18,7 @@ const EMPTY = {
   client_id: "",
   practice_area: PRACTICE_AREAS[0] as string,
   assigned_to: ATTORNEYS[0] as string,
+  priority: "medium",
   description: "",
   hourly_rate: "",
 };
@@ -30,6 +37,7 @@ export default function MattersPage() {
     "active",
   );
   const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
 
   async function load() {
     const [{ data: m }, { data: c }] = await Promise.all([
@@ -58,6 +66,7 @@ export default function MattersPage() {
       if (statusFilter === "active" && m.status === "closed") return false;
       if (statusFilter === "closed" && m.status !== "closed") return false;
       if (areaFilter !== "all" && m.practice_area !== areaFilter) return false;
+      if (priorityFilter !== "all" && m.priority !== priorityFilter) return false;
       if (q) {
         const hay = [
           m.name,
@@ -76,7 +85,7 @@ export default function MattersPage() {
     return [...list].sort((a, b) =>
       sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
     );
-  }, [matters, clients, sortAsc, query, statusFilter, areaFilter]);
+  }, [matters, clients, sortAsc, query, statusFilter, areaFilter, priorityFilter]);
 
   const nameOf = (id: string | null) =>
     clients.find((c) => c.id === id)?.name ?? "";
@@ -99,6 +108,30 @@ export default function MattersPage() {
     await supabase.from("matters").update(changes).eq("id", id);
   }
 
+  // Changing status records who/when on close, clears it on reopen, and logs.
+  async function changeStatus(m: Matter, status: string) {
+    const changes: Partial<Matter> = { status };
+    if (status === "closed" && m.status !== "closed") {
+      changes.closed_at = new Date().toISOString();
+      changes.closed_by = userName;
+    } else if (status !== "closed") {
+      changes.closed_at = null;
+      changes.closed_by = null;
+    }
+    await patch(m.id, changes);
+    if (status !== m.status) {
+      await supabase.from("activity_log").insert({
+        kind: "matter_updated",
+        matter_id: m.id,
+        client_id: m.client_id,
+        description:
+          status === "closed"
+            ? `${userName} closed matter ${m.name}`
+            : `${userName} reopened matter ${m.name}`,
+      });
+    }
+  }
+
   async function addMatter() {
     if (!form.name.trim()) return;
     setSaving(true);
@@ -109,6 +142,7 @@ export default function MattersPage() {
         client_id: form.client_id || null,
         practice_area: form.practice_area,
         assigned_to: form.assigned_to || null,
+        priority: form.priority,
         description: form.description.trim() || null,
         hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
       })
@@ -176,6 +210,28 @@ export default function MattersPage() {
             </button>
           ))}
         </div>
+        <div className="filter-row" style={{ margin: 0 }}>
+          <span className="filter-tag">Priority</span>
+          <button
+            type="button"
+            className={`filter-chip${priorityFilter === "all" ? " active" : ""}`}
+            onClick={() => setPriorityFilter("all")}
+          >
+            All
+          </button>
+          {PRIORITIES.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              className={`filter-chip${
+                priorityFilter === p.value ? " active" : ""
+              }`}
+              onClick={() => setPriorityFilter(p.value)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -199,6 +255,7 @@ export default function MattersPage() {
                 <th>Practice Area</th>
                 <th>Assigned To</th>
                 <th>Rate</th>
+                <th>Priority</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -249,13 +306,24 @@ export default function MattersPage() {
                   </td>
                   <td>
                     <InlineSelect
+                      value={m.priority}
+                      className={`prio-${m.priority}`}
+                      options={PRIORITIES.map((p) => ({
+                        value: p.value,
+                        label: p.label,
+                      }))}
+                      onSave={(v) => patch(m.id, { priority: v })}
+                    />
+                  </td>
+                  <td>
+                    <InlineSelect
                       value={m.status}
                       className={`pill-${m.status}`}
                       options={[
                         { value: "open", label: "open" },
                         { value: "closed", label: "closed" },
                       ]}
-                      onSave={(v) => patch(m.id, { status: v })}
+                      onSave={(v) => changeStatus(m, v)}
                     />
                   </td>
                 </tr>
@@ -318,6 +386,21 @@ export default function MattersPage() {
                 {ATTORNEYS.map((a) => (
                   <option key={a} value={a}>
                     {a}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Priority
+              <select
+                value={form.priority}
+                onChange={(e) =>
+                  setForm({ ...form, priority: e.target.value })
+                }
+              >
+                {PRIORITIES.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
                   </option>
                 ))}
               </select>

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import {
   ATTORNEYS,
   PRACTICE_AREAS,
+  PRIORITIES,
   type Client,
   type Matter,
   type TimeEntry,
@@ -16,6 +17,7 @@ import {
   InlineText,
   InlineTextarea,
 } from "../../Inline";
+import { usePortal } from "../../PortalProvider";
 
 function fmtHm(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -24,6 +26,7 @@ function fmtHm(seconds: number): string {
 }
 
 export default function MatterDetail({ params }: { params: { id: string } }) {
+  const { userName } = usePortal();
   const [matter, setMatter] = useState<Matter | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -54,6 +57,31 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     if (!matter) return;
     setMatter({ ...matter, ...changes });
     await supabase.from("matters").update(changes).eq("id", matter.id);
+  }
+
+  async function changeStatus(status: string) {
+    if (!matter) return;
+    const changes: Partial<Matter> = { status };
+    if (status === "closed" && matter.status !== "closed") {
+      changes.closed_at = new Date().toISOString();
+      changes.closed_by = userName;
+    } else if (status !== "closed") {
+      changes.closed_at = null;
+      changes.closed_by = null;
+    }
+    const wasStatus = matter.status;
+    await patch(changes);
+    if (status !== wasStatus) {
+      await supabase.from("activity_log").insert({
+        kind: "matter_updated",
+        matter_id: matter.id,
+        client_id: matter.client_id,
+        description:
+          status === "closed"
+            ? `${userName} closed matter ${matter.name}`
+            : `${userName} reopened matter ${matter.name}`,
+      });
+    }
   }
 
   if (loading) return <p className="muted-line">Loading…</p>;
@@ -108,11 +136,20 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             { value: "open", label: "open" },
             { value: "closed", label: "closed" },
           ]}
-          onSave={(v) => patch({ status: v })}
+          onSave={(v) => changeStatus(v)}
         />
       </div>
 
       <div className="detail-grid grid-6">
+        <div className="detail-item">
+          <span className="detail-label">Priority</span>
+          <InlineSelect
+            value={matter.priority}
+            className={`prio-${matter.priority}`}
+            options={PRIORITIES.map((p) => ({ value: p.value, label: p.label }))}
+            onSave={(v) => patch({ priority: v })}
+          />
+        </div>
         <div className="detail-item">
           <span className="detail-label">Client</span>
           {matter.client_id ? (
@@ -159,6 +196,19 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           <span className="detail-label">Billable</span>
           {billable != null ? `$${billable.toFixed(2)}` : "—"}
         </div>
+        {matter.status === "closed" && (
+          <div className="detail-item">
+            <span className="detail-label">Closed</span>
+            {matter.closed_at
+              ? new Date(matter.closed_at).toLocaleDateString()
+              : "—"}
+            {matter.closed_by ? (
+              <span className="muted-line" style={{ fontSize: "0.8rem" }}>
+                by {matter.closed_by}
+              </span>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <div className="panel" style={{ marginBottom: "1.5rem" }}>
