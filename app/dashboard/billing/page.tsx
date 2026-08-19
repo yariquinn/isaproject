@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client, Invoice, Matter, TimeEntry } from "@/lib/types";
 import Disclaimer from "../Disclaimer";
+import TimesheetTab from "./TimesheetTab";
 
 function fmtHm(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -18,23 +19,26 @@ export default function BillingPage() {
   const [matters, setMatters] = useState<Matter[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"invoices" | "time">("invoices");
+  const [tab, setTab] = useState<"invoices" | "time" | "timesheet">("invoices");
+
+  async function load() {
+    const [{ data: inv }, { data: e }, { data: m }, { data: c }] =
+      await Promise.all([
+        supabase.from("invoices").select("*").order("created_at", { ascending: false }),
+        supabase.from("time_entries").select("*").order("logged_at", { ascending: false }),
+        supabase.from("matters").select("*"),
+        supabase.from("clients").select("*"),
+      ]);
+    setInvoices((inv as Invoice[]) ?? []);
+    setEntries((e as TimeEntry[]) ?? []);
+    setMatters((m as Matter[]) ?? []);
+    setClients((c as Client[]) ?? []);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    (async () => {
-      const [{ data: inv }, { data: e }, { data: m }, { data: c }] =
-        await Promise.all([
-          supabase.from("invoices").select("*").order("created_at", { ascending: false }),
-          supabase.from("time_entries").select("*").order("logged_at", { ascending: false }),
-          supabase.from("matters").select("*"),
-          supabase.from("clients").select("*"),
-        ]);
-      setInvoices((inv as Invoice[]) ?? []);
-      setEntries((e as TimeEntry[]) ?? []);
-      setMatters((m as Matter[]) ?? []);
-      setClients((c as Client[]) ?? []);
-      setLoading(false);
-    })();
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const matterName = (id: string | null) =>
@@ -74,9 +78,18 @@ export default function BillingPage() {
         >
           Time Entries ({entries.length})
         </button>
+        <button
+          type="button"
+          className={tab === "timesheet" ? "active" : undefined}
+          onClick={() => setTab("timesheet")}
+        >
+          Timesheet
+        </button>
       </div>
 
-      {tab === "invoices" ? (
+      {tab === "timesheet" ? (
+        <TimesheetTab onSaved={load} />
+      ) : tab === "invoices" ? (
         <>
           <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
             <div className="stat" style={{ cursor: "default" }}>

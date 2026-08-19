@@ -156,22 +156,24 @@ export default function TodoWidget({
         >
           {t.done ? "✓" : ""}
         </button>
-        <button type="button" className="todo-open" onClick={() => openTodo(t)}>
-          <span className="todo-title">{t.title}</span>
-        </button>
-        <span className="todo-row-meta">
-          {t.priority && t.priority !== "-" && (
-            <span className={`todo-prio-pill prio-${t.priority}`}>
-              {prioLabel(t.priority)} priority
-            </span>
-          )}
-          {mName && <span className="todo-matter">{mName}</span>}
-          {t.due_date && (
-            <span className={`todo-due${overdue ? " overdue" : ""}`}>
-              Due {fmtDue(t.due_date)}
-            </span>
-          )}
-        </span>
+        <div className="todo-main">
+          <button type="button" className="todo-open" onClick={() => openTodo(t)}>
+            <span className="todo-title">{t.title}</span>
+          </button>
+          <span className="todo-row-meta">
+            {t.priority && t.priority !== "-" && (
+              <span className={`todo-prio-pill prio-${t.priority}`}>
+                {prioLabel(t.priority)}
+              </span>
+            )}
+            {mName && <span className="todo-matter">{mName}</span>}
+            {t.due_date && (
+              <span className={`todo-due${overdue ? " overdue" : ""}`}>
+                Due {fmtDue(t.due_date)}
+              </span>
+            )}
+          </span>
+        </div>
         <select
           className="todo-assign-inline"
           value={(ATTORNEYS as readonly string[]).includes(t.assignee ?? "")
@@ -193,7 +195,7 @@ export default function TodoWidget({
 
   return (
     <div>
-      <div className="todo-add">
+      <div className="todo-compose">
         <input
           className="todo-input"
           placeholder="Add a task…"
@@ -203,6 +205,7 @@ export default function TodoWidget({
             if (e.key === "Enter") add();
           }}
         />
+        <div className="todo-compose-meta">
         {!matterId && (
           <div className="todo-matter-pick">
             <input
@@ -288,6 +291,7 @@ export default function TodoWidget({
         <button className="btn" type="button" onClick={add} disabled={!text.trim()}>
           Add
         </button>
+        </div>
       </div>
 
       <div className={compact ? "panel-scroll" : undefined}>
