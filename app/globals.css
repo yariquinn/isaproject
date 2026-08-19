@@ -1248,8 +1248,43 @@ section.block.alt {
   margin-bottom: 1.5rem;
 }
 /* Six info boxes on one neat row on wide screens; collapse without orphans. */
-.detail-grid.grid-6 {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+.detail-grid.grid-6,
+.detail-grid.grid-even {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.detail-grid.grid-even .inline-select {
+  width: 100%;
+}
+
+/* Matter detail header: title + grouped meta controls */
+.matter-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.matter-head .page-title {
+  margin-bottom: 0;
+}
+.matter-meta {
+  display: flex;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.meta-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.meta-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--dash-muted);
 }
 .detail-grid.grid-6 .detail-item {
   min-width: 0;

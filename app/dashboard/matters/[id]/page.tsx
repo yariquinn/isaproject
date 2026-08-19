@@ -120,7 +120,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       <Link href="/dashboard/matters" className="back-link">
         ← Matters
       </Link>
-      <div className="page-head">
+      <div className="matter-head">
         <h1 className="page-title editable-title">
           <InlineText
             value={matter.name}
@@ -129,27 +129,43 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             }}
           />
         </h1>
-        <InlineSelect
-          value={matter.status}
-          className={`pill-${matter.status}`}
-          options={[
-            { value: "open", label: "open" },
-            { value: "closed", label: "closed" },
-          ]}
-          onSave={(v) => changeStatus(v)}
-        />
+        <div className="matter-meta">
+          <div className="meta-chip">
+            <span className="meta-label">Priority</span>
+            <InlineSelect
+              value={matter.priority}
+              className={`prio-${matter.priority}`}
+              options={PRIORITIES.map((p) => ({
+                value: p.value,
+                label: p.label,
+              }))}
+              onSave={(v) => patch({ priority: v })}
+            />
+          </div>
+          <div className="meta-chip">
+            <span className="meta-label">Status</span>
+            <InlineSelect
+              value={matter.status}
+              className={`pill-${matter.status}`}
+              options={[
+                { value: "open", label: "open" },
+                { value: "closed", label: "closed" },
+              ]}
+              onSave={(v) => changeStatus(v)}
+            />
+          </div>
+          <div className="meta-chip">
+            <span className="meta-label">Practice Area</span>
+            <InlineSelect
+              value={matter.practice_area ?? PRACTICE_AREAS[0]}
+              options={PRACTICE_AREAS.map((p) => ({ value: p, label: p }))}
+              onSave={(v) => patch({ practice_area: v })}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="detail-grid grid-6">
-        <div className="detail-item">
-          <span className="detail-label">Priority</span>
-          <InlineSelect
-            value={matter.priority}
-            className={`prio-${matter.priority}`}
-            options={PRIORITIES.map((p) => ({ value: p.value, label: p.label }))}
-            onSave={(v) => patch({ priority: v })}
-          />
-        </div>
+      <div className="detail-grid grid-even">
         <div className="detail-item">
           <span className="detail-label">Client</span>
           {matter.client_id ? (
@@ -162,14 +178,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           ) : (
             <span className="inline-placeholder">—</span>
           )}
-        </div>
-        <div className="detail-item">
-          <span className="detail-label">Practice Area</span>
-          <InlineSelect
-            value={matter.practice_area ?? PRACTICE_AREAS[0]}
-            options={PRACTICE_AREAS.map((p) => ({ value: p, label: p }))}
-            onSave={(v) => patch({ practice_area: v })}
-          />
         </div>
         <div className="detail-item">
           <span className="detail-label">Assigned To</span>
