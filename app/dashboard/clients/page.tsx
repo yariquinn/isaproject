@@ -382,11 +382,6 @@ export default function ClientsPage() {
                     >
                       {c.name}
                     </Link>
-                    {c.client_type === "business" ? (
-                      <span className="type-pill">Business</span>
-                    ) : c.partner_name ? (
-                      <span className="type-pill soft">Couple</span>
-                    ) : null}
                   </td>
                   <td>
                     <Guarded
