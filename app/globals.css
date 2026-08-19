@@ -1876,13 +1876,14 @@ a.activity-row:hover .act-desc {
 .todo-matter {
   font-size: 0.72rem;
   color: var(--dash-muted);
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 20px;
+  padding: 0.15rem 0.6rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 240px;
-}
-.todo-matter::before {
-  content: "⁃ ";
 }
 .todo-due {
   font-size: 0.72rem;
@@ -1978,9 +1979,7 @@ a.activity-row:hover .act-desc {
 .todo-open {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: block;
   background: transparent;
   border: none;
   text-align: left;
@@ -1989,12 +1988,15 @@ a.activity-row:hover .act-desc {
   font-size: 0.92rem;
   font-family: inherit;
   padding: 0;
-}
-.todo-open .todo-title {
-  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.todo-row-meta {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 .todo-open:hover .todo-title {
   color: var(--accent);
@@ -3167,3 +3169,66 @@ a.activity-row:hover .act-desc {
   cursor: pointer;
 }
 .es-open:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Task add-row: searchable matter picker + due label */
+.todo-matter-pick {
+  position: relative;
+  min-width: 12rem;
+}
+.todo-matter-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--radius-sm);
+  background: var(--dash-bg);
+  color: var(--dash-fg);
+}
+.todo-matter-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+.todo-matter-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.todo-matter-menu button {
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--dash-fg);
+  cursor: pointer;
+}
+.todo-matter-menu button:hover {
+  background: var(--dash-bg);
+}
+.todo-matter-empty {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.82rem;
+  color: var(--dash-muted);
+}
+.todo-due-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--dash-muted);
+}

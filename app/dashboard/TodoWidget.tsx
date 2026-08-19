@@ -20,6 +20,8 @@ export default function TodoWidget({
   const [text, setText] = useState("");
   const [assignee, setAssignee] = useState<string>(ATTORNEYS[0]);
   const [newMatter, setNewMatter] = useState<string>("");
+  const [matterQuery, setMatterQuery] = useState<string>("");
+  const [matterOpen, setMatterOpen] = useState<boolean>(false);
   const [newDue, setNewDue] = useState<string>("");
   const [newPriority, setNewPriority] = useState<string>("-");
   const [loading, setLoading] = useState(true);
@@ -72,9 +74,14 @@ export default function TodoWidget({
       .single();
     if (data) setTodos((prev) => [data as Todo, ...prev]);
     setNewMatter("");
+    setMatterQuery("");
     setNewDue("");
     setNewPriority("-");
   }
+
+  const matterMatches = matters
+    .filter((m) => m.name.toLowerCase().includes(matterQuery.trim().toLowerCase()))
+    .slice(0, 6);
 
   async function toggle(t: Todo) {
     const next = !t.done;
@@ -155,17 +162,15 @@ export default function TodoWidget({
         )}
         <button type="button" className="todo-open" onClick={() => openTodo(t)}>
           <span className="todo-title">{t.title}</span>
-          {(mName || t.due_date) && (
-            <span className="todo-sub">
-              {mName && <span className="todo-matter">{mName}</span>}
-              {t.due_date && (
-                <span className={`todo-due${overdue ? " overdue" : ""}`}>
-                  Due {fmtDue(t.due_date)}
-                </span>
-              )}
+        </button>
+        <span className="todo-row-meta">
+          {mName && <span className="todo-matter">{mName}</span>}
+          {t.due_date && (
+            <span className={`todo-due${overdue ? " overdue" : ""}`}>
+              Due {fmtDue(t.due_date)}
             </span>
           )}
-        </button>
+        </span>
         <select
           className="todo-assign-inline"
           value={(ATTORNEYS as readonly string[]).includes(t.assignee ?? "")
@@ -198,27 +203,63 @@ export default function TodoWidget({
           }}
         />
         {!matterId && (
-          <select
-            className="todo-assign-select"
-            value={newMatter}
-            onChange={(e) => setNewMatter(e.target.value)}
-            aria-label="Matter"
-          >
-            <option value="">No matter</option>
-            {matters.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
+          <div className="todo-matter-pick">
+            <input
+              className="todo-matter-input"
+              type="text"
+              placeholder="Search matter…"
+              value={matterQuery}
+              onChange={(e) => {
+                setMatterQuery(e.target.value);
+                setNewMatter("");
+                setMatterOpen(true);
+              }}
+              onFocus={() => setMatterOpen(true)}
+              onBlur={() => setTimeout(() => setMatterOpen(false), 150)}
+              aria-label="Search matter"
+            />
+            {matterOpen && (
+              <div className="todo-matter-menu">
+                <button
+                  type="button"
+                  onMouseDown={() => {
+                    setNewMatter("");
+                    setMatterQuery("");
+                    setMatterOpen(false);
+                  }}
+                >
+                  No matter
+                </button>
+                {matterMatches.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onMouseDown={() => {
+                      setNewMatter(m.id);
+                      setMatterQuery(m.name);
+                      setMatterOpen(false);
+                    }}
+                  >
+                    {m.name}
+                  </button>
+                ))}
+                {matterMatches.length === 0 && (
+                  <span className="todo-matter-empty">No matches</span>
+                )}
+              </div>
+            )}
+          </div>
         )}
-        <input
-          className="todo-due-input"
-          type="date"
-          value={newDue}
-          onChange={(e) => setNewDue(e.target.value)}
-          aria-label="Due date"
-        />
+        <label className="todo-due-field">
+          <span>Due</span>
+          <input
+            className="todo-due-input"
+            type="date"
+            value={newDue}
+            onChange={(e) => setNewDue(e.target.value)}
+            aria-label="Due date"
+          />
+        </label>
         <select
           className="todo-assign-select"
           value={newPriority}
