@@ -3284,24 +3284,42 @@ a.activity-row:hover .act-desc {
   display: inline-flex;
   gap: 0.25rem;
 }
+.es-tabs {
+  gap: 0.5rem;
+}
 .es-tabs button {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.85rem;
-  border: none;
-  background: transparent;
+  gap: 0.45rem;
+  padding: 0.5rem 1.05rem;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-surface);
   color: var(--dash-muted);
   font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  border-radius: 999px;
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.es-tabs button:hover {
+  color: var(--dash-fg);
+  border-color: var(--accent);
 }
 .es-tabs button.active {
-  background: var(--dash-surface);
-  color: var(--dash-fg);
-  box-shadow: var(--shadow-sm);
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+}
+:root[data-theme="dark"] .es-tabs button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.es-tabs button.active .es-count {
+  color: rgba(255, 255, 255, 0.85);
 }
 .es-count {
   font-size: 0.75rem;
