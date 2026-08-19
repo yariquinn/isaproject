@@ -17,6 +17,23 @@ type EditCell = { id: string; field: keyof TimeEntry } | null;
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
+const PERIODS = [
+  { key: "all", label: "All time" },
+  { key: "day", label: "Today" },
+  { key: "week", label: "This week" },
+  { key: "month", label: "This month" },
+  { key: "year", label: "This year" },
+] as const;
+
+function periodStart(key: string): number {
+  const now = new Date();
+  if (key === "day") return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (key === "week") return now.getTime() - 7 * 24 * 3600 * 1000;
+  if (key === "month") return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  if (key === "year") return new Date(now.getFullYear(), 0, 1).getTime();
+  return 0;
+}
+
 export default function TimeEntriesTab({
   entries,
   rate,
@@ -45,6 +62,7 @@ export default function TimeEntriesTab({
   const [nNote, setNNote] = useState<string>("");
   const [nLawyer, setNLawyer] = useState<string>(ATTORNEYS[0]);
   const [nDur, setNDur] = useState<string>("");
+  const [loggedPeriod, setLoggedPeriod] = useState<string>("all");
 
   function commitNew() {
     const hrs = parseFloat(nDur);
@@ -153,7 +171,28 @@ export default function TimeEntriesTab({
         {stat("Un-invoiced", unInvoiced, "warn")}
       </div>
       <p className="te-total-hours">
-        Total logged: <strong>{total.hours.toFixed(2)}</strong> hour(s)
+        Total logged:{" "}
+        <strong>
+          {(
+            entries
+              .filter(
+                (e) => new Date(e.logged_at).getTime() >= periodStart(loggedPeriod),
+              )
+              .reduce((s, e) => s + e.duration_seconds, 0) / 3600
+          ).toFixed(2)}
+        </strong>{" "}
+        hour(s)
+        <select
+          className="inline-select te-period"
+          value={loggedPeriod}
+          onChange={(e) => setLoggedPeriod(e.target.value)}
+        >
+          {PERIODS.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label}
+            </option>
+          ))}
+        </select>
       </p>
 
       {selected.size > 0 && (

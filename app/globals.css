@@ -3497,3 +3497,13 @@ a.activity-row:hover .act-desc {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Total-logged period dropdown */
+.te-period.inline-select {
+  margin-left: 0.6rem;
+  min-width: 0;
+  height: 28px;
+  padding: 0 0.5rem;
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
