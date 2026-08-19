@@ -652,7 +652,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         >
           <h2 className="panel-title">Details</h2>
           <dl className="details-grid">
-            <div style={{ gridColumn: "1 / -1" }}>
+            <div>
               <dt>Rate</dt>
               <dd className="rate-dd">
                 <InlineNumber
@@ -783,6 +783,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         >
           <h2 className="panel-title">Notes</h2>
           <div className="notes-log">
+            <div className="notes-log-scroll">
             {(() => {
               const noteEntries = parseNotes(matter.notes);
               if (noteEntries.length === 0)
@@ -870,6 +871,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </ul>
               );
             })()}
+            </div>
           </div>
           <div className="notes-add">
             <textarea
