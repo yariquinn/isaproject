@@ -2762,6 +2762,27 @@ a.activity-row:hover .act-desc {
   background: var(--dash-muted);
   height: 64px;
 }
+.placeholder-card {
+  border-style: dashed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 160px;
+}
+.ph-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.ph-title {
+  font-weight: 600;
+  color: var(--dash-fg);
+}
+.ph-sub {
+  font-size: 0.85rem;
+  color: var(--dash-muted);
+}
 .matter-alert {
   display: flex;
   align-items: center;

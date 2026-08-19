@@ -117,15 +117,21 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     "time" | "tasks" | "documents" | "events" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
   const cardsRef = useRef<HTMLDivElement>(null);
-  const latestPct = useRef(58);
-  const [leftPct, setLeftPct] = useState(58);
+  const latest = useRef({ left: 38, mid: 37 });
+  const [leftPct, setLeftPct] = useState(38);
+  const [midPct, setMidPct] = useState(37);
   const [stackCards, setStackCards] = useState(false);
 
   useEffect(() => {
-    const saved = Number(localStorage.getItem("matterCardsLeftPct"));
-    if (saved >= 25 && saved <= 75) {
-      latestPct.current = saved;
-      setLeftPct(saved);
+    const l = Number(localStorage.getItem("matterCardsLeftPct"));
+    const m = Number(localStorage.getItem("matterCardsMidPct"));
+    if (l >= 20 && l <= 70) {
+      latest.current.left = l;
+      setLeftPct(l);
+    }
+    if (m >= 20 && m <= 70) {
+      latest.current.mid = m;
+      setMidPct(m);
     }
     const mq = window.matchMedia("(max-width: 820px)");
     const sync = () => setStackCards(mq.matches);
@@ -134,26 +140,37 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  function startCardResize(e: React.MouseEvent) {
-    e.preventDefault();
-    const el = cardsRef.current;
-    if (!el) return;
-    document.body.style.userSelect = "none";
-    const move = (ev: MouseEvent) => {
-      const rect = el.getBoundingClientRect();
-      let pct = ((ev.clientX - rect.left) / rect.width) * 100;
-      pct = Math.max(25, Math.min(75, pct));
-      latestPct.current = pct;
-      setLeftPct(pct);
+  // Drag a boundary: "left" = Client|Details edge, "mid" = Details|New-panel edge.
+  // Each column stays ≥ 18% and the third panel keeps ≥ 15%.
+  function startCardResize(which: "left" | "mid") {
+    return (e: React.MouseEvent) => {
+      e.preventDefault();
+      const el = cardsRef.current;
+      if (!el) return;
+      document.body.style.userSelect = "none";
+      const move = (ev: MouseEvent) => {
+        const rect = el.getBoundingClientRect();
+        const pct = ((ev.clientX - rect.left) / rect.width) * 100;
+        if (which === "left") {
+          const next = Math.max(18, Math.min(pct, 100 - latest.current.mid - 15));
+          latest.current.left = next;
+          setLeftPct(next);
+        } else {
+          const next = Math.max(18, Math.min(pct - latest.current.left, 100 - latest.current.left - 15));
+          latest.current.mid = next;
+          setMidPct(next);
+        }
+      };
+      const up = () => {
+        document.removeEventListener("mousemove", move);
+        document.removeEventListener("mouseup", up);
+        document.body.style.userSelect = "";
+        localStorage.setItem("matterCardsLeftPct", String(Math.round(latest.current.left)));
+        localStorage.setItem("matterCardsMidPct", String(Math.round(latest.current.mid)));
+      };
+      document.addEventListener("mousemove", move);
+      document.addEventListener("mouseup", up);
     };
-    const up = () => {
-      document.removeEventListener("mousemove", move);
-      document.removeEventListener("mouseup", up);
-      document.body.style.userSelect = "";
-      localStorage.setItem("matterCardsLeftPct", String(Math.round(latestPct.current)));
-    };
-    document.addEventListener("mousemove", move);
-    document.addEventListener("mouseup", up);
   }
 
   async function loadActivity() {
@@ -462,12 +479,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       >
         <div
           className="panel client-card"
-          style={stackCards ? undefined : { flex: `0 0 calc(${leftPct}% - 0.75rem)`, minWidth: 0, position: "relative" }}
+          style={stackCards ? undefined : { flex: `0 0 calc(${leftPct}% - 1rem)`, minWidth: 0, position: "relative" }}
         >
           {!stackCards && (
             <div
               className="card-grip right"
-              onMouseDown={startCardResize}
+              onMouseDown={startCardResize("left")}
               title="Drag to resize"
               role="separator"
               aria-orientation="vertical"
@@ -574,16 +591,25 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         <div
           className="panel details-card"
-          style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0, position: "relative" }}
+          style={stackCards ? undefined : { flex: `0 0 calc(${midPct}% - 1rem)`, minWidth: 0, position: "relative" }}
         >
           {!stackCards && (
-            <div
-              className="card-grip left"
-              onMouseDown={startCardResize}
-              title="Drag to resize"
-              role="separator"
-              aria-orientation="vertical"
-            />
+            <>
+              <div
+                className="card-grip left"
+                onMouseDown={startCardResize("left")}
+                title="Drag to resize"
+                role="separator"
+                aria-orientation="vertical"
+              />
+              <div
+                className="card-grip right"
+                onMouseDown={startCardResize("mid")}
+                title="Drag to resize"
+                role="separator"
+                aria-orientation="vertical"
+              />
+            </>
           )}
           <h2 className="panel-title">Details</h2>
           <dl className="details-grid">
@@ -678,6 +704,25 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               </ul>
             </div>
           )}
+        </div>
+
+        <div
+          className="panel placeholder-card"
+          style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0, position: "relative" }}
+        >
+          {!stackCards && (
+            <div
+              className="card-grip left"
+              onMouseDown={startCardResize("mid")}
+              title="Drag to resize"
+              role="separator"
+              aria-orientation="vertical"
+            />
+          )}
+          <div className="ph-inner">
+            <span className="ph-title">New panel</span>
+            <span className="ph-sub">Tell Claude what to show here</span>
+          </div>
         </div>
       </div>
 
