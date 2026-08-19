@@ -3404,3 +3404,11 @@ a.activity-row:hover .act-desc {
   overflow: hidden;
   line-height: 1.4;
 }
+
+/* Client record: keep type pill beside the name */
+.head-name {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+}

@@ -178,12 +178,14 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     <div>
       <Link href="/dashboard/clients" className="back-link">← Clients</Link>
       <div className="page-head">
-        <h1 className="page-title editable-title">
-          <InlineText value={client.name} onSave={(v) => { if (v) patch({ name: v }); }} />
-        </h1>
-        <span className="type-pill">
-          {client.client_type === "business" ? "Business" : client.partner_name ? "Couple" : "Individual"}
-        </span>
+        <div className="head-name">
+          <h1 className="page-title editable-title">
+            <InlineText value={client.name} onSave={(v) => { if (v) patch({ name: v }); }} />
+          </h1>
+          <span className="type-pill">
+            {client.client_type === "business" ? "Business" : client.partner_name ? "Couple" : "Individual"}
+          </span>
+        </div>
         <span className={`pill pill-${client.status}`}>{client.status}</span>
       </div>
 
