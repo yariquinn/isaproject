@@ -2729,6 +2729,33 @@ a.activity-row:hover .act-desc {
   margin-bottom: 1.5rem;
   align-items: stretch;
 }
+/* Draggable divider between the Client and Details cards */
+.cards-resizer {
+  flex: none;
+  width: 10px;
+  margin: 0 0.4rem;
+  align-self: stretch;
+  cursor: col-resize;
+  position: relative;
+  border-radius: 6px;
+  touch-action: none;
+}
+.cards-resizer::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 44px;
+  border-radius: 3px;
+  background: var(--dash-border);
+  transition: background 0.15s ease, height 0.15s ease;
+}
+.cards-resizer:hover::before {
+  background: var(--dash-muted);
+  height: 64px;
+}
 .matter-alert {
   display: flex;
   align-items: center;

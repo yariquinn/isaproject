@@ -116,6 +116,45 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [bodyTab, setBodyTab] = useState<
     "time" | "tasks" | "documents" | "events" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
+  const cardsRef = useRef<HTMLDivElement>(null);
+  const latestPct = useRef(58);
+  const [leftPct, setLeftPct] = useState(58);
+  const [stackCards, setStackCards] = useState(false);
+
+  useEffect(() => {
+    const saved = Number(localStorage.getItem("matterCardsLeftPct"));
+    if (saved >= 25 && saved <= 75) {
+      latestPct.current = saved;
+      setLeftPct(saved);
+    }
+    const mq = window.matchMedia("(max-width: 820px)");
+    const sync = () => setStackCards(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  function startCardResize(e: React.MouseEvent) {
+    e.preventDefault();
+    const el = cardsRef.current;
+    if (!el) return;
+    document.body.style.userSelect = "none";
+    const move = (ev: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      let pct = ((ev.clientX - rect.left) / rect.width) * 100;
+      pct = Math.max(25, Math.min(75, pct));
+      latestPct.current = pct;
+      setLeftPct(pct);
+    };
+    const up = () => {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+      document.body.style.userSelect = "";
+      localStorage.setItem("matterCardsLeftPct", String(Math.round(latestPct.current)));
+    };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  }
 
   async function loadActivity() {
     const { data } = await supabase
@@ -411,8 +450,15 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <div className="matter-cards">
-        <div className="panel client-card">
+      <div
+        className="matter-cards"
+        ref={cardsRef}
+        style={stackCards ? undefined : { display: "flex", gap: 0, alignItems: "stretch" }}
+      >
+        <div
+          className="panel client-card"
+          style={stackCards ? undefined : { flex: `0 0 calc(${leftPct}% - 0.75rem)`, minWidth: 0 }}
+        >
           <h2 className="panel-title">Client</h2>
           {matter.client_id && clientObj ? (
             <>
@@ -501,7 +547,19 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           )}
         </div>
 
-        <div className="panel details-card">
+        {!stackCards && (
+          <div
+            className="cards-resizer"
+            onMouseDown={startCardResize}
+            title="Drag to resize"
+            role="separator"
+            aria-orientation="vertical"
+          />
+        )}
+        <div
+          className="panel details-card"
+          style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0 }}
+        >
           <h2 className="panel-title">Details</h2>
           <dl className="details-grid">
             <div>
