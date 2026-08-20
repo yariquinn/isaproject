@@ -829,28 +829,31 @@ section.block.alt {
 }
 .app-header .tracker-icon {
   position: relative;
-  width: 34px;
+  min-width: 34px;
   height: 34px;
-  padding: 0;
+  padding: 0 0.45rem;
   justify-content: center;
-  gap: 0;
-  background: var(--dash-surface);
-  border: 1px solid var(--dash-border);
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
   color: var(--dash-fg);
   border-radius: 9px;
 }
 .app-header .tracker-icon:hover {
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--dash-fg) 7%, transparent);
   color: var(--accent);
 }
 .app-header .tracker-icon.on {
-  border-color: #22a06b;
   color: #157a4e;
 }
-/* Icon-only in the header — hide the "Timer" label and inline time */
-.app-header .tracker-icon-label,
-.app-header .tracker-icon-time {
+/* Header: hide the "Timer" word, but show the running clock once started */
+.app-header .tracker-icon-label {
   display: none;
+}
+.app-header .tracker-icon-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.82rem;
 }
 .app-header .tracker-dot {
   position: absolute;

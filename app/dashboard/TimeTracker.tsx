@@ -199,7 +199,7 @@ export default function TimeTracker() {
         aria-label="Time tracker"
       >
         <span className="tracker-icon-glyph">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
         </span>
         {runningCount > 0 ? (
           <span className="tracker-icon-time">{fmt(elapsedOf(runningTimer!, now))}</span>
