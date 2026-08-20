@@ -58,24 +58,50 @@ function periodStart(key: string): number {
 const GOAL_TARGET = 50000; // revenue goal (placeholder — easy to make configurable later)
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-// Earnings over the last 7 days — a single-series bar chart.
+// Round a value up to a clean axis maximum (1/2/2.5/5/10 × 10ⁿ).
+function niceCeil(n: number): number {
+  if (n <= 0) return 1;
+  const pow = Math.pow(10, Math.floor(Math.log10(n)));
+  const f = n / pow;
+  const nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  return nf * pow;
+}
+
+// Earnings over the last 7 days — a single-series bar chart with a light track,
+// y-axis ticks and gridlines, and a value on hover.
 function WeekBars({ data }: { data: { label: string; amount: number }[] }) {
-  const max = Math.max(1, ...data.map((d) => d.amount));
+  const max = niceCeil(Math.max(1, ...data.map((d) => d.amount)));
+  const ticks = [1, 0.75, 0.5, 0.25, 0].map((f) => Math.round(max * f));
   return (
-    <div className="wb">
-      {data.map((d, i) => (
-        <div className="wb-col" key={i}>
-          <div className="wb-track">
-            <div className="wb-val">{money(d.amount)}</div>
-            <div
-              className="wb-bar"
-              style={{ height: `${(d.amount / max) * 100}%` }}
-              aria-label={`${d.label}: ${money(d.amount)}`}
-            />
-          </div>
-          <span className="wb-day">{d.label}</span>
+    <div className="wb-wrap">
+      <div className="wb-yaxis">
+        {ticks.map((t, i) => (
+          <span className="wb-tick" key={i}>{money(t)}</span>
+        ))}
+      </div>
+      <div className="wb-plot">
+        <div className="wb-grid">
+          {ticks.map((_, i) => (
+            <div className="wb-gridline" key={i} />
+          ))}
         </div>
-      ))}
+        <div className="wb">
+          {data.map((d, i) => (
+            <div className="wb-col" key={i}>
+              <div className="wb-track">
+                <div className="wb-rail" />
+                <div className="wb-val">{money(d.amount)}</div>
+                <div
+                  className="wb-bar"
+                  style={{ height: `${(d.amount / max) * 100}%` }}
+                  aria-label={`${d.label}: ${money(d.amount)}`}
+                />
+              </div>
+              <span className="wb-day">{d.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -159,6 +185,24 @@ export default function Overview() {
   const [filter, setFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<string>("month");
+  const [showFin, setShowFin] = useState(true);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("showFinancials");
+      if (v !== null) setShowFin(v === "1");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const toggleFin = (v: boolean) => {
+    setShowFin(v);
+    try {
+      localStorage.setItem("showFinancials", v ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -329,8 +373,14 @@ export default function Overview() {
       </div>
 
       <div className="fin-section">
-        <h2 className="panel-title">Financials</h2>
-        {loading ? (
+        <div className="fin-section-head">
+          <h2 className="panel-title">Financials</h2>
+          <label className="switch" title="Show financials">
+            <input type="checkbox" checked={showFin} onChange={(e) => toggleFin(e.target.checked)} />
+            <span className="switch-track" />
+          </label>
+        </div>
+        {!showFin ? null : loading ? (
           <p className="muted-line">Loading…</p>
         ) : (
           <div className="fin-grid">

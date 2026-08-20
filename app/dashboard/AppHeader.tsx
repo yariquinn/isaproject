@@ -145,19 +145,19 @@ export default function AppHeader() {
                 <div className="hdr-alert-list">
                   {alerts.map((a) => (
                     <Link key={a.id} href={a.href} className="hdr-alert" onClick={() => setBellOpen(false)}>
-                      <span className={`hdr-alert-tag tag-${a.kind}`}>
-                        {a.kind === "task" ? "Task" : a.kind === "event" ? "Event" : "Mention"}
-                      </span>
                       <div className="hdr-alert-main">
-                        <div className="hdr-alert-title-row">
-                          {a.high && <span className="hdr-alert-flag" title="High priority" />}
-                          <span className="hdr-alert-title">{a.title}</span>
-                        </div>
                         {a.matter && <span className="hdr-alert-matter">{a.matter}</span>}
+                        <span className="hdr-alert-title">{a.title}</span>
+                        {a.high && <span className="hdr-alert-high">High priority</span>}
                       </div>
-                      <span className={`hdr-alert-date${a.overdue ? " overdue" : ""}`}>
-                        {a.overdue ? "Overdue" : fmt(a.date)}
-                      </span>
+                      <div className="hdr-alert-right">
+                        <span className={`hdr-alert-date${a.overdue ? " overdue" : ""}`}>
+                          {a.overdue ? "Overdue" : fmt(a.date)}
+                        </span>
+                        <span className={`hdr-alert-tag tag-${a.kind}`}>
+                          {a.kind === "task" ? "Task" : a.kind === "event" ? "Event" : "Mention"}
+                        </span>
+                      </div>
                     </Link>
                   ))}
                 </div>
