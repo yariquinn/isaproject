@@ -2952,6 +2952,7 @@ a.activity-row:hover .act-desc {
 .te-rate-row {
   display: flex;
   justify-content: flex-end;
+  margin-top: 1.5rem;
   margin-bottom: 0.75rem;
 }
 .te-rate {
@@ -4262,7 +4263,7 @@ a.activity-row:hover .act-desc {
 .du-head {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.4rem;
   margin-bottom: 0.5rem;
 }
