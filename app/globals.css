@@ -2948,21 +2948,74 @@ a.activity-row:hover .act-desc {
     margin-top: 1.25rem;
   }
 }
-/* Rate row at the top of the Time Entries section. */
-.te-rate {
+/* Compact rate pill, right-aligned above the Time Entries table. */
+.te-rate-row {
   display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+.te-rate {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--dash-border);
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 20px;
 }
 .te-rate-label {
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--dash-muted);
-  margin-right: 0.25rem;
+}
+
+/* Contacts tab cards */
+.contact-cards {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.contact-card {
+  border: 1px solid var(--dash-border);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.1rem;
+  background: var(--dash-bg);
+}
+.cc-role {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--dash-muted);
+  margin-bottom: 0.25rem;
+}
+.cc-name-lg {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--dash-fg);
+  margin-bottom: 0.6rem;
+}
+
+/* Editable event date in the Events tab */
+.ev-date-input {
+  flex: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dash-fg);
+}
+.ev-date-input:hover {
+  border-color: var(--dash-border);
+}
+.ev-date-input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 /* A single draggable divider line centered in the gap between two cards. */

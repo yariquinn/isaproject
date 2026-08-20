@@ -151,7 +151,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const dragStep = useRef<string | null>(null);
   const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
   const [bodyTab, setBodyTab] = useState<
-    "time" | "expenses" | "tasks" | "documents" | "events" | "invoices" | "notes" | "timeline" | "activity"
+    "time" | "expenses" | "tasks" | "documents" | "contacts" | "events" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
   const cardsRef = useRef<HTMLDivElement>(null);
   const latestCombo = useRef(66);
@@ -341,6 +341,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       prev.map((e) => (e.id === ev.id ? { ...e, completed: false } : e)),
     );
     await supabase.from("events").update({ completed: false }).eq("id", ev.id);
+  }
+
+  async function saveEvent(id: string, changes: Partial<EventItem>) {
+    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...changes } : e)));
+    await supabase.from("events").update(changes).eq("id", id);
   }
 
   async function completeTask(id: string, title: string) {
@@ -997,6 +1002,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           ["expenses", "Expenses"],
           ["tasks", "Tasks"],
           ["documents", "Documents"],
+          ["contacts", "Contacts"],
           ["events", `Events (${upcomingEvents.length})`],
           ["invoices", `Invoices (${invoices.length})`],
           ["timeline", "Case Timeline"],
@@ -1123,22 +1129,24 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "time" && (
           <>
-            <div className="te-rate">
-              <span className="te-rate-label">Rate</span>
-              <InlineNumber
-                value={matter.hourly_rate}
-                prefix="$"
-                onSave={(v) => patch({ hourly_rate: v })}
-              />
-              <InlineSelect
-                value={matter.rate_type || "hourly"}
-                className="rate-type-select"
-                options={RATE_TYPES.map((r) => ({
-                  value: r.value,
-                  label: r.value === "flat" ? "flat" : "/hr",
-                }))}
-                onSave={(v) => patch({ rate_type: v })}
-              />
+            <div className="te-rate-row">
+              <div className="te-rate">
+                <span className="te-rate-label">Rate</span>
+                <InlineNumber
+                  value={matter.hourly_rate}
+                  prefix="$"
+                  onSave={(v) => patch({ hourly_rate: v })}
+                />
+                <InlineSelect
+                  value={matter.rate_type || "hourly"}
+                  className="rate-type-select"
+                  options={RATE_TYPES.map((r) => ({
+                    value: r.value,
+                    label: r.value === "flat" ? "flat" : "/hr",
+                  }))}
+                  onSave={(v) => patch({ rate_type: v })}
+                />
+              </div>
             </div>
             <TimeEntriesTab
               entries={entries}
@@ -1153,6 +1161,39 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           <>
             <p className="muted-line">No expenses recorded for this matter.</p>
             <Disclaimer>Expense tracking is a placeholder for now.</Disclaimer>
+          </>
+        )}
+
+        {bodyTab === "contacts" && (
+          <>
+            {clientObj ? (
+              <ul className="contact-cards">
+                <li className="contact-card">
+                  <div className="cc-role">Primary contact</div>
+                  <div className="cc-name-lg">{clientObj.primary_contact || clientObj.name}</div>
+                  <dl className="cc-fields">
+                    {clientObj.contact_title && (
+                      <div><dt>Title</dt><dd>{clientObj.contact_title}</dd></div>
+                    )}
+                    <div><dt>Email</dt><dd>{clientObj.email || "—"}</dd></div>
+                    <div><dt>Phone</dt><dd>{clientObj.phone || "—"}</dd></div>
+                    <div><dt>Address</dt><dd>{clientObj.address || "—"}</dd></div>
+                  </dl>
+                </li>
+                {clientObj.partner_name && (
+                  <li className="contact-card">
+                    <div className="cc-role">Second contact</div>
+                    <div className="cc-name-lg">{clientObj.partner_name}</div>
+                    <dl className="cc-fields">
+                      <div><dt>Email</dt><dd>{clientObj.partner_email || "—"}</dd></div>
+                      <div><dt>Phone</dt><dd>{clientObj.partner_phone || "—"}</dd></div>
+                    </dl>
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p className="muted-line">No contacts linked to this matter.</p>
+            )}
           </>
         )}
 
@@ -1193,14 +1234,23 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               <ul className="du-list">
                 {upcomingEvents.map((ev) => (
                   <li key={ev.id}>
-                    <span className="du-date">
-                      {new Date(ev.event_date).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
+                    <input
+                      type="date"
+                      className="ev-date-input"
+                      value={(ev.event_date || "").slice(0, 10)}
+                      onChange={(e) => {
+                        if (e.target.value) saveEvent(ev.id, { event_date: e.target.value });
+                      }}
+                    />
                     <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
-                    <span className="du-title">{ev.title}</span>
+                    <span className="du-title">
+                      <InlineText
+                        value={ev.title}
+                        onSave={(v) => {
+                          if (v) saveEvent(ev.id, { title: v });
+                        }}
+                      />
+                    </span>
                     <button
                       type="button"
                       className="du-check"
@@ -1253,7 +1303,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             {clientObj && (
               <div className="billing-notes" style={{ marginBottom: "1.25rem" }}>
                 <h3 className="billing-notes-title">Billing Notes</h3>
-                <p className="field-note">How {clientObj.name} likes to be billed.</p>
                 <NotesFeed
                   value={clientObj.billing_notes}
                   onSave={(next) => saveBillingNotes(clientObj.id, next ?? "")}
