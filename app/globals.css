@@ -828,9 +828,12 @@ section.block.alt {
   margin-right: 0.6rem;
 }
 .app-header .tracker-icon {
-  width: auto;
+  position: relative;
+  width: 34px;
   height: 34px;
-  padding: 0 0.7rem;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
   background: var(--dash-surface);
   border: 1px solid var(--dash-border);
   color: var(--dash-fg);
@@ -843,15 +846,21 @@ section.block.alt {
 .app-header .tracker-icon.on {
   border-color: #22a06b;
   color: #157a4e;
-  background: color-mix(in srgb, #22a06b 12%, var(--dash-surface));
 }
-.app-header .tracker-icon-label {
-  font-size: 0.8rem;
-}
+/* Icon-only in the header — hide the "Timer" label and inline time */
+.app-header .tracker-icon-label,
 .app-header .tracker-icon-time {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 0.82rem;
+  display: none;
+}
+.app-header .tracker-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22a06b;
+  border: 2px solid var(--dash-bg);
 }
 .app-header .tracker-pop {
   left: auto;
