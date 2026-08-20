@@ -84,6 +84,10 @@ export type Todo = {
   due_date: string | null;
   priority: string;
   created_at: string;
+  scheduled_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  duration_minutes: number | null;
 };
 
 export type Invoice = {
