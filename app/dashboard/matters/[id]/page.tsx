@@ -758,7 +758,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   return (
                   <li key={`${it.kind}-${it.id}`}>
                     <span className={`du-date${overdue ? " overdue" : ""}`}>
-                      {new Date(it.date).toLocaleDateString(undefined, {
+                      {new Date(it.date.slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                       })}
@@ -799,7 +799,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 {completedItems.map((it) => (
                   <li key={`${it.kind}-${it.id}`} className="du-item-done">
                     <span className="du-date">
-                      {new Date(it.date).toLocaleDateString(undefined, {
+                      {new Date(it.date.slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                       })}

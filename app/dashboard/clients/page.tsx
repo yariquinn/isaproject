@@ -309,13 +309,6 @@ export default function ClientsPage() {
       <div className="page-head">
         <h1 className="page-title upper">Clients <span className="count-badge">{clients.length}</span></h1>
         <div className="head-controls">
-          <input
-            className="activity-search"
-            type="search"
-            placeholder="Search clients…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
           <div className="filter-wrap" ref={filterRef}>
             <button
               className={`icon-btn print-btn${typeFilter !== "all" ? " filter-on" : ""}`}
@@ -358,6 +351,15 @@ export default function ClientsPage() {
             +
           </button>
         </div>
+      </div>
+      <div className="head-search-row">
+        <input
+          className="activity-search head-search"
+          type="search"
+          placeholder="Search clients…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
 
       <div className="matter-filters" style={{ marginBottom: "1.25rem" }}>

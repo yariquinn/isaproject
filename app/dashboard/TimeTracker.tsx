@@ -180,21 +180,15 @@ export default function TimeTracker() {
     await load();
   }
 
-  const runningCount = timers.filter((t) => t.is_running).length;
   const runningTimer = timers.find((t) => t.is_running);
+  const activeTimer = runningTimer ?? timers.find((t) => t.accumulated_seconds > 0);
 
   return (
     <div className="tracker">
       <button
-        className={`tracker-icon${runningCount > 0 ? " on" : ""}`}
+        className={`tracker-icon${activeTimer ? " on" : ""}`}
         onClick={() => {
-          // Running → go straight to logging (no status box). Idle → search to start.
-          if (runningTimer) {
-            openLog(runningTimer);
-            setOpen(false);
-            return;
-          }
-          setPicking(true);
+          if (!activeTimer) setPicking(true);
           setOpen((o) => !o);
         }}
         type="button"
@@ -204,16 +198,40 @@ export default function TimeTracker() {
         <span className="tracker-icon-glyph">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
         </span>
-        {runningCount > 0 ? (
-          <span className="tracker-icon-time">{fmt(elapsedOf(runningTimer!, now))}</span>
+        {activeTimer ? (
+          <span className="tracker-icon-time">{fmt(elapsedOf(activeTimer, now))}</span>
         ) : (
           <span className="tracker-icon-label">Timer</span>
         )}
-        {runningCount > 0 && <span className="tracker-dot" />}
+        {runningTimer && <span className="tracker-dot" />}
       </button>
 
-      {open && !runningTimer && <div className="tracker-backdrop" onClick={() => setOpen(false)} />}
-      {open && !runningTimer && (
+      {open && <div className="tracker-backdrop" onClick={() => setOpen(false)} />}
+      {open && activeTimer && (
+        <div className="tracker-pop tracker-pop--ctrl">
+          <div className="tracker-ctrl-matter">{matterName(activeTimer.matter_id)}</div>
+          <div className="tracker-ctrl">
+            {activeTimer.is_running ? (
+              <button type="button" className="tc-btn" onClick={() => pause(activeTimer)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+                Pause
+              </button>
+            ) : (
+              <button type="button" className="tc-btn" onClick={() => resume(activeTimer)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z" /></svg>
+                Play
+              </button>
+            )}
+            <button type="button" className="tc-btn primary" onClick={() => openLog(activeTimer)} disabled={Math.floor(elapsedOf(activeTimer, now)) === 0}>
+              Log
+            </button>
+            <button type="button" className="tc-btn tc-x" aria-label="Discard timer" onClick={() => { removeTimer(activeTimer); setOpen(false); }}>
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      {open && !activeTimer && (
         <div className="tracker-pop tracker-pop--pick">
           {matters.length === 0 ? (
             <p className="muted-line" style={{ fontSize: "0.8rem" }}>Add a matter first, then start a timer.</p>

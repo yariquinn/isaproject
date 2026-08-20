@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Minimal CSV parser (handles quoted fields, commas, newlines).
 function parseCsv(text: string): Record<string, string>[] {
@@ -45,12 +45,23 @@ export default function ImportExport({
   onImport?: (records: Record<string, string>[]) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [menuOpen]);
 
   const esc = (v: string | number | null | undefined) => {
     const s = v == null ? "" : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const exportCsv = () => {
+  const downloadCsv = () => {
     const lines = [headers, ...rows].map((r) => r.map(esc).join(","));
     const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -61,6 +72,12 @@ export default function ImportExport({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    setMenuOpen(false);
+  };
+  const exportPdf = () => {
+    // Browser print dialog → "Save as PDF".
+    setMenuOpen(false);
+    window.print();
   };
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -72,6 +89,14 @@ export default function ImportExport({
 
   return (
     <>
+      <button className="icon-btn print-btn" type="button" title="Print" aria-label="Print" onClick={() => window.print()}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9" />
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+          <rect x="6" y="14" width="12" height="8" />
+        </svg>
+      </button>
+
       {onImport && (
         <>
           <button className="icon-btn print-btn" type="button" title="Import CSV" aria-label="Import CSV" onClick={() => fileRef.current?.click()}>
@@ -82,11 +107,20 @@ export default function ImportExport({
           <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={handleFile} style={{ display: "none" }} />
         </>
       )}
-      <button className="icon-btn print-btn" type="button" title="Export CSV" aria-label="Export CSV" onClick={exportCsv}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="8 12 12 16 16 12" /><line x1="12" y1="4" x2="12" y2="16" />
-        </svg>
-      </button>
+
+      <div className="export-wrap" ref={wrapRef}>
+        <button className="icon-btn print-btn" type="button" title="Export" aria-label="Export" onClick={() => setMenuOpen((o) => !o)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="8 12 12 16 16 12" /><line x1="12" y1="4" x2="12" y2="16" />
+          </svg>
+        </button>
+        {menuOpen && (
+          <div className="export-menu">
+            <button type="button" onClick={downloadCsv}>Download CSV</button>
+            <button type="button" onClick={exportPdf}>Download PDF</button>
+          </div>
+        )}
+      </div>
     </>
   );
 }

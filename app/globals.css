@@ -900,6 +900,58 @@ section.block.alt {
   font-size: 0.8rem;
   color: var(--dash-muted);
 }
+.app-header .tracker-pop--ctrl {
+  width: auto;
+  min-width: 220px;
+}
+.tracker-ctrl-matter {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dash-fg);
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tracker-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.tc-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tc-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.tc-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.tc-btn.tc-x {
+  margin-left: auto;
+  padding: 0.4rem 0.55rem;
+  color: var(--dash-muted);
+}
+.tc-btn.tc-x:hover {
+  color: #c0392b;
+  border-color: #c0392b;
+}
 .hdr-bell-badge.green {
   background: #22a06b;
 }
@@ -1914,6 +1966,13 @@ section.block.alt {
   position: relative;
   display: inline-flex;
 }
+.head-search-row {
+  margin: 0.9rem 0 1.1rem;
+}
+.head-search-row .head-search {
+  width: 100%;
+  max-width: 420px;
+}
 .icon-btn.filter-on {
   border-color: var(--accent);
   color: var(--accent);
@@ -1977,6 +2036,19 @@ section.block.alt {
   font-size: 0.72rem;
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.sc-dd {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.sc-name-row {
+  display: inline-flex;
+  align-items: center;
+}
+.sc-phone {
+  font-size: 0.88rem;
+  color: var(--dash-muted);
 }
 .rel-pill {
   display: inline-block;

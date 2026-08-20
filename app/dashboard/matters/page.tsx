@@ -296,13 +296,6 @@ export default function MattersPage() {
       <div className="page-head">
         <h1 className="page-title upper">Matters <span className="count-badge">{matters.length}</span></h1>
         <div className="head-controls">
-          <input
-            className="activity-search"
-            type="search"
-            placeholder="Search all matters…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
           <div className="filter-wrap" ref={filterRef}>
             <button
               className={`icon-btn print-btn${areaFilter !== "all" || prioFilter !== "all" ? " filter-on" : ""}`}
@@ -355,6 +348,15 @@ export default function MattersPage() {
           </button>
         </div>
       </div>
+      <div className="head-search-row">
+        <input
+          className="activity-search head-search"
+          type="search"
+          placeholder="Search all matters…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
 
       <div className="matter-filters">
         <div className="filter-row" style={{ margin: 0 }}>
@@ -365,7 +367,7 @@ export default function MattersPage() {
               className={`filter-chip${statusFilter === s ? " active" : ""}`}
               onClick={() => setStatusFilter(s)}
             >
-              {s === "active" ? "Active" : s === "closed" ? "Closed" : "All"}
+              {s === "active" ? "Active" : s === "closed" ? "Archived" : "All"}
             </button>
           ))}
         </div>

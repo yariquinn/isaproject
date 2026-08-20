@@ -302,18 +302,33 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 <Guarded field="address" label="address" />
               </dd>
             </div>
-            {client.partner_name && (
-              <div>
-                <dt>Second contact</dt>
-                <dd>
-                  {client.partner_name}
-                  {client.partner_phone ? ` · ${client.partner_phone}` : ""}
-                  {client.partner_relationship && (
-                    <span className="rel-pill">{client.partner_relationship}</span>
-                  )}
-                </dd>
-              </div>
-            )}
+            {client.partner_name && (() => {
+              const partnerClient = allClients.find(
+                (c) => c.id !== client.id && c.name === client.partner_name,
+              );
+              return (
+                <div>
+                  <dt>Second contact</dt>
+                  <dd className="sc-dd">
+                    <span className="sc-name-row">
+                      {partnerClient ? (
+                        <Link href={`/dashboard/clients/${partnerClient.id}`} className="row-link">
+                          {client.partner_name}
+                        </Link>
+                      ) : (
+                        client.partner_name
+                      )}
+                      {client.partner_relationship && (
+                        <span className="rel-pill">{client.partner_relationship}</span>
+                      )}
+                    </span>
+                    {client.partner_phone && (
+                      <span className="sc-phone">{client.partner_phone}</span>
+                    )}
+                  </dd>
+                </div>
+              );
+            })()}
             <div>
               <dt>Billing contact</dt>
               <dd>
