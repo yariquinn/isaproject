@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { AUTH_COOKIE } from "@/lib/auth";
 import Sidebar from "./Sidebar";
+import AppHeader from "./AppHeader";
 import { PortalProvider } from "./PortalProvider";
 
 export const metadata = {
@@ -20,6 +21,7 @@ export default function DashboardLayout({
       <div className="dash">
         <Sidebar userName={userName} />
         <div className="dash-main">
+          <AppHeader />
           <div className="dash-content">{children}</div>
         </div>
       </div>

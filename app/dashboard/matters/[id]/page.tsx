@@ -22,7 +22,7 @@ import {
   InlineText,
   InlineTextarea,
 } from "../../Inline";
-import { usePortal } from "../../PortalProvider";
+import { usePortal, useCrumbs } from "../../PortalProvider";
 import TodoWidget from "../../TodoWidget";
 import Disclaimer from "../../Disclaimer";
 import Collapsible from "../../Collapsible";
@@ -426,6 +426,19 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     loadAll();
   }
 
+  const crumbClient = matter ? clients.find((c) => c.id === matter.client_id) : null;
+  useCrumbs(
+    matter
+      ? [
+          { label: "Matters", href: "/dashboard/matters" },
+          ...(crumbClient
+            ? [{ label: crumbClient.name, href: `/dashboard/clients/${crumbClient.id}` }]
+            : []),
+          { label: matter.name },
+        ]
+      : [],
+  );
+
   if (loading) return <p className="muted-line">Loading…</p>;
   if (!matter)
     return (
@@ -449,17 +462,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <nav className="crumbs" aria-label="Breadcrumb">
-        <Link href="/dashboard/matters">Matters</Link>
-        <span className="crumb-sep">/</span>
-        {clientObj ? (
-          <Link href={`/dashboard/clients/${clientObj.id}`}>{clientObj.name}</Link>
-        ) : (
-          <span className="crumb-current">—</span>
-        )}
-        <span className="crumb-sep">/</span>
-        <span className="crumb-current">{matter.name}</span>
-      </nav>
       <div className="matter-head">
         <div className="matter-head-title">
           <h1 className="page-title editable-title">

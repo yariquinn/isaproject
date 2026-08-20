@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ActivityItem, Client, Matter } from "@/lib/types";
 import { InlineText, InlineTextarea } from "../../Inline";
-import { usePortal } from "../../PortalProvider";
+import { usePortal, useCrumbs } from "../../PortalProvider";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -143,6 +143,12 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     return allClients.filter((c) => c.id !== params.id).filter((c) => (q ? c.name.toLowerCase().includes(q) : true)).slice(0, 8);
   }, [allClients, contactQuery, params.id]);
 
+  useCrumbs(
+    client
+      ? [{ label: "Clients", href: "/dashboard/clients" }, { label: client.name }]
+      : [],
+  );
+
   if (loading) return <p className="muted-line">Loading…</p>;
   if (!client)
     return (
@@ -176,7 +182,6 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <Link href="/dashboard/clients" className="back-link">← Clients</Link>
       <div className="page-head">
         <div className="head-name">
           <h1 className="page-title editable-title">

@@ -760,8 +760,40 @@ section.block.alt {
   flex-direction: column;
   min-width: 0;
 }
+/* Universal top header (breadcrumb bar) — kept compact in height. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 50px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 0 2.25rem;
+  background: var(--dash-bg);
+  border-bottom: 1px solid var(--dash-border);
+}
+.app-crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+}
+.app-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.app-header a {
+  color: var(--dash-muted);
+}
+.app-header a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
 .dash-content {
-  padding: 2rem 2.25rem;
+  padding: 1.5rem 2.25rem 2rem;
   flex: 1;
 }
 
