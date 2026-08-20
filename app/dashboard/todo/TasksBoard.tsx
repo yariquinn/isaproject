@@ -272,8 +272,8 @@ export default function TasksBoard() {
     <div className="tb">
       {/* Toolbar */}
       <div className="tb-toolbar">
-        <button className="btn tb-addnew" type="button" onClick={() => openAdd({ scheduled_date: todayIso })}>
-          + Add new
+        <button className="btn icon-plus-btn tb-addnew" type="button" onClick={() => openAdd({ scheduled_date: todayIso })} title="Add task" aria-label="Add task">
+          +
         </button>
         <div className="tb-weeknav">
           <button type="button" onClick={() => setWeekStart(startOfWeek(new Date()))}>

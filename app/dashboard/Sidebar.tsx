@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import TimeTracker from "./TimeTracker";
 import { logoutAction } from "./actions";
 
-const GROUPS: {
-  label?: string;
-  items: { href: string; label: string; sub?: boolean }[];
-}[] = [
+type NavItem = { href: string; label: string; children?: NavItem[] };
+type Section = { key: string; label: string; items: NavItem[] };
+
+const SECTIONS: Section[] = [
   {
+    key: "workspace",
+    label: "Workspace",
     items: [
       { href: "/dashboard", label: "Overview" },
       { href: "/dashboard/clients", label: "Clients" },
@@ -18,27 +21,49 @@ const GROUPS: {
     ],
   },
   {
+    key: "practice",
+    label: "Practice",
     items: [
       { href: "/dashboard/todo", label: "Tasks" },
       { href: "/dashboard/reports", label: "Reports" },
-    ],
-  },
-  {
-    items: [
       { href: "/dashboard/billing", label: "Billing" },
       { href: "/dashboard/intake", label: "Intake" },
     ],
   },
   {
+    key: "schedule",
+    label: "Schedule",
     items: [
-      { href: "/dashboard/calendar", label: "Calendar" },
-      { href: "/dashboard/deadlines", label: "Deadlines", sub: true },
+      {
+        href: "/dashboard/calendar",
+        label: "Calendar",
+        children: [{ href: "/dashboard/deadlines", label: "Deadlines" }],
+      },
     ],
   },
   {
+    key: "files",
+    label: "Files",
     items: [{ href: "/dashboard/documents", label: "Documents" }],
   },
 ];
+
+// Destinations a custom pinned shortcut can point at.
+const DESTINATIONS: { href: string; label: string }[] = [
+  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/clients", label: "Clients" },
+  { href: "/dashboard/matters", label: "Matters" },
+  { href: "/dashboard/todo", label: "Tasks" },
+  { href: "/dashboard/reports", label: "Reports" },
+  { href: "/dashboard/billing", label: "Billing" },
+  { href: "/dashboard/intake", label: "Intake" },
+  { href: "/dashboard/calendar", label: "Calendar" },
+  { href: "/dashboard/deadlines", label: "Deadlines" },
+  { href: "/dashboard/documents", label: "Documents" },
+  { href: "/dashboard/settings", label: "Settings" },
+];
+
+type Custom = { id: string; label: string; href: string };
 
 export default function Sidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
@@ -54,6 +79,110 @@ export default function Sidebar({ userName }: { userName: string }) {
       ? pathname === "/dashboard"
       : pathname === href || pathname.startsWith(href + "/");
 
+  // Collapse state (per section + per parent item), persisted per browser.
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [custom, setCustom] = useState<Record<string, Custom[]>>({});
+  const [adding, setAdding] = useState<string | null>(null);
+  const [addLabel, setAddLabel] = useState("");
+  const [addHref, setAddHref] = useState(DESTINATIONS[0].href);
+
+  useEffect(() => {
+    try {
+      const c = localStorage.getItem("sidebarCollapsed");
+      if (c) setCollapsed(JSON.parse(c));
+      const x = localStorage.getItem("sidebarCustom");
+      if (x) setCustom(JSON.parse(x));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const persistCollapsed = (next: Record<string, boolean>) => {
+    setCollapsed(next);
+    try {
+      localStorage.setItem("sidebarCollapsed", JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+  const persistCustom = (next: Record<string, Custom[]>) => {
+    setCustom(next);
+    try {
+      localStorage.setItem("sidebarCustom", JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+  const toggle = (key: string) =>
+    persistCollapsed({ ...collapsed, [key]: !collapsed[key] });
+
+  const startAdd = (sectionKey: string) => {
+    setAdding(sectionKey);
+    setAddLabel("");
+    setAddHref(DESTINATIONS[0].href);
+    persistCollapsed({ ...collapsed, [sectionKey]: false });
+  };
+  const saveAdd = (sectionKey: string) => {
+    const label = addLabel.trim();
+    if (!label) return;
+    const item: Custom = {
+      id: Math.random().toString(36).slice(2),
+      label,
+      href: addHref,
+    };
+    persistCustom({
+      ...custom,
+      [sectionKey]: [...(custom[sectionKey] ?? []), item],
+    });
+    setAdding(null);
+  };
+  const removeCustom = (sectionKey: string, id: string) => {
+    persistCustom({
+      ...custom,
+      [sectionKey]: (custom[sectionKey] ?? []).filter((c) => c.id !== id),
+    });
+  };
+
+  const renderItem = (item: NavItem) => {
+    const hasChildren = !!item.children?.length;
+    const isOpen = !collapsed[item.href];
+    return (
+      <div className="nav-item" key={item.href}>
+        <div className={`nav-row${isActive(item.href) ? " active" : ""}`}>
+          {hasChildren ? (
+            <button
+              type="button"
+              className={`nav-caret${isOpen ? " open" : ""}`}
+              onClick={() => toggle(item.href)}
+              aria-label={isOpen ? "Collapse" : "Expand"}
+            >
+              ›
+            </button>
+          ) : (
+            <span className="nav-caret-spacer" />
+          )}
+          <Link href={item.href} title={item.label} className="nav-link">
+            <span className="nav-tx">{item.label}</span>
+          </Link>
+        </div>
+        {hasChildren && isOpen && (
+          <div className="nav-children">
+            {item.children!.map((c) => (
+              <Link
+                key={c.href}
+                href={c.href}
+                title={c.label}
+                className={`nav-child${isActive(c.href) ? " active" : ""}`}
+              >
+                {c.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-inner">
@@ -66,22 +195,94 @@ export default function Sidebar({ userName }: { userName: string }) {
         </div>
 
         <nav className="sidebar-nav">
-          {GROUPS.map((g, i) => (
-            <div className="nav-group" key={i}>
-              {g.label && <div className="nav-group-label">{g.label}</div>}
-              {g.items.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  title={l.label}
-                  className={`${isActive(l.href) ? "active" : ""}${l.sub ? " sub" : ""}`}
-                >
-                  <span className="nav-ic">{l.label[0]}</span>
-                  <span className="nav-tx">{l.label}</span>
-                </Link>
-              ))}
-            </div>
-          ))}
+          {SECTIONS.map((s) => {
+            const open = !collapsed[s.key];
+            const customItems = custom[s.key] ?? [];
+            return (
+              <div className="nav-group" key={s.key}>
+                <div className="nav-section-head">
+                  <button
+                    type="button"
+                    className={`nav-caret${open ? " open" : ""}`}
+                    onClick={() => toggle(s.key)}
+                    aria-label={open ? "Collapse section" : "Expand section"}
+                  >
+                    ›
+                  </button>
+                  <span className="nav-group-label" onClick={() => toggle(s.key)}>
+                    {s.label}
+                  </span>
+                  <button
+                    type="button"
+                    className="nav-add"
+                    onClick={() => startAdd(s.key)}
+                    title={`Add a shortcut under ${s.label}`}
+                    aria-label={`Add a shortcut under ${s.label}`}
+                  >
+                    +
+                  </button>
+                </div>
+                {open && (
+                  <>
+                    {s.items.map(renderItem)}
+                    {customItems.map((c) => (
+                      <div className="nav-item" key={c.id}>
+                        <div className={`nav-row custom${isActive(c.href) ? " active" : ""}`}>
+                          <span className="nav-caret-spacer" />
+                          <Link href={c.href} title={c.label} className="nav-link">
+                            <span className="nav-tx">{c.label}</span>
+                          </Link>
+                          <button
+                            type="button"
+                            className="nav-remove"
+                            onClick={() => removeCustom(s.key, c.id)}
+                            title="Remove shortcut"
+                            aria-label="Remove shortcut"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {adding === s.key && (
+                      <div className="nav-add-form">
+                        <input
+                          className="nav-add-input"
+                          autoFocus
+                          placeholder="Shortcut name…"
+                          value={addLabel}
+                          onChange={(e) => setAddLabel(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveAdd(s.key);
+                            if (e.key === "Escape") setAdding(null);
+                          }}
+                        />
+                        <select
+                          className="nav-add-select"
+                          value={addHref}
+                          onChange={(e) => setAddHref(e.target.value)}
+                        >
+                          {DESTINATIONS.map((d) => (
+                            <option key={d.href} value={d.href}>
+                              {d.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="nav-add-actions">
+                          <button type="button" className="nav-add-save" onClick={() => saveAdd(s.key)} disabled={!addLabel.trim()}>
+                            Add
+                          </button>
+                          <button type="button" className="nav-add-cancel" onClick={() => setAdding(null)}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="sidebar-tracker">
