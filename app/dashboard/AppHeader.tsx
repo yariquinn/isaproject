@@ -25,6 +25,84 @@ type Alert = {
   high: boolean;
 };
 
+type SearchHit = { kind: "client" | "matter"; id: string; name: string; sub: string | null };
+
+function GlobalSearch() {
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState<SearchHit[]>([]);
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const term = q.trim();
+    if (term === "") {
+      setHits([]);
+      return;
+    }
+    let cancelled = false;
+    const run = async () => {
+      const [{ data: clients }, { data: matters }] = await Promise.all([
+        supabase.from("clients").select("id,name,primary_contact").ilike("name", `%${term}%`).limit(6),
+        supabase.from("matters").select("id,name,practice_area").ilike("name", `%${term}%`).limit(6),
+      ]);
+      if (cancelled) return;
+      const list: SearchHit[] = [];
+      for (const c of (clients as { id: string; name: string; primary_contact: string | null }[]) ?? [])
+        list.push({ kind: "client", id: c.id, name: c.name, sub: c.primary_contact });
+      for (const m of (matters as { id: string; name: string; practice_area: string | null }[]) ?? [])
+        list.push({ kind: "matter", id: m.id, name: m.name, sub: m.practice_area });
+      setHits(list);
+    };
+    const t = setTimeout(run, 150);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div className="hdr-search" ref={boxRef}>
+      <svg className="hdr-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <input
+        type="search"
+        className="hdr-search-input"
+        placeholder="Search clients & matters…"
+        value={q}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && q.trim() !== "" && (
+        <div className="hdr-search-menu">
+          {hits.length === 0 ? (
+            <p className="hdr-empty">No matches.</p>
+          ) : (
+            hits.map((h) => (
+              <Link
+                key={`${h.kind}-${h.id}`}
+                href={h.kind === "client" ? `/dashboard/clients/${h.id}` : `/dashboard/matters/${h.id}`}
+                className="hdr-search-hit"
+                onClick={() => { setOpen(false); setQ(""); }}
+              >
+                <span className={`hdr-search-kind hdr-search-${h.kind}`}>{h.kind === "client" ? "Client" : "Matter"}</span>
+                <span className="hdr-search-name">{h.name}</span>
+                {h.sub && <span className="hdr-search-sub">{h.sub}</span>}
+              </Link>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AppHeader() {
   const { userName } = usePortal();
   const initials =
@@ -142,6 +220,7 @@ export default function AppHeader() {
 
   return (
     <header className="app-header">
+      <GlobalSearch />
       <div className="app-header-right" ref={wrapRef}>
         {/* Timer (lives in the header, left of alerts) */}
         <TimeTracker />
