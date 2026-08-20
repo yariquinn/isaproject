@@ -134,6 +134,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const { userName } = usePortal();
   const router = useRouter();
   const [confirmDel, setConfirmDel] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [matter, setMatter] = useState<Matter | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -151,7 +152,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const dragStep = useRef<string | null>(null);
   const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
   const [bodyTab, setBodyTab] = useState<
-    "time" | "expenses" | "tasks" | "documents" | "contacts" | "events" | "invoices" | "notes" | "timeline" | "activity"
+    "time" | "expenses" | "tasks" | "documents" | "contacts" | "conflict" | "events" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
   const cardsRef = useRef<HTMLDivElement>(null);
   const latestCombo = useRef(66);
@@ -552,6 +553,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
         <div className="matter-meta">
+          <button type="button" className="ghost sm" onClick={() => setEditOpen(true)}>
+            Edit
+          </button>
           <button
             type="button"
             className="ghost sm"
@@ -997,21 +1001,28 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       </div>
 
       <div className="doc-tabs client-tabs">
-        {([
-          ["time", `Time Entries (${entries.length})`],
-          ["expenses", "Expenses"],
-          ["tasks", "Tasks"],
-          ["documents", "Documents"],
-          ["contacts", "Contacts"],
-          ["events", `Events (${upcomingEvents.length})`],
-          ["invoices", `Invoices (${invoices.length})`],
-          ["timeline", "Case Timeline"],
-        ] as const).map(([key, label]) => (
+        {(
+          [
+            ["time", `Time Entries (${entries.length})`],
+            ["expenses", "Expenses"],
+            ["tasks", "Tasks"],
+            ["documents", "Documents"],
+            ["contacts", "Contacts"],
+            ...(matter.show_conflict_check
+              ? ([["conflict", "Conflict Check"]] as [string, string][])
+              : []),
+            ["events", `Events (${upcomingEvents.length})`],
+            ["invoices", `Invoices (${invoices.length})`],
+            ...(matter.show_case_timeline
+              ? ([["timeline", "Case Timeline"]] as [string, string][])
+              : []),
+          ] as [string, string][]
+        ).map(([key, label]) => (
           <button
             key={key}
             type="button"
             className={bodyTab === key ? "active" : undefined}
-            onClick={() => setBodyTab(key)}
+            onClick={() => setBodyTab(key as typeof bodyTab)}
           >
             {label}
           </button>
@@ -1197,6 +1208,15 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </>
         )}
 
+        {bodyTab === "conflict" && (
+          <>
+            <p className="muted-line">No conflict check has been run for this matter.</p>
+            <Disclaimer>
+              Conflict checking against existing clients and matters is a placeholder for now.
+            </Disclaimer>
+          </>
+        )}
+
         {bodyTab === "tasks" && (
           <TodoWidget matterId={matter.id} compact />
         )}
@@ -1315,20 +1335,87 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             {invoices.length === 0 ? (
               <p className="muted-line">No invoices for this matter.</p>
             ) : (
-              <ul className="invoice-list">
-                {invoices.map((i) => (
-                  <li key={i.id}>
-                    <span className="strong-cell">{i.number || "—"}</span>
-                    <span>{i.amount != null ? `$${i.amount.toFixed(2)}` : "—"}</span>
-                    <span className={`pill inv-${i.status}`}>{i.status}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="table-wrap" style={{ border: "none" }}>
+                <table className="data-table invoice-table">
+                  <thead>
+                    <tr>
+                      <th>Invoice #</th>
+                      <th>Date Created</th>
+                      <th>Amount Due</th>
+                      <th>Status</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.map((i) => {
+                      const created = i.issued_date || i.created_at;
+                      const due = i.status === "paid" ? 0 : i.amount;
+                      return (
+                        <tr key={i.id}>
+                          <td className="strong-cell">{i.number || "—"}</td>
+                          <td>
+                            {created
+                              ? new Date(created).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })
+                              : "—"}
+                          </td>
+                          <td>{due != null ? `$${due.toFixed(2)}` : "—"}</td>
+                          <td>
+                            <span className={`pill inv-${i.status}`}>{i.status}</span>
+                          </td>
+                          <td>{i.amount != null ? `$${i.amount.toFixed(2)}` : "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </>
         )}
 
       </div>
+
+      {editOpen && (
+        <div className="modal-backdrop" onClick={() => setEditOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Edit matter</h3>
+            <p className="modal-dur">Turn optional sections on or off for this matter.</p>
+            <label className="toggle-row">
+              <span>
+                <span className="toggle-title">Conflict Check</span>
+                <span className="toggle-sub">Adds a Conflict Check tab.</span>
+              </span>
+              <input
+                type="checkbox"
+                className="toggle-switch"
+                checked={matter.show_conflict_check}
+                onChange={(e) => patch({ show_conflict_check: e.target.checked })}
+              />
+            </label>
+            <label className="toggle-row">
+              <span>
+                <span className="toggle-title">Case Timeline</span>
+                <span className="toggle-sub">Adds a Case Timeline tab (off by default).</span>
+              </span>
+              <input
+                type="checkbox"
+                className="toggle-switch"
+                checked={matter.show_case_timeline}
+                onChange={(e) => patch({ show_case_timeline: e.target.checked })}
+              />
+            </label>
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={() => setEditOpen(false)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmDel && (
         <div className="modal-backdrop" onClick={() => setConfirmDel(false)}>

@@ -4262,6 +4262,7 @@ a.activity-row:hover .act-desc {
 .du-head {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   margin-bottom: 0.5rem;
 }
@@ -4281,7 +4282,7 @@ a.activity-row:hover .act-desc {
 }
 .du-list li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.6rem;
   font-size: 0.88rem;
 }
@@ -4315,9 +4316,9 @@ a.activity-row:hover .act-desc {
   flex: 1;
   min-width: 0;
   color: var(--dash-fg);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 .du-kind {
   flex: none;
@@ -4529,3 +4530,54 @@ a.activity-row:hover .act-desc {
 :root[data-theme="dark"] .kb-low { background: rgba(111, 155, 216, 0.1); }
 :root[data-theme="dark"] .kb-none { background: rgba(154, 164, 178, 0.08); }
 :root[data-theme="dark"] .kb-done { background: rgba(76, 157, 107, 0.1); }
+
+/* Matter Edit modal toggles */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--dash-border);
+}
+.toggle-title {
+  display: block;
+  font-weight: 600;
+  color: var(--dash-fg);
+  font-size: 0.9rem;
+}
+.toggle-sub {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--dash-muted);
+  margin-top: 0.1rem;
+}
+.toggle-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 40px;
+  height: 22px;
+  border-radius: 20px;
+  background: var(--dash-border);
+  position: relative;
+  cursor: pointer;
+  flex: none;
+  transition: background 0.15s ease;
+}
+.toggle-switch::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+.toggle-switch:checked {
+  background: #2e7d46;
+}
+.toggle-switch:checked::before {
+  transform: translateX(18px);
+}

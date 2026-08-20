@@ -35,6 +35,8 @@ export type Matter = {
   assigned_to: string | null;
   priority: string;
   case_timeline_type: string | null;
+  show_case_timeline: boolean;
+  show_conflict_check: boolean;
   notes: string | null;
   closed_at: string | null;
   closed_by: string | null;
