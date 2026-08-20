@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { CLIENT_TYPES, type Client } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
-import ExportMenu from "../ExportMenu";
+import ImportExport from "../ImportExport";
 
 const EMPTY = {
   name: "",
@@ -34,6 +34,34 @@ export default function ClientsPage() {
   const [sortAsc, setSortAsc] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"open" | "archived" | "all">("open");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [filterOpen]);
+
+  async function importClients(records: Record<string, string>[]) {
+    const toInsert = records
+      .map((r) => ({
+        name: (r.Name || r.name || "").trim(),
+        client_type: (r.Type || r.client_type || "individual").toLowerCase() === "business" ? "business" : "individual",
+        primary_contact: r.Contact || r.primary_contact || null,
+        email: r.Email || r.email || null,
+        phone: r.Phone || r.phone || null,
+        created_by: userName,
+      }))
+      .filter((c) => c.name);
+    if (toInsert.length === 0) return;
+    await supabase.from("clients").insert(toInsert);
+    load();
+  }
   const [activeMatters, setActiveMatters] = useState<
     Record<string, { id: string; name: string }[]>
   >({});
@@ -99,6 +127,7 @@ export default function ClientsPage() {
     let list = clients.filter((c) =>
       view === "archived" ? c.archived : view === "open" ? !c.archived : true,
     );
+    if (typeFilter !== "all") list = list.filter((c) => c.client_type === typeFilter);
     if (q) {
       list = list.filter((c) =>
         [c.name, c.primary_contact, c.email, c.phone, c.address]
@@ -110,7 +139,7 @@ export default function ClientsPage() {
     return [...list].sort((a, b) =>
       sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
     );
-  }, [clients, sortAsc, query, view]);
+  }, [clients, sortAsc, query, view, typeFilter]);
 
   async function patch(id: string, changes: Partial<Client>) {
     setClients((prev) =>
@@ -287,16 +316,43 @@ export default function ClientsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <ExportMenu
+          <div className="filter-wrap" ref={filterRef}>
+            <button
+              className={`icon-btn print-btn${typeFilter !== "all" ? " filter-on" : ""}`}
+              type="button"
+              title="Filter"
+              aria-label="Filter"
+              onClick={() => setFilterOpen((o) => !o)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+            </button>
+            {filterOpen && (
+              <div className="filter-menu">
+                <div className="filter-menu-group">
+                  <div className="filter-menu-label">Type</div>
+                  {[["all", "All types"], ...CLIENT_TYPES.map((t) => [t.value, t.label])].map(([v, l]) => (
+                    <button key={v} type="button" className={`filter-menu-item${typeFilter === v ? " on" : ""}`} onClick={() => setTypeFilter(v as string)}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <ImportExport
             filename="clients"
-            headers={["Name", "Contact", "Email", "Phone", "Active Matters"]}
+            headers={["Name", "Type", "Contact", "Email", "Phone", "Active Matters"]}
             rows={rows.map((c) => [
               c.name,
+              c.client_type,
               c.primary_contact,
               c.email,
               c.phone,
               (activeMatters[c.id] ?? []).map((m) => m.name).join("; "),
             ])}
+            onImport={importClients}
           />
           <button className="btn icon-plus-btn" onClick={() => setAddOpen(true)} type="button" title="Add client" aria-label="Add client">
             +

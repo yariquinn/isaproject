@@ -1909,6 +1909,60 @@ section.block.alt {
   font-size: 0.75rem;
   color: var(--dash-muted);
 }
+/* Filter icon + dropdown (matters / clients) */
+.filter-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.icon-btn.filter-on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.filter-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  min-width: 200px;
+  padding: 0.4rem;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+}
+.filter-menu-group + .filter-menu-group {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--dash-border);
+}
+.filter-menu-label {
+  padding: 0.35rem 0.55rem 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
+.filter-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  background: transparent;
+  color: var(--dash-fg);
+  font-size: 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.filter-menu-item:hover {
+  background: color-mix(in srgb, var(--dash-fg) 5%, transparent);
+}
+.filter-menu-item.on {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
 .page-title.upper {
   display: inline-flex;
   align-items: center;

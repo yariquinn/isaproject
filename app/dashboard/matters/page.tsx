@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   ATTORNEYS,
@@ -18,7 +18,7 @@ const initialsOf = (n: string | null) =>
   (n || "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
 import { InlineNumber, InlineSelect } from "../Inline";
 import { usePortal } from "../PortalProvider";
-import ExportMenu from "../ExportMenu";
+import ImportExport from "../ImportExport";
 
 const EMPTY = {
   name: "",
@@ -58,6 +58,33 @@ export default function MattersPage() {
     "active",
   );
   const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [prioFilter, setPrioFilter] = useState<string>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [filterOpen]);
+
+  async function importMatters(records: Record<string, string>[]) {
+    const toInsert = records
+      .map((r) => ({
+        name: (r.Matter || r.name || "").trim(),
+        practice_area: r["Practice Area"] || r.practice_area || null,
+        priority: ((r.Priority || r.priority || "-").toLowerCase() || "-"),
+        status: (r.Status || r.status || "open").toLowerCase() === "closed" ? "closed" : "open",
+        opened_by: userName,
+      }))
+      .filter((m) => m.name);
+    if (toInsert.length === 0) return;
+    await supabase.from("matters").insert(toInsert);
+    load();
+  }
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pendingTasks, setPendingTasks] = useState<Record<string, number>>({});
   const [matterTasks, setMatterTasks] = useState<Record<string, { title: string; assignee: string | null }[]>>({});
@@ -139,6 +166,7 @@ export default function MattersPage() {
       if (statusFilter === "active" && m.status === "closed") return false;
       if (statusFilter === "closed" && m.status !== "closed") return false;
       if (areaFilter !== "all" && m.practice_area !== areaFilter) return false;
+      if (prioFilter !== "all" && (m.priority || "-") !== prioFilter) return false;
       if (q) {
         const hay = [
           m.name,
@@ -275,7 +303,40 @@ export default function MattersPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <ExportMenu
+          <div className="filter-wrap" ref={filterRef}>
+            <button
+              className={`icon-btn print-btn${areaFilter !== "all" || prioFilter !== "all" ? " filter-on" : ""}`}
+              type="button"
+              title="Filter"
+              aria-label="Filter"
+              onClick={() => setFilterOpen((o) => !o)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+            </button>
+            {filterOpen && (
+              <div className="filter-menu">
+                <div className="filter-menu-group">
+                  <div className="filter-menu-label">Practice area</div>
+                  {["all", ...PRACTICE_AREAS].map((p) => (
+                    <button key={p} type="button" className={`filter-menu-item${areaFilter === p ? " on" : ""}`} onClick={() => setAreaFilter(p)}>
+                      {p === "all" ? "All areas" : p}
+                    </button>
+                  ))}
+                </div>
+                <div className="filter-menu-group">
+                  <div className="filter-menu-label">Priority</div>
+                  {[["all", "All priorities"], ...PRIORITIES.map((p) => [p.value, p.value === "-" ? "None" : p.label])].map(([v, l]) => (
+                    <button key={v} type="button" className={`filter-menu-item${prioFilter === v ? " on" : ""}`} onClick={() => setPrioFilter(v as string)}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <ImportExport
             filename="matters"
             headers={["Matter", "Client", "Practice Area", "Pending Tasks", "Rate", "Priority", "Status"]}
             rows={rows.map((m) => [
@@ -287,6 +348,7 @@ export default function MattersPage() {
               m.priority,
               m.status,
             ])}
+            onImport={importMatters}
           />
           <button className="btn icon-plus-btn" onClick={() => setOpen(true)} type="button" title="Add matter" aria-label="Add matter">
             +
@@ -304,25 +366,6 @@ export default function MattersPage() {
               onClick={() => setStatusFilter(s)}
             >
               {s === "active" ? "Active" : s === "closed" ? "Closed" : "All"}
-            </button>
-          ))}
-        </div>
-        <div className="filter-row" style={{ margin: 0 }}>
-          <button
-            type="button"
-            className={`filter-chip${areaFilter === "all" ? " active" : ""}`}
-            onClick={() => setAreaFilter("all")}
-          >
-            All areas
-          </button>
-          {PRACTICE_AREAS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={`filter-chip${areaFilter === p ? " active" : ""}`}
-              onClick={() => setAreaFilter(p)}
-            >
-              {p}
             </button>
           ))}
         </div>
