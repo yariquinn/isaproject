@@ -674,18 +674,33 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     />
                   </dd>
                 </div>
-                {clientObj.partner_name && (
-                  <div>
-                    <dt>Second contact</dt>
-                    <dd>
-                      {clientObj.partner_name}
-                      {clientObj.partner_phone ? ` · ${clientObj.partner_phone}` : ""}
-                      {clientObj.partner_relationship && (
-                        <span className="rel-pill">{clientObj.partner_relationship}</span>
-                      )}
-                    </dd>
-                  </div>
-                )}
+                {clientObj.partner_name && (() => {
+                  const splitContact = clients.find(
+                    (c) => c.id !== clientObj.id && c.name === clientObj.partner_name,
+                  );
+                  return (
+                    <div>
+                      <dt>Second contact</dt>
+                      <dd className="sc-dd">
+                        <span className="sc-name-row">
+                          {splitContact ? (
+                            <Link href={`/dashboard/clients/${splitContact.id}`} className="row-link">
+                              {clientObj.partner_name}
+                            </Link>
+                          ) : (
+                            clientObj.partner_name
+                          )}
+                          {clientObj.partner_relationship && (
+                            <span className="rel-pill">{clientObj.partner_relationship}</span>
+                          )}
+                        </span>
+                        {clientObj.partner_phone && (
+                          <span className="sc-phone">{clientObj.partner_phone}</span>
+                        )}
+                      </dd>
+                    </div>
+                  );
+                })()}
                 <div>
                   <dt>Billing contact</dt>
                   <dd>
@@ -852,6 +867,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0 }}
         >
           <div className="notes-head notes-head-center">
+            <h2 className="combo-title notes-title">Activity</h2>
             <div className="notes-filter">
               {(["all", "comment", "activity"] as const).map((f) => (
                 <button
@@ -1280,7 +1296,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               <p className="muted-line">No upcoming events.</p>
             ) : (
               <ul className="du-list">
-                {upcomingEvents.map((ev) => (
+                {upcomingEvents.map((ev) => {
+                  const evOverdue = (ev.event_date || "").slice(0, 10) < todayStrLocal;
+                  return (
                   <li key={ev.id}>
                     <input
                       type="date"
@@ -1290,7 +1308,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                         if (e.target.value) saveEvent(ev.id, { event_date: e.target.value });
                       }}
                     />
-                    <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
+                    {evOverdue ? (
+                      <span className="du-overdue" title="Overdue">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        Overdue
+                      </span>
+                    ) : (
+                      <span className={`event-kind ev-${ev.kind}`}>{ev.kind}</span>
+                    )}
                     <span className="du-title">
                       <InlineText
                         value={ev.title}
@@ -1311,7 +1338,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       </svg>
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
 

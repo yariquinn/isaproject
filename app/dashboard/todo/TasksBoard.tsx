@@ -342,7 +342,7 @@ export default function TasksBoard() {
       <div className="tb-lv-head">
         <span>Task</span>
         <span>Matter</span>
-        <span>User</span>
+        <span>Responsible</span>
         <span>Day</span>
         <span>Due</span>
       </div>
@@ -405,7 +405,7 @@ export default function TasksBoard() {
                     onBlur={() => setLvEdit(null)}
                   />
                 ) : (
-                  t.scheduled_date ? fmtDay(t.scheduled_date) : "Waiting"
+                  t.scheduled_date ? fmtDay(t.scheduled_date) : "—"
                 )}
               </span>
               <span className="tb-lv-due" onClick={(e) => { e.stopPropagation(); setLvEdit({ id: t.id, field: "due_date" }); }}>

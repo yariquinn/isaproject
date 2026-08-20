@@ -191,11 +191,26 @@ function Sparkline({ data }: { data: number[] }) {
   );
 }
 
+// Small trend badge: arrow + percentage, colored by direction.
+function StatDelta({ value }: { value: number | null }) {
+  if (value == null) return null;
+  const up = value >= 0;
+  return (
+    <span className={`stat-delta ${up ? "up" : "down"}`}>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        {up ? <polyline points="6 15 12 9 18 15" /> : <polyline points="6 9 12 15 18 9" />}
+      </svg>
+      {up ? "+" : ""}{value}%
+    </span>
+  );
+}
+
 export default function Overview() {
   const { userName } = usePortal();
   const firstName = userName.split(" ")[0] || userName;
 
   const [clients, setClients] = useState(0);
+  const [clientRows, setClientRows] = useState<{ created_at: string }[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
@@ -258,7 +273,7 @@ export default function Overview() {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
       const [cRes, eRes, iRes, mRes, evRes, aRes, tRes] = await Promise.all([
-        supabase.from("clients").select("id", { count: "exact", head: true }),
+        supabase.from("clients").select("id,created_at"),
         supabase.from("time_entries").select("*"),
         supabase.from("invoices").select("*"),
         supabase.from("matters").select("*"),
@@ -266,7 +281,8 @@ export default function Overview() {
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100),
         supabase.from("todos").select("*").eq("done", false),
       ]);
-      setClients(cRes.count ?? 0);
+      setClients((cRes.data as { created_at: string }[])?.length ?? 0);
+      setClientRows((cRes.data as { created_at: string }[]) ?? []);
       setEntries((eRes.data as TimeEntry[]) ?? []);
       setInvoices((iRes.data as Invoice[]) ?? []);
       setMatters((mRes.data as Matter[]) ?? []);
@@ -288,6 +304,10 @@ export default function Overview() {
     weekEarnings,
     revenueDelta,
     goalPct,
+    clientsDelta,
+    openedDelta,
+    closedDelta,
+    hoursDelta,
   } = useMemo(() => {
     const start = periodStart(period);
     let secs = 0;
@@ -349,6 +369,35 @@ export default function Overview() {
     const revenueDelta = prevRev > 0 ? Math.round(((rev - prevRev) / prevRev) * 100) : null;
     const goalPct = Math.min(100, Math.round((rev / GOAL_TARGET) * 100));
 
+    // Period-over-period % change for the snapshot tiles.
+    const pctDelta = (cur: number, prev: number): number | null =>
+      prev > 0 ? Math.round(((cur - prev) / prev) * 100) : cur > 0 ? 100 : null;
+
+    const inPrev = (iso: string | null | undefined) => {
+      if (!iso) return false;
+      const t = new Date(iso).getTime();
+      return t >= prevStart && t < start;
+    };
+    const inCur = (iso: string | null | undefined) => {
+      if (!iso) return false;
+      return new Date(iso).getTime() >= start;
+    };
+
+    let curClients = 0, prevClients = 0;
+    for (const c of clientRows) {
+      if (inCur(c.created_at)) curClients++;
+      else if (inPrev(c.created_at)) prevClients++;
+    }
+    let prevOpened = 0, prevClosed = 0;
+    for (const m of matters) {
+      if (inPrev(m.open_date || m.created_at)) prevOpened++;
+      if (inPrev(m.closed_at)) prevClosed++;
+    }
+    let prevSecs = 0;
+    for (const e of entries) {
+      if (inPrev(e.logged_at)) prevSecs += e.duration_seconds;
+    }
+
     return {
       hours: secs / 3600,
       revenue: rev,
@@ -360,8 +409,12 @@ export default function Overview() {
       weekEarnings,
       revenueDelta,
       goalPct,
+      clientsDelta: pctDelta(curClients, prevClients),
+      openedDelta: pctDelta(opened, prevOpened),
+      closedDelta: pctDelta(closed, prevClosed),
+      hoursDelta: pctDelta(secs, prevSecs),
     };
-  }, [entries, invoices, matters, period]);
+  }, [entries, invoices, matters, clientRows, period]);
 
   // Last 12 months of earnings + revenue, for the chart's "This Year" view
   // and the Revenue sparkline.
@@ -500,18 +553,22 @@ export default function Overview() {
         <Link href="/dashboard/clients" className="stat">
           <span className="stat-num">{clients}</span>
           <span className="stat-label">Clients</span>
+          <StatDelta value={clientsDelta} />
         </Link>
         <Link href="/dashboard/matters?status=active" className="stat">
           <span className="stat-num">{openedCount}</span>
           <span className="stat-label">Opened</span>
+          <StatDelta value={openedDelta} />
         </Link>
         <Link href="/dashboard/matters?status=closed" className="stat">
           <span className="stat-num">{closedCount}</span>
           <span className="stat-label">Closed</span>
+          <StatDelta value={closedDelta} />
         </Link>
         <Link href="/dashboard/billing" className="stat">
           <span className="stat-num">{hours.toFixed(1)}</span>
           <span className="stat-label">Hours Logged</span>
+          <StatDelta value={hoursDelta} />
         </Link>
       </div>
 
