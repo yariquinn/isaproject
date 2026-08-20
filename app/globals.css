@@ -4099,14 +4099,18 @@ a.activity-row:hover .act-desc {
 }
 .notes-head-center {
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 0.6rem;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
 }
 .notes-title {
   margin: 0;
-  text-align: center;
+  text-align: left;
+  width: 100%;
+}
+.notes-head-center .notes-filter {
+  align-self: center;
 }
 .notes-filter {
   display: inline-flex;
