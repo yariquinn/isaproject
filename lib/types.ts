@@ -136,7 +136,7 @@ export type TaskComment = {
 
 // Distinct avatar color per person (Yari — the user — is blue).
 const PERSON_COLORS: Record<string, string> = {
-  "Yari Corsino": "#1e3a8a",
+  "Yari Corsino": "linear-gradient(135deg, #1c3577 0%, #3a63c4 100%)",
   "Isa Abdur-Rahman": "#2f8f83",
   "Paralegal": "#7c5cbf",
 };

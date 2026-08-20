@@ -188,8 +188,21 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           <h1 className="page-title editable-title">
             <InlineText value={client.name} onSave={(v) => { if (v) patch({ name: v }); }} />
           </h1>
+          <div className="matter-substrip">
+            <span className={`status-pill status-${client.archived ? "closed" : "active"}`}>
+              {client.archived ? "Archived" : "Active"}
+            </span>
+            <span className="strip-sep">·</span>
+            <span className="strip-item">
+              Added{" "}
+              {new Date(client.created_at).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          </div>
         </div>
-        <span className={`pill pill-${client.status}`}>{client.status}</span>
       </div>
 
       <div className="detail-cols" style={{ marginBottom: "1.5rem" }}>

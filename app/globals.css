@@ -882,11 +882,11 @@ section.block.alt {
 }
 .hdr-bell-badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
+  top: 2px;
+  right: 3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
   border-radius: 999px;
   background: #c0392b;
   color: #fff;
@@ -5283,6 +5283,201 @@ a.activity-row:hover .act-desc {
 .doc-tabs button.active .count-badge {
   color: #fff;
   background: rgba(255, 255, 255, 0.22);
+}
+
+/* ============================================================
+   Overview financials
+   ============================================================ */
+.fin-section {
+  margin-bottom: 1.5rem;
+}
+.fin-section .panel-title {
+  margin-bottom: 0.85rem;
+}
+.fin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.fin-card {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.fin-revenue { grid-column: span 1; }
+.fin-expenses { grid-column: span 1; }
+.fin-goals { grid-column: span 2; align-items: center; text-align: center; }
+.fin-week { grid-column: span 3; }
+.fin-invoices { grid-column: span 1; }
+.fin-card-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
+.fin-hero {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--dash-fg);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.fin-delta {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.fin-delta.up { color: #2e7d46; }
+.fin-delta.down { color: #c0392b; }
+.fin-sub {
+  font-size: 0.76rem;
+  color: var(--dash-muted);
+}
+.fin-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.fin-week-total {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--dash-fg);
+}
+.fin-ring {
+  margin: 0.25rem 0;
+}
+.fin-ring-num {
+  font-size: 1.35rem;
+  font-weight: 700;
+  fill: var(--dash-fg);
+}
+/* weekly bar chart */
+.wb {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.55rem;
+  height: 130px;
+  margin-top: 0.6rem;
+}
+.wb-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  height: 100%;
+}
+.wb-track {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--dash-border);
+}
+.wb-bar {
+  width: 58%;
+  max-width: 34px;
+  min-height: 3px;
+  background: #4c9d6b;
+  border-radius: 4px 4px 0 0;
+  transition: filter 0.1s ease;
+}
+.wb-col:hover .wb-bar {
+  filter: brightness(1.08);
+}
+.wb-val {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--dash-fg);
+  background: var(--dash-surface);
+  padding: 0.05rem 0.3rem;
+  border-radius: 5px;
+  border: 1px solid var(--dash-border);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+.wb-col:hover .wb-val {
+  opacity: 1;
+}
+.wb-day {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--dash-muted);
+}
+/* invoice split bar */
+.inv-bar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0.5rem 0 0.75rem;
+}
+.inv-seg {
+  height: 100%;
+}
+.inv-seg.empty {
+  background: var(--dash-border);
+}
+.inv-legend {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.inv-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.inv-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+.inv-label {
+  color: var(--dash-fg);
+}
+.inv-val {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--dash-fg);
+}
+@media (max-width: 1000px) {
+  .fin-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .fin-goals,
+  .fin-week {
+    grid-column: span 2;
+  }
+}
+@media (max-width: 560px) {
+  .fin-grid {
+    grid-template-columns: 1fr;
+  }
+  .fin-revenue,
+  .fin-expenses,
+  .fin-goals,
+  .fin-week,
+  .fin-invoices {
+    grid-column: span 1;
+  }
 }
 
 /* ============================================================

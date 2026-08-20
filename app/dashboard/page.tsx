@@ -55,62 +55,92 @@ function periodStart(key: string): number {
   return new Date(now.getFullYear(), 0, 1).getTime();
 }
 
-const STATUS_META: Record<string, { label: string; color: string }> = {
-  paid: { label: "Paid", color: "#4c9d6b" },
-  sent: { label: "Sent", color: "#6f9bd8" },
-  draft: { label: "Draft", color: "#9aa4b2" },
-  overdue: { label: "Overdue", color: "#c0392b" },
-  unpaid: { label: "Unpaid", color: "#d9a441" },
-};
+const GOAL_TARGET = 50000; // revenue goal (placeholder — easy to make configurable later)
+const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-function Donut({ data }: { data: { label: string; value: number; color: string }[] }) {
-  const total = data.reduce((s, d) => s + d.value, 0);
-  if (total <= 0) return <p className="muted-line">No invoice data yet.</p>;
-  const r = 54;
-  const circ = 2 * Math.PI * r;
-  let acc = 0;
+// Earnings over the last 7 days — a single-series bar chart.
+function WeekBars({ data }: { data: { label: string; amount: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.amount));
   return (
-    <div className="fin-chart">
-      <svg width="140" height="140" viewBox="0 0 140 140" className="fin-donut">
-        <g transform="rotate(-90 70 70)">
-          <circle cx="70" cy="70" r={r} fill="none" stroke="var(--dash-border)" strokeWidth="20" />
-          {data.map((d, i) => {
-            const frac = d.value / total;
-            const dash = frac * circ;
-            const el = (
-              <circle
-                key={i}
-                cx="70"
-                cy="70"
-                r={r}
-                fill="none"
-                stroke={d.color}
-                strokeWidth="20"
-                strokeDasharray={`${dash} ${circ - dash}`}
-                strokeDashoffset={-acc * circ}
-              />
-            );
-            acc += frac;
-            return el;
-          })}
-        </g>
-        <text x="70" y="67" textAnchor="middle" className="fin-total-num">
-          ${total.toFixed(0)}
-        </text>
-        <text x="70" y="83" textAnchor="middle" className="fin-total-label">
-          TOTAL
-        </text>
-      </svg>
-      <ul className="fin-legend">
-        {data.map((d, i) => (
-          <li key={i}>
-            <span className="fin-dot" style={{ background: d.color }} />
-            <span className="fin-legend-label">{d.label}</span>
-            <span className="fin-val">${d.value.toFixed(0)}</span>
+    <div className="wb">
+      {data.map((d, i) => (
+        <div className="wb-col" key={i}>
+          <div className="wb-track">
+            <div className="wb-val">{money(d.amount)}</div>
+            <div
+              className="wb-bar"
+              style={{ height: `${(d.amount / max) * 100}%` }}
+              aria-label={`${d.label}: ${money(d.amount)}`}
+            />
+          </div>
+          <span className="wb-day">{d.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Progress ring toward the revenue goal.
+function GoalRing({ pct }: { pct: number }) {
+  const r = 44;
+  const c = 2 * Math.PI * r;
+  const off = c * (1 - Math.min(100, pct) / 100);
+  return (
+    <svg width="120" height="120" viewBox="0 0 120 120" className="fin-ring">
+      <circle cx="60" cy="60" r={r} fill="none" stroke="var(--dash-border)" strokeWidth="10" />
+      <circle
+        cx="60"
+        cy="60"
+        r={r}
+        fill="none"
+        stroke="#4c9d6b"
+        strokeWidth="10"
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={off}
+        transform="rotate(-90 60 60)"
+      />
+      <text x="60" y="66" textAnchor="middle" className="fin-ring-num">{pct}%</text>
+    </svg>
+  );
+}
+
+// Invoice status split — a stacked bar with a labelled legend.
+function InvoiceBar({ paid, open, overdue }: { paid: number; open: number; overdue: number }) {
+  const total = paid + open + overdue;
+  const rows = [
+    { label: "Paid", val: paid, color: "#4c9d6b" },
+    { label: "Open", val: open, color: "#d9a441" },
+    { label: "Past due", val: overdue, color: "#c0392b" },
+  ];
+  return (
+    <>
+      <div className="inv-bar">
+        {total === 0 ? (
+          <span className="inv-seg empty" style={{ width: "100%" }} />
+        ) : (
+          rows.map(
+            (r) =>
+              r.val > 0 && (
+                <span
+                  key={r.label}
+                  className="inv-seg"
+                  style={{ width: `${(r.val / total) * 100}%`, background: r.color }}
+                />
+              ),
+          )
+        )}
+      </div>
+      <ul className="inv-legend">
+        {rows.map((r) => (
+          <li key={r.label}>
+            <span className="inv-dot" style={{ background: r.color }} />
+            <span className="inv-label">{r.label}</span>
+            <span className="inv-val">{money(r.val)}</span>
           </li>
         ))}
       </ul>
-    </div>
+    </>
   );
 }
 
@@ -151,7 +181,18 @@ export default function Overview() {
     })();
   }, []);
 
-  const { hours, revenue, openedCount, closedCount, financials } = useMemo(() => {
+  const {
+    hours,
+    revenue,
+    openedCount,
+    closedCount,
+    invPaid,
+    invOpen,
+    invOverdue,
+    weekEarnings,
+    revenueDelta,
+    goalPct,
+  } = useMemo(() => {
     const start = periodStart(period);
     let secs = 0;
     for (const e of entries) {
@@ -172,19 +213,58 @@ export default function Overview() {
       if (od && new Date(od).getTime() >= start) opened++;
       if (m.closed_at && new Date(m.closed_at).getTime() >= start) closed++;
     }
-    const byStatus: Record<string, number> = {};
+    // Invoice split by status group.
+    let invPaid = 0, invOpen = 0, invOverdue = 0;
     for (const i of invoices) {
-      byStatus[i.status] = (byStatus[i.status] ?? 0) + (i.amount ?? 0);
+      const a = i.amount ?? 0;
+      if (i.status === "paid") invPaid += a;
+      else if (i.status === "overdue") invOverdue += a;
+      else invOpen += a; // draft / sent / unpaid
     }
-    const financials = Object.entries(byStatus)
-      .map(([status, value]) => ({
-        status,
-        value,
-        label: STATUS_META[status]?.label ?? status,
-        color: STATUS_META[status]?.color ?? "#9aa4b2",
-      }))
-      .filter((d) => d.value > 0);
-    return { hours: secs / 3600, revenue: rev, openedCount: opened, closedCount: closed, financials };
+
+    // Earnings over the last 7 days (billable time × matter rate).
+    const rateOf = (id: string | null) =>
+      matters.find((m) => m.id === id)?.hourly_rate ?? 0;
+    const weekEarnings: { label: string; amount: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - i);
+      const ds = d.getTime();
+      const de = ds + 86400000;
+      let amt = 0;
+      for (const e of entries) {
+        if (!e.billable) continue;
+        const t = new Date(e.logged_at).getTime();
+        if (t >= ds && t < de) amt += (e.duration_seconds / 3600) * (rateOf(e.matter_id) ?? 0);
+      }
+      weekEarnings.push({ label: d.toLocaleDateString(undefined, { weekday: "short" }), amount: amt });
+    }
+
+    // Revenue change vs the previous equal-length window.
+    const span = Date.now() - start;
+    const prevStart = start - span;
+    let prevRev = 0;
+    for (const i of invoices) {
+      if (i.status !== "paid") continue;
+      const when = new Date(i.issued_date ?? i.created_at).getTime();
+      if (when >= prevStart && when < start) prevRev += i.amount ?? 0;
+    }
+    const revenueDelta = prevRev > 0 ? Math.round(((rev - prevRev) / prevRev) * 100) : null;
+    const goalPct = Math.min(100, Math.round((rev / GOAL_TARGET) * 100));
+
+    return {
+      hours: secs / 3600,
+      revenue: rev,
+      openedCount: opened,
+      closedCount: closed,
+      invPaid,
+      invOpen,
+      invOverdue,
+      weekEarnings,
+      revenueDelta,
+      goalPct,
+    };
   }, [entries, invoices, matters, period]);
 
   const filtered = useMemo(() => {
@@ -252,9 +332,50 @@ export default function Overview() {
         </Link>
       </div>
 
-      <div className="panel ov-fin-panel">
+      <div className="fin-section">
         <h2 className="panel-title">Financials</h2>
-        {loading ? <p className="muted-line">Loading…</p> : <Donut data={financials} />}
+        {loading ? (
+          <p className="muted-line">Loading…</p>
+        ) : (
+          <div className="fin-grid">
+            <div className="fin-card fin-revenue">
+              <span className="fin-card-label">Revenue</span>
+              <span className="fin-hero">{money(revenue)}</span>
+              {revenueDelta != null && (
+                <span className={`fin-delta ${revenueDelta >= 0 ? "up" : "down"}`}>
+                  {revenueDelta >= 0 ? "+" : ""}{revenueDelta}% vs prev
+                </span>
+              )}
+            </div>
+
+            <div className="fin-card fin-expenses">
+              <span className="fin-card-label">Expenses</span>
+              <span className="fin-hero">$0</span>
+              <span className="fin-sub">Not tracked yet</span>
+            </div>
+
+            <div className="fin-card fin-goals">
+              <span className="fin-card-label">Goal</span>
+              <GoalRing pct={goalPct} />
+              <span className="fin-sub">{money(revenue)} of {money(GOAL_TARGET)}</span>
+            </div>
+
+            <div className="fin-card fin-week">
+              <div className="fin-card-head">
+                <span className="fin-card-label">Earnings — last 7 days</span>
+                <span className="fin-week-total">
+                  {money(weekEarnings.reduce((s, d) => s + d.amount, 0))}
+                </span>
+              </div>
+              <WeekBars data={weekEarnings} />
+            </div>
+
+            <div className="fin-card fin-invoices">
+              <span className="fin-card-label">Invoices</span>
+              <InvoiceBar paid={invPaid} open={invOpen} overdue={invOverdue} />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="overview-cols equal">
