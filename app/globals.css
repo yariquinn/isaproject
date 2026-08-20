@@ -5926,6 +5926,79 @@ a.activity-row:hover .act-desc {
   font-weight: 700;
   color: var(--dash-fg);
 }
+.tb-viewseg {
+  flex: none;
+}
+/* List view */
+.tb-listview {
+  flex-direction: column;
+  overflow-y: auto;
+}
+.tb-lv-head,
+.tb-lv-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr) 60px 90px 90px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+}
+.tb-lv-head {
+  position: sticky;
+  top: 0;
+  background: var(--dash-surface);
+  border-bottom: 1px solid var(--dash-border);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  z-index: 1;
+}
+.tb-lv-row {
+  border-bottom: 1px solid var(--dash-border);
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--dash-fg);
+}
+.tb-lv-row:hover {
+  background: color-mix(in srgb, var(--dash-fg) 3%, transparent);
+}
+.tb-lv-row.done .tb-lv-task {
+  text-decoration: line-through;
+  color: var(--dash-muted);
+}
+.tb-lv-task {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-weight: 500;
+}
+.tb-lv-c {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--dash-muted);
+}
+.tb-lv-matter {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dash-muted);
+}
+.tb-card-who.sm {
+  width: 24px;
+  height: 24px;
+  font-size: 0.6rem;
+  margin: 0;
+}
+.tb-lv-day,
+.tb-lv-due {
+  font-size: 0.82rem;
+  color: var(--dash-muted);
+}
 .tb-toolbar-right {
   margin-left: auto;
   display: flex;

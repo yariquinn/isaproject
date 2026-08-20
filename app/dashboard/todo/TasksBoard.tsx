@@ -98,7 +98,25 @@ export default function TasksBoard() {
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [collapsedPeople, setCollapsedPeople] = useState<Record<string, boolean>>({});
+  const [view, setView] = useState<"calendar" | "list">("calendar");
   const dragId = useRef<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("tasksView");
+      if (v === "calendar" || v === "list") setView(v);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const changeView = (v: "calendar" | "list") => {
+    setView(v);
+    try {
+      localStorage.setItem("tasksView", v);
+    } catch {
+      /* ignore */
+    }
+  };
 
   async function load() {
     const [{ data }, { data: ms }, { data: cs }] = await Promise.all([
@@ -293,6 +311,54 @@ export default function TasksBoard() {
     );
   };
 
+  const fmtDay = (d: string) =>
+    new Date(d.slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const listTasks = todos
+    .filter((t) => filterWho === "all" || t.assignee === filterWho)
+    .sort(
+      (a, b) =>
+        (a.done ? 1 : 0) - (b.done ? 1 : 0) ||
+        (a.scheduled_date || a.due_date || "9999").localeCompare(b.scheduled_date || b.due_date || "9999"),
+    );
+  const renderList = () => (
+    <div className="tb-wrap tb-listview">
+      <div className="tb-lv-head">
+        <span>Task</span>
+        <span>Matter</span>
+        <span>User</span>
+        <span>Day</span>
+        <span>Due</span>
+      </div>
+      <div className="tb-lv-body">
+        {listTasks.length === 0 ? (
+          <p className="muted-line" style={{ padding: "1rem" }}>No tasks.</p>
+        ) : (
+          listTasks.map((t) => (
+            <div key={t.id} className={`tb-lv-row${t.done ? " done" : ""}`} onClick={() => setSelected(t)}>
+              <span className="tb-lv-task">
+                {t.title}
+                {commentCount(t.id) > 0 && (
+                  <span className="tb-lv-c">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                    {commentCount(t.id)}
+                  </span>
+                )}
+              </span>
+              <span className="tb-lv-matter">{matterName(t.matter_id) || "—"}</span>
+              <span className="tb-lv-user">
+                <span className="tb-card-who sm" style={{ background: personColor(t.assignee) }} title={t.assignee ?? undefined}>
+                  {initialsOf(t.assignee)}
+                </span>
+              </span>
+              <span className="tb-lv-day">{t.scheduled_date ? fmtDay(t.scheduled_date) : "Waiting"}</span>
+              <span className="tb-lv-due">{t.due_date ? fmtDay(t.due_date) : "—"}</span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="tb">
       {/* Toolbar */}
@@ -304,6 +370,10 @@ export default function TasksBoard() {
           Today
         </button>
         <span className="tb-week-label">{weekLabel}</span>
+        <div className="tb-viewseg seg">
+          <button type="button" className={view === "calendar" ? "active" : undefined} onClick={() => changeView("calendar")}>Calendar</button>
+          <button type="button" className={view === "list" ? "active" : undefined} onClick={() => changeView("list")}>List</button>
+        </div>
         <div className="tb-toolbar-right">
           <span className="tb-groupby">Group by responsible</span>
           <select className="inline-select" value={filterWho} onChange={(e) => setFilterWho(e.target.value)}>
@@ -315,6 +385,7 @@ export default function TasksBoard() {
         </div>
       </div>
 
+      {view === "list" ? renderList() : (
       <div className="tb-wrap">
         {/* Grid */}
         <div className="tb-scroll">
@@ -418,6 +489,7 @@ export default function TasksBoard() {
           </div>
         </div>
       </div>
+      )}
 
       {addOpen && (
         <TaskModal
