@@ -187,13 +187,19 @@ export default function TimeTracker() {
     <div className="tracker">
       <button
         className={`tracker-icon${runningCount > 0 ? " on" : ""}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() =>
+          setOpen((o) => {
+            const next = !o;
+            if (next && timers.length === 0) setPicking(true);
+            return next;
+          })
+        }
         type="button"
         title="Time tracker"
         aria-label="Time tracker"
       >
         <span className="tracker-icon-glyph">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 8v4l2.5 2" /></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
         </span>
         {runningCount > 0 ? (
           <span className="tracker-icon-time">{fmt(elapsedOf(runningTimer!, now))}</span>
@@ -211,19 +217,63 @@ export default function TimeTracker() {
             <button
               className="tracker-add"
               onClick={() => {
-                const m = currentMatterId
-                  ? matters.find((x) => x.id === currentMatterId)
-                  : null;
-                if (m) startForMatter(m);
-                else setPicking(true);
+                setPicking((p) => !p);
+                setPickQuery("");
               }}
               type="button"
             >
-              + New
+              {picking ? "Cancel" : "+ New"}
             </button>
           </div>
         <div className="tracker-body">
-          {timers.length === 0 && (
+          {picking && (
+            <div className="tracker-pick">
+              {matters.length === 0 ? (
+                <p className="muted-line" style={{ fontSize: "0.8rem" }}>Add a matter first, then start a timer.</p>
+              ) : (
+                <>
+                  <input
+                    className="activity-search"
+                    type="search"
+                    autoFocus
+                    placeholder="Search a matter to start…"
+                    value={pickQuery}
+                    onChange={(e) => setPickQuery(e.target.value)}
+                    style={{ width: "100%" }}
+                  />
+                  <div className="tracker-pick-list">
+                    {matters
+                      .filter((m) => {
+                        const q = pickQuery.trim().toLowerCase();
+                        if (!q) return true;
+                        return (
+                          m.name.toLowerCase().includes(q) ||
+                          (m.practice_area || "").toLowerCase().includes(q) ||
+                          (m.assigned_to || "").toLowerCase().includes(q)
+                        );
+                      })
+                      .slice(0, 8)
+                      .map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className="matter-pick-item"
+                          onClick={() => {
+                            setPickQuery("");
+                            setPicking(false);
+                            startForMatter(m);
+                          }}
+                        >
+                          <span className="mp-name">{m.name}</span>
+                          <span className="mp-sub">{m.practice_area} · {m.assigned_to || "Unassigned"}</span>
+                        </button>
+                      ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {timers.length === 0 && !picking && (
             <p className="muted-line" style={{ fontSize: "0.8rem", padding: "0.25rem 0" }}>
               No timers yet.
             </p>
@@ -272,78 +322,6 @@ export default function TimeTracker() {
             );
           })}
         </div>
-        </div>
-      )}
-
-      {picking && (
-        <div
-          className="modal-backdrop"
-          onClick={() => {
-            setPicking(false);
-            setPickQuery("");
-          }}
-        >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Start a timer</h3>
-            <p className="modal-dur">Search for a matter to track time against:</p>
-            {matters.length === 0 ? (
-              <p className="muted-line">
-                No matters yet. Add a matter first, then start a timer.
-              </p>
-            ) : (
-              <>
-                <input
-                  className="activity-search"
-                  type="search"
-                  autoFocus
-                  placeholder="Search matters…"
-                  value={pickQuery}
-                  onChange={(e) => setPickQuery(e.target.value)}
-                  style={{ width: "100%" }}
-                />
-                <div className="matter-pick">
-                  {matters
-                    .filter((m) => {
-                      const q = pickQuery.trim().toLowerCase();
-                      if (!q) return true;
-                      return (
-                        m.name.toLowerCase().includes(q) ||
-                        (m.practice_area || "").toLowerCase().includes(q) ||
-                        (m.assigned_to || "").toLowerCase().includes(q)
-                      );
-                    })
-                    .map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        className="matter-pick-item"
-                        onClick={() => {
-                          setPickQuery("");
-                          startForMatter(m);
-                        }}
-                      >
-                        <span className="mp-name">{m.name}</span>
-                        <span className="mp-sub">
-                          {m.practice_area} · {m.assigned_to || "Unassigned"}
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </>
-            )}
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => {
-                  setPicking(false);
-                  setPickQuery("");
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
