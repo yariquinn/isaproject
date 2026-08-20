@@ -826,6 +826,8 @@ section.block.alt {
 .app-header .tracker {
   position: relative;
   margin-right: 0.6rem;
+  background: transparent;
+  border-bottom: none;
 }
 .app-header .tracker-icon {
   position: relative;
@@ -845,6 +847,8 @@ section.block.alt {
 }
 .app-header .tracker-icon.on {
   color: #157a4e;
+  border: 1px solid #22a06b;
+  background: color-mix(in srgb, #22a06b 8%, var(--dash-surface));
 }
 /* Header: hide the "Timer" word, but show the running clock once started */
 .app-header .tracker-icon-label {
