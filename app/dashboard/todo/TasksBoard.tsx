@@ -7,7 +7,7 @@ import { usePortal } from "../PortalProvider";
 
 type MatterLite = { id: string; name: string };
 
-const DAY_COUNT = 5; // Mon–Fri
+const DAY_COUNT = 3; // 3-day view, paged with the arrows
 
 // ---- date helpers (local, tz-safe) ----
 const iso = (d: Date) =>
@@ -295,23 +295,25 @@ export default function TasksBoard() {
       <div className="tb-wrap">
         {/* Grid */}
         <div className="tb-scroll">
-          <button type="button" className="tb-nav tb-nav-next" onClick={() => setWeekStart(addDays(weekStart, 7))} aria-label="Next week">›</button>
           <div
             className="tb-grid"
-            style={{ gridTemplateColumns: `168px repeat(${DAY_COUNT}, minmax(200px, 1fr))` }}
+            style={{ gridTemplateColumns: `168px repeat(${DAY_COUNT}, 1fr)` }}
           >
             {/* header */}
             <div className="tb-corner">
               <span className="tb-month">{weekStart.toLocaleDateString(undefined, { month: "long" })}</span>
-              <button type="button" className="tb-nav tb-nav-prev" onClick={() => setWeekStart(addDays(weekStart, -7))} aria-label="Previous week">‹</button>
+              <button type="button" className="tb-nav tb-nav-prev" onClick={() => setWeekStart(addDays(weekStart, -DAY_COUNT))} aria-label="Previous days">‹</button>
             </div>
-            {days.map((d) => {
+            {days.map((d, i) => {
               const isToday = iso(d) === todayIso;
               return (
                 <div key={iso(d)} className={`tb-dayhead${isToday ? " today" : ""}`}>
                   <span className="tb-daynum">{d.getDate()}</span>
                   <span className="tb-dow">{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
                   {isToday && <span className="tb-daymark" />}
+                  {i === days.length - 1 && (
+                    <button type="button" className="tb-nav tb-nav-next" onClick={() => setWeekStart(addDays(weekStart, DAY_COUNT))} aria-label="Next days">›</button>
+                  )}
                 </div>
               );
             })}
