@@ -762,13 +762,11 @@ section.block.alt {
   flex-direction: column;
   min-width: 0;
 }
-/* Global header search (centered) */
+/* Global header search (centered in its grid column, never overlapped) */
 .hdr-search {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(420px, 38vw);
+  position: relative;
+  justify-self: center;
+  width: min(420px, 100%);
   display: flex;
   align-items: center;
 }
@@ -855,8 +853,10 @@ section.block.alt {
   z-index: 30;
   height: 50px;
   flex: none;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
+  gap: 1rem;
   padding: 0 2.25rem;
   background: var(--dash-surface);
   border-bottom: 1px solid var(--dash-border);
