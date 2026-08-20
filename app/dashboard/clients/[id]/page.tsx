@@ -37,6 +37,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [contactTab, setContactTab] = useState<"search" | "new">("search");
   const [contactQuery, setContactQuery] = useState("");
   const [newForm, setNewForm] = useState(NEW_FORM);
+  const [splitOpen, setSplitOpen] = useState(false);
 
   async function loadActivity() {
     const { data } = await supabase
@@ -99,6 +100,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       email: newForm.email.trim() || null,
       phone: newForm.phone.trim() || null,
       address: newForm.address.trim() || null,
+      created_by: userName,
     }).select("*").single();
     if (created) {
       await supabase.from("activity_log").insert({ kind: "client_added", client_id: (created as Client).id, description: `${userName} added client ${(created as Client).name}` });
@@ -108,6 +110,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     setContactModal(false);
   }
   async function splitPartner() {
+    setSplitOpen(false);
     if (!client?.partner_name) return;
     const { data: created } = await supabase
       .from("clients")
@@ -118,6 +121,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         email: client.partner_email,
         phone: client.partner_phone,
         address: client.address,
+        created_by: userName,
       })
       .select("*")
       .single();
@@ -200,6 +204,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 day: "numeric",
                 year: "numeric",
               })}
+              {client.created_by && <> by <strong className="strip-who">{client.created_by}</strong></>}
             </span>
           </div>
         </div>
@@ -211,7 +216,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           <div className="panel-head">
             <h2 className="panel-title">Contact</h2>
             {client.client_type !== "business" && client.partner_name && (
-              <button type="button" className="ghost sm" onClick={splitPartner} title="Create a standalone client record for the second contact">
+              <button type="button" className="ghost sm" onClick={() => setSplitOpen(true)} title="Create a standalone client record for the second contact">
                 Split second contact →
               </button>
             )}
@@ -257,15 +262,14 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           <div className="panel-scroll">
             {matters.length === 0 ? <p className="muted-line">No matters yet.</p> : (
               <>
-                <h3 className="subsection">Active <span className="count-badge">{openMatters.length}</span></h3>
-                {openMatters.length === 0 ? <p className="muted-line">No active matters.</p> : (
+                {openMatters.length > 0 && (
                   <ul className="link-list">{openMatters.map((m) => <MatterRow key={m.id} m={m} />)}</ul>
                 )}
+                {openMatters.length > 0 && closedMatters.length > 0 && (
+                  <div className="link-list-divider" />
+                )}
                 {closedMatters.length > 0 && (
-                  <>
-                    <h3 className="subsection muted">Closed <span className="count-badge">{closedMatters.length}</span></h3>
-                    <ul className="link-list dim">{closedMatters.map((m) => <MatterRow key={m.id} m={m} />)}</ul>
-                  </>
+                  <ul className="link-list dim">{closedMatters.map((m) => <MatterRow key={m.id} m={m} />)}</ul>
                 )}
               </>
             )}
@@ -287,6 +291,23 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           )}
         </div>
       </div>
+
+      {splitOpen && client.partner_name && (
+        <div className="modal-backdrop" onClick={() => setSplitOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Split second contact</h3>
+            <p className="modal-dur">
+              This will create a <strong>new client</strong> in your client list for{" "}
+              <strong>{client.partner_name}</strong> (split from {client.name}), and open
+              their new record. Continue?
+            </p>
+            <div className="modal-actions">
+              <button type="button" className="ghost" onClick={() => setSplitOpen(false)}>Cancel</button>
+              <button type="button" className="btn" onClick={splitPartner}>Create client record</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {prompt && (
         <div className="modal-backdrop" onClick={() => setPrompt(null)}>

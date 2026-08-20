@@ -13,6 +13,7 @@ export type Client = {
   notes: string | null;
   status: string;
   archived: boolean;
+  created_by: string | null;
   billing_notes: string | null;
   created_at: string;
 };

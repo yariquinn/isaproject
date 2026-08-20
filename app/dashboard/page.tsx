@@ -326,10 +326,6 @@ export default function Overview() {
           <span className="stat-num">{hours.toFixed(1)}</span>
           <span className="stat-label">Hours Logged</span>
         </Link>
-        <Link href="/dashboard/billing" className="stat">
-          <span className="stat-num">${revenue.toFixed(0)}</span>
-          <span className="stat-label">Revenue</span>
-        </Link>
       </div>
 
       <div className="fin-section">
@@ -354,6 +350,11 @@ export default function Overview() {
               <span className="fin-sub">Not tracked yet</span>
             </div>
 
+            <div className="fin-card fin-invoices">
+              <span className="fin-card-label">Invoices</span>
+              <InvoiceBar paid={invPaid} open={invOpen} overdue={invOverdue} />
+            </div>
+
             <div className="fin-card fin-goals">
               <span className="fin-card-label">Goal</span>
               <GoalRing pct={goalPct} />
@@ -368,11 +369,6 @@ export default function Overview() {
                 </span>
               </div>
               <WeekBars data={weekEarnings} />
-            </div>
-
-            <div className="fin-card fin-invoices">
-              <span className="fin-card-label">Invoices</span>
-              <InvoiceBar paid={invPaid} open={invOpen} overdue={invOverdue} />
             </div>
           </div>
         )}

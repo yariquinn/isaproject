@@ -545,8 +545,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               {new Date(matter.created_at).toLocaleDateString(undefined, {
                 month: "short",
                 day: "numeric",
+                year: "numeric",
               })}
-              {matter.opened_by ? ` by ${matter.opened_by}` : ""}
+              {matter.opened_by && <> by <strong className="strip-who">{matter.opened_by}</strong></>}
             </span>
             {matter.status === "closed" && matter.closed_by && (
               <>

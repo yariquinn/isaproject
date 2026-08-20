@@ -165,6 +165,7 @@ export default function ClientsPage() {
         email: newForm.email.trim() || null,
         phone: newForm.phone.trim() || null,
         address: newForm.address.trim() || null,
+        created_by: userName,
       })
       .select("*")
       .single();
@@ -224,6 +225,7 @@ export default function ClientsPage() {
         phone: form.phone.trim() || null,
         address: form.address.trim() || null,
         notes: form.notes.trim() || null,
+        created_by: userName,
       })
       .select("id")
       .single();
