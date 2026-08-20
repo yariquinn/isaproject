@@ -238,17 +238,17 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
 
       <div className="detail-cols">
         <div className="panel">
-          <h2 className="panel-title">Matters ({matters.length})</h2>
+          <h2 className="panel-title">Matters <span className="count-badge">{matters.length}</span></h2>
           <div className="panel-scroll">
             {matters.length === 0 ? <p className="muted-line">No matters yet.</p> : (
               <>
-                <h3 className="subsection">Active ({openMatters.length})</h3>
+                <h3 className="subsection">Active <span className="count-badge">{openMatters.length}</span></h3>
                 {openMatters.length === 0 ? <p className="muted-line">No active matters.</p> : (
                   <ul className="link-list">{openMatters.map((m) => <MatterRow key={m.id} m={m} />)}</ul>
                 )}
                 {closedMatters.length > 0 && (
                   <>
-                    <h3 className="subsection muted">Closed ({closedMatters.length})</h3>
+                    <h3 className="subsection muted">Closed <span className="count-badge">{closedMatters.length}</span></h3>
                     <ul className="link-list dim">{closedMatters.map((m) => <MatterRow key={m.id} m={m} />)}</ul>
                   </>
                 )}

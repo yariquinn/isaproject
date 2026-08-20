@@ -5058,6 +5058,31 @@ a.activity-row:hover .act-desc {
   color: var(--dash-muted);
 }
 
+/* Reusable count pill (e.g. "Matters  4") */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  padding: 0.1em 0.5em;
+  margin-left: 0.5rem;
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--dash-muted);
+  background: var(--dash-border);
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.doc-tabs button .count-badge,
+.client-tabs button .count-badge {
+  margin-left: 0.4rem;
+}
+.doc-tabs button.active .count-badge {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+}
+
 /* ============================================================
    Tasks board (weekly planner)
    ============================================================ */

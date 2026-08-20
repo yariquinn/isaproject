@@ -1006,18 +1006,18 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       <div className="doc-tabs client-tabs">
         {(
           [
-            ["time", `Time Entries (${entries.length})`],
+            ["time", "Time Entries", entries.length],
             ["expenses", "Expenses"],
             ["tasks", "Tasks"],
             ["documents", "Documents"],
             ["contacts", "Contacts"],
-            ["events", `Events (${upcomingEvents.length})`],
-            ["invoices", `Invoices (${invoices.length})`],
+            ["events", "Events", upcomingEvents.length],
+            ["invoices", "Invoices", invoices.length],
             ...(matter.show_case_timeline
-              ? ([["timeline", "Case Timeline"]] as [string, string][])
+              ? ([["timeline", "Case Timeline"]] as [string, string, number?][])
               : []),
-          ] as [string, string][]
-        ).map(([key, label]) => (
+          ] as [string, string, number?][]
+        ).map(([key, label, count]) => (
           <button
             key={key}
             type="button"
@@ -1025,6 +1025,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             onClick={() => setBodyTab(key as typeof bodyTab)}
           >
             {label}
+            {count != null && <span className="count-badge">{count}</span>}
           </button>
         ))}
       </div>
@@ -1236,7 +1237,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "events" && (
           <>
-            <h3 className="ev-section">Upcoming ({upcomingEvents.length})</h3>
+            <h3 className="ev-section">Upcoming <span className="count-badge">{upcomingEvents.length}</span></h3>
             {upcomingEvents.length === 0 ? (
               <p className="muted-line">No upcoming events.</p>
             ) : (
@@ -1279,7 +1280,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             {completedEvents.length > 0 && (
               <>
                 <h3 className="ev-section muted" style={{ marginTop: "1.4rem" }}>
-                  Completed ({completedEvents.length})
+                  Completed <span className="count-badge">{completedEvents.length}</span>
                 </h3>
                 <ul className="du-list dim">
                   {completedEvents.map((ev) => (

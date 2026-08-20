@@ -71,14 +71,14 @@ export default function BillingPage() {
           className={tab === "invoices" ? "active" : undefined}
           onClick={() => setTab("invoices")}
         >
-          Invoices ({invoices.length})
+          Invoices <span className="count-badge">{invoices.length}</span>
         </button>
         <button
           type="button"
           className={tab === "time" ? "active" : undefined}
           onClick={() => setTab("time")}
         >
-          Time Entries ({entries.length})
+          Time Entries <span className="count-badge">{entries.length}</span>
         </button>
         <button
           type="button"
