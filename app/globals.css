@@ -1199,6 +1199,64 @@ section.block.alt {
    ============================================================ */
 .greeting {
   margin-bottom: 1.75rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.ov-gear-wrap {
+  position: relative;
+  flex: none;
+}
+.ov-gear {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-surface);
+  color: var(--dash-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.ov-gear:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ov-gear-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: 240px;
+  padding: 0.4rem;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+.ov-gear-head {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
+.ov-gear-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.88rem;
+  color: var(--dash-fg);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.ov-gear-item:hover {
+  background: color-mix(in srgb, var(--dash-fg) 4%, transparent);
 }
 .greeting-date {
   font-size: 0.78rem;
