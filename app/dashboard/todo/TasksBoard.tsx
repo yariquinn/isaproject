@@ -68,6 +68,7 @@ type Draft = {
   assignee: string;
   matter_id: string;
   scheduled_date: string;
+  due_date: string;
   start_time: string;
   end_time: string;
   duration: string; // hours, decimal
@@ -78,6 +79,7 @@ const emptyDraft = (): Draft => ({
   assignee: ATTORNEYS[0],
   matter_id: "",
   scheduled_date: "",
+  due_date: "",
   start_time: "",
   end_time: "",
   duration: "",
@@ -176,6 +178,7 @@ export default function TasksBoard() {
         created_by: userName,
         matter_id: draft.matter_id || null,
         scheduled_date: draft.scheduled_date || null,
+        due_date: draft.due_date || null,
         start_time: draft.start_time || null,
         end_time: draft.end_time || null,
         duration_minutes: dur,
@@ -228,8 +231,7 @@ export default function TasksBoard() {
       <div
         className={`tb-card${t.done ? " done" : ""}`}
         style={{
-          borderLeftColor: bar,
-          background: `color-mix(in srgb, ${bar} 12%, var(--dash-surface))`,
+          background: `color-mix(in srgb, ${bar} 20%, var(--dash-surface))`,
         }}
         draggable
         onDragStart={(e) => {
@@ -275,14 +277,10 @@ export default function TasksBoard() {
         <button className="btn icon-plus-btn tb-addnew" type="button" onClick={() => openAdd({ scheduled_date: todayIso })} title="Add task" aria-label="Add task">
           +
         </button>
-        <div className="tb-weeknav">
-          <button type="button" onClick={() => setWeekStart(startOfWeek(new Date()))}>
-            Today
-          </button>
-          <button type="button" className="tb-arrow" onClick={() => setWeekStart(addDays(weekStart, -7))} aria-label="Previous week">‹</button>
-          <span className="tb-week-label">{weekLabel}</span>
-          <button type="button" className="tb-arrow" onClick={() => setWeekStart(addDays(weekStart, 7))} aria-label="Next week">›</button>
-        </div>
+        <button type="button" className="tb-today" onClick={() => setWeekStart(startOfWeek(new Date()))}>
+          Today
+        </button>
+        <span className="tb-week-label">{weekLabel}</span>
         <div className="tb-toolbar-right">
           <span className="tb-groupby">Group by responsible</span>
           <select className="inline-select" value={filterWho} onChange={(e) => setFilterWho(e.target.value)}>
@@ -297,18 +295,23 @@ export default function TasksBoard() {
       <div className="tb-wrap">
         {/* Grid */}
         <div className="tb-scroll">
+          <button type="button" className="tb-nav tb-nav-next" onClick={() => setWeekStart(addDays(weekStart, 7))} aria-label="Next week">›</button>
           <div
             className="tb-grid"
-            style={{ gridTemplateColumns: `168px repeat(${DAY_COUNT}, minmax(210px, 1fr))` }}
+            style={{ gridTemplateColumns: `168px repeat(${DAY_COUNT}, minmax(200px, 1fr))` }}
           >
             {/* header */}
-            <div className="tb-corner" />
+            <div className="tb-corner">
+              <span className="tb-month">{weekStart.toLocaleDateString(undefined, { month: "long" })}</span>
+              <button type="button" className="tb-nav tb-nav-prev" onClick={() => setWeekStart(addDays(weekStart, -7))} aria-label="Previous week">‹</button>
+            </div>
             {days.map((d) => {
               const isToday = iso(d) === todayIso;
               return (
                 <div key={iso(d)} className={`tb-dayhead${isToday ? " today" : ""}`}>
-                  <span className="tb-dow">{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
                   <span className="tb-daynum">{d.getDate()}</span>
+                  <span className="tb-dow">{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
+                  {isToday && <span className="tb-daymark" />}
                 </div>
               );
             })}
@@ -509,6 +512,12 @@ function TaskModal({
             <input type="date" value={draft.scheduled_date} onChange={(e) => set("scheduled_date", e.target.value)} />
           </label>
           <label>
+            Due date
+            <input type="date" value={draft.due_date} onChange={(e) => set("due_date", e.target.value)} />
+          </label>
+        </div>
+        <div className="field-pair">
+          <label>
             Priority
             <select value={draft.priority} onChange={(e) => set("priority", e.target.value)}>
               {PRIORITIES.map((p) => (
@@ -516,15 +525,12 @@ function TaskModal({
               ))}
             </select>
           </label>
-        </div>
-        <div className="field-pair">
           <label>
-            Start
-            <input type="time" value={draft.start_time} onChange={(e) => set("start_time", e.target.value)} />
-          </label>
-          <label>
-            End
-            <input type="time" value={draft.end_time} onChange={(e) => set("end_time", e.target.value)} />
+            Start / End
+            <div className="field-pair" style={{ gap: "0.4rem" }}>
+              <input type="time" value={draft.start_time} onChange={(e) => set("start_time", e.target.value)} />
+              <input type="time" value={draft.end_time} onChange={(e) => set("end_time", e.target.value)} />
+            </div>
           </label>
         </div>
         <label>
@@ -559,6 +565,7 @@ function EditModal({
     assignee: todo.assignee ?? ATTORNEYS[0],
     matter_id: todo.matter_id ?? "",
     scheduled_date: todo.scheduled_date ?? "",
+    due_date: todo.due_date ?? "",
     start_time: todo.start_time ?? "",
     end_time: todo.end_time ?? "",
     duration: todo.duration_minutes ? (todo.duration_minutes / 60).toString() : "",
@@ -576,6 +583,7 @@ function EditModal({
       assignee: t.assignee,
       matter_id: t.matter_id || null,
       scheduled_date: t.scheduled_date || null,
+      due_date: t.due_date || null,
       start_time: t.start_time || null,
       end_time: t.end_time || null,
       duration_minutes: dur,
@@ -616,6 +624,12 @@ function EditModal({
             <input type="date" value={t.scheduled_date} onChange={(e) => set("scheduled_date", e.target.value)} />
           </label>
           <label>
+            Due date
+            <input type="date" value={t.due_date} onChange={(e) => set("due_date", e.target.value)} />
+          </label>
+        </div>
+        <div className="field-pair">
+          <label>
             Priority
             <select value={t.priority} onChange={(e) => set("priority", e.target.value)}>
               {PRIORITIES.map((p) => (
@@ -623,15 +637,12 @@ function EditModal({
               ))}
             </select>
           </label>
-        </div>
-        <div className="field-pair">
           <label>
-            Start
-            <input type="time" value={t.start_time} onChange={(e) => set("start_time", e.target.value)} />
-          </label>
-          <label>
-            End
-            <input type="time" value={t.end_time} onChange={(e) => set("end_time", e.target.value)} />
+            Start / End
+            <div className="field-pair" style={{ gap: "0.4rem" }}>
+              <input type="time" value={t.start_time} onChange={(e) => set("start_time", e.target.value)} />
+              <input type="time" value={t.end_time} onChange={(e) => set("end_time", e.target.value)} />
+            </div>
           </label>
         </div>
         <label>
