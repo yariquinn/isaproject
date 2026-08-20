@@ -814,6 +814,9 @@ section.block.alt {
   align-items: center;
   gap: 0.55rem;
 }
+.hdr-bell-wrap {
+  margin-right: 0.9rem;
+}
 .online-label {
   font-size: 0.6rem;
   font-weight: 600;
