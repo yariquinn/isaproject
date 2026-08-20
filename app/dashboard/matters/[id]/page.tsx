@@ -149,12 +149,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const dragStep = useRef<string | null>(null);
   const [archivePrompt, setArchivePrompt] = useState<{ clientId: string; name: string } | null>(null);
   const [bodyTab, setBodyTab] = useState<
-    "time" | "tasks" | "documents" | "events" | "invoices" | "notes" | "timeline" | "activity"
+    "time" | "expenses" | "tasks" | "documents" | "events" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
   const cardsRef = useRef<HTMLDivElement>(null);
-  const latest = useRef({ left: 38, mid: 37 });
-  const [leftPct, setLeftPct] = useState(38);
-  const [midPct, setMidPct] = useState(37);
+  const latestCombo = useRef(66);
+  const [comboPct, setComboPct] = useState(66);
   const [stackCards, setStackCards] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [editIdx, setEditIdx] = useState<number | null>(null);
@@ -162,15 +161,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [noteFilter, setNoteFilter] = useState<"all" | "comment" | "activity">("all");
 
   useEffect(() => {
-    const l = Number(localStorage.getItem("matterCardsLeftPct"));
-    const m = Number(localStorage.getItem("matterCardsMidPct"));
-    if (l >= 20 && l <= 70) {
-      latest.current.left = l;
-      setLeftPct(l);
-    }
-    if (m >= 20 && m <= 70) {
-      latest.current.mid = m;
-      setMidPct(m);
+    const c = Number(localStorage.getItem("matterComboPct"));
+    if (c >= 40 && c <= 85) {
+      latestCombo.current = c;
+      setComboPct(c);
     }
     const mq = window.matchMedia("(max-width: 820px)");
     const sync = () => setStackCards(mq.matches);
@@ -179,37 +173,27 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  // Drag a boundary: "left" = Client|Details edge, "mid" = Details|New-panel edge.
-  // Each column stays ≥ 18% and the third panel keeps ≥ 15%.
-  function startCardResize(which: "left" | "mid") {
-    return (e: React.MouseEvent) => {
-      e.preventDefault();
-      const el = cardsRef.current;
-      if (!el) return;
-      document.body.style.userSelect = "none";
-      const move = (ev: MouseEvent) => {
-        const rect = el.getBoundingClientRect();
-        const pct = ((ev.clientX - rect.left) / rect.width) * 100;
-        if (which === "left") {
-          const next = Math.max(18, Math.min(pct, 100 - latest.current.mid - 15));
-          latest.current.left = next;
-          setLeftPct(next);
-        } else {
-          const next = Math.max(18, Math.min(pct - latest.current.left, 100 - latest.current.left - 15));
-          latest.current.mid = next;
-          setMidPct(next);
-        }
-      };
-      const up = () => {
-        document.removeEventListener("mousemove", move);
-        document.removeEventListener("mouseup", up);
-        document.body.style.userSelect = "";
-        localStorage.setItem("matterCardsLeftPct", String(Math.round(latest.current.left)));
-        localStorage.setItem("matterCardsMidPct", String(Math.round(latest.current.mid)));
-      };
-      document.addEventListener("mousemove", move);
-      document.addEventListener("mouseup", up);
+  // Drag the divider between the combined Client/Details panel and Notes.
+  function startComboResize(e: React.MouseEvent) {
+    e.preventDefault();
+    const el = cardsRef.current;
+    if (!el) return;
+    document.body.style.userSelect = "none";
+    const move = (ev: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      const pct = ((ev.clientX - rect.left) / rect.width) * 100;
+      const next = Math.max(40, Math.min(pct, 85));
+      latestCombo.current = next;
+      setComboPct(next);
     };
+    const up = () => {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+      document.body.style.userSelect = "";
+      localStorage.setItem("matterComboPct", String(Math.round(latestCombo.current)));
+    };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
   }
 
   async function loadActivity() {
@@ -528,9 +512,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         style={stackCards ? undefined : { display: "flex", gap: 0, alignItems: "stretch" }}
       >
         <div
-          className="panel client-card"
-          style={stackCards ? undefined : { flex: `0 0 calc(${leftPct}% - 1rem)`, minWidth: 0 }}
+          className="panel combo-card"
+          style={stackCards ? undefined : { flex: `0 0 calc(${comboPct}% - 1rem)`, minWidth: 0 }}
         >
+          <div className="combo-grid">
+            <div className="combo-col">
           <h2 className="panel-title">Client</h2>
           {matter.client_id && clientObj ? (
             <>
@@ -629,41 +615,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             <p className="muted-line">No client linked.</p>
           )}
         </div>
-
-        {!stackCards && (
-          <div
-            className="cards-resizer"
-            onMouseDown={startCardResize("left")}
-            title="Drag to resize"
-            role="separator"
-            aria-orientation="vertical"
-          />
-        )}
-        <div
-          className="panel details-card"
-          style={stackCards ? undefined : { flex: `0 0 calc(${midPct}% - 1rem)`, minWidth: 0 }}
-        >
+            <div className="combo-col">
           <h2 className="panel-title">Details</h2>
           <dl className="details-grid">
-            <div style={{ gridColumn: "1 / -1" }}>
-              <dt>Rate</dt>
-              <dd className="rate-dd">
-                <InlineNumber
-                  value={matter.hourly_rate}
-                  prefix="$"
-                  onSave={(v) => patch({ hourly_rate: v })}
-                />
-                <InlineSelect
-                  value={matter.rate_type || "hourly"}
-                  className="rate-type-select"
-                  options={RATE_TYPES.map((r) => ({
-                    value: r.value,
-                    label: r.value === "flat" ? "flat" : "/hr",
-                  }))}
-                  onSave={(v) => patch({ rate_type: v })}
-                />
-              </dd>
-            </div>
             <div>
               <dt>Practice Area</dt>
               <dd>
@@ -759,12 +713,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               </ul>
             </div>
           )}
+            </div>
+          </div>
         </div>
 
         {!stackCards && (
           <div
             className="cards-resizer"
-            onMouseDown={startCardResize("mid")}
+            onMouseDown={startComboResize}
             title="Drag to resize"
             role="separator"
             aria-orientation="vertical"
@@ -967,6 +923,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       <div className="doc-tabs client-tabs">
         {([
           ["time", `Time Entries (${entries.length})`],
+          ["expenses", "Expenses"],
           ["tasks", "Tasks"],
           ["documents", "Documents"],
           ["events", `Events (${upcomingEvents.length})`],
@@ -1094,12 +1051,38 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
         {bodyTab === "time" && (
-          <TimeEntriesTab
-            entries={entries}
-            rate={matter.hourly_rate}
-            onAddEntry={addEntry}
-            onChanged={loadAll}
-          />
+          <>
+            <div className="te-rate">
+              <span className="te-rate-label">Rate</span>
+              <InlineNumber
+                value={matter.hourly_rate}
+                prefix="$"
+                onSave={(v) => patch({ hourly_rate: v })}
+              />
+              <InlineSelect
+                value={matter.rate_type || "hourly"}
+                className="rate-type-select"
+                options={RATE_TYPES.map((r) => ({
+                  value: r.value,
+                  label: r.value === "flat" ? "flat" : "/hr",
+                }))}
+                onSave={(v) => patch({ rate_type: v })}
+              />
+            </div>
+            <TimeEntriesTab
+              entries={entries}
+              rate={matter.hourly_rate}
+              onAddEntry={addEntry}
+              onChanged={loadAll}
+            />
+          </>
+        )}
+
+        {bodyTab === "expenses" && (
+          <>
+            <p className="muted-line">No expenses recorded for this matter.</p>
+            <Disclaimer>Expense tracking is a placeholder for now.</Disclaimer>
+          </>
         )}
 
         {bodyTab === "tasks" && (
