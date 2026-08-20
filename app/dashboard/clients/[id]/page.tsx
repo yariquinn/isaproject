@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { PRACTICE_AREAS, ATTORNEYS, type ActivityItem, type Client, type Matter } from "@/lib/types";
+import { PRACTICE_AREAS, ATTORNEYS, CLIENT_TYPES, type ActivityItem, type Client, type Matter } from "@/lib/types";
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
 
@@ -38,6 +38,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [contactQuery, setContactQuery] = useState("");
   const [newForm, setNewForm] = useState(NEW_FORM);
   const [splitOpen, setSplitOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [addMatterOpen, setAddMatterOpen] = useState(false);
   const [mForm, setMForm] = useState({ name: "", practice_area: PRACTICE_AREAS[0] as string, assigned_to: ATTORNEYS[0] as string });
   const [mSaving, setMSaving] = useState(false);
@@ -253,6 +254,12 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             </span>
           </div>
         </div>
+        <div className="head-actions">
+          <button type="button" className="ghost sm" onClick={() => setEditOpen(true)}>Edit</button>
+          <button type="button" className="ghost sm" onClick={() => patch({ archived: !client.archived })}>
+            {client.archived ? "Reopen" : "Close"}
+          </button>
+        </div>
       </div>
 
       <div className="detail-cols" style={{ marginBottom: "1.5rem" }}>
@@ -370,6 +377,53 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           )}
         </div>
       </div>
+
+      {editOpen && (
+        <div className="modal-backdrop" onClick={() => setEditOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Edit client</h3>
+            <div className="seg seg-full" style={{ marginBottom: "0.9rem" }}>
+              {CLIENT_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  className={client.client_type === t.value ? "active" : undefined}
+                  onClick={() => patch({ client_type: t.value })}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {client.client_type !== "business" && client.partner_name && (
+              <label>
+                Second contact relationship
+                <select value={client.partner_relationship ?? "Spouse"} onChange={(e) => patch({ partner_relationship: e.target.value })}>
+                  {["Spouse", "Partner", "Parent", "Child", "Sibling", "Other"].map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label>
+              Billing contact
+              <input value={client.billing_contact ?? ""} onChange={(e) => patch({ billing_contact: e.target.value || null })} placeholder="Same as primary" />
+            </label>
+            <div className="field-pair">
+              <label>
+                Billing email
+                <input value={client.billing_email ?? ""} onChange={(e) => patch({ billing_email: e.target.value || null })} />
+              </label>
+              <label>
+                Billing phone
+                <input value={client.billing_phone ?? ""} onChange={(e) => patch({ billing_phone: e.target.value || null })} />
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={() => setEditOpen(false)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {addMatterOpen && (
         <div className="modal-backdrop" onClick={() => setAddMatterOpen(false)}>

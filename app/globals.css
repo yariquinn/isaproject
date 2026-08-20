@@ -4833,6 +4833,12 @@ a.activity-row:hover .act-desc {
   gap: 0.4rem;
   min-width: 0;
 }
+.head-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
 /* Inline new-client form inside Add Matter */
 .nc-inline {
