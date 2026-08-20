@@ -868,9 +868,9 @@ section.block.alt {
   position: relative;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--dash-border);
+  border: none;
   border-radius: 9px;
-  background: var(--dash-surface);
+  background: transparent;
   color: var(--dash-fg);
   display: inline-flex;
   align-items: center;
@@ -878,7 +878,6 @@ section.block.alt {
   cursor: pointer;
 }
 .hdr-bell:hover {
-  border-color: var(--accent);
   color: var(--accent);
 }
 .hdr-bell-badge {
@@ -4013,6 +4012,21 @@ a.activity-row:hover .act-desc {
   border-color: #8dc4a1;
   color: #2e7d46;
 }
+.te-invoiced {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-bg);
+  color: var(--dash-muted);
+}
+.te-invoiced.on {
+  background: rgba(46, 125, 70, 0.13);
+  border-color: #8dc4a1;
+  color: #2e7d46;
+}
 .icon-add {
   width: 32px;
   height: 32px;
@@ -5431,9 +5445,9 @@ a.activity-row:hover .act-desc {
   left: 0;
   z-index: 2;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
-  padding: 0.75rem 0.7rem;
+  padding: 0.85rem 0.7rem;
   background: var(--dash-surface);
   border-bottom: 1px solid var(--dash-border);
   border-right: 1px solid var(--dash-border);
@@ -5482,7 +5496,7 @@ a.activity-row:hover .act-desc {
   color: var(--dash-muted);
 }
 .tb-cell {
-  min-height: 96px;
+  min-height: 58px;
   padding: 0.4rem 0.45rem 0.6rem;
   border-bottom: 1px solid var(--dash-border);
   border-left: 1px solid var(--dash-border);

@@ -192,7 +192,9 @@ export default function TimeTracker() {
         title="Time tracker"
         aria-label="Time tracker"
       >
-        <span className="tracker-icon-glyph">◷</span>
+        <span className="tracker-icon-glyph">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 8v4l2.5 2" /></svg>
+        </span>
         {runningCount > 0 ? (
           <span className="tracker-icon-time">{fmt(elapsedOf(runningTimer!, now))}</span>
         ) : (

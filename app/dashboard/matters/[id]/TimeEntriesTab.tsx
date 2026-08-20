@@ -454,15 +454,14 @@ export default function TimeEntriesTab({
                       {e.billable ? "Billable" : "Non-bill"}
                     </button>
                   </td>
-                  {/* Invoiced toggle */}
+                  {/* Invoiced — read-only; reflects whether this entry is on an invoice */}
                   <td>
-                    <button
-                      type="button"
-                      className={`te-toggle${e.invoiced ? " on" : ""}`}
-                      onClick={() => toggle(e, "invoiced")}
+                    <span
+                      className={`te-invoiced${e.invoiced ? " on" : ""}`}
+                      title={e.invoiced ? "On an invoice" : "Not yet invoiced"}
                     >
                       {e.invoiced ? "Invoiced" : "Un-inv"}
-                    </button>
+                    </span>
                   </td>
                 </tr>
               ))}

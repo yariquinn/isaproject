@@ -546,6 +546,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 month: "short",
                 day: "numeric",
               })}
+              {matter.opened_by ? ` by ${matter.opened_by}` : ""}
             </span>
             {matter.status === "closed" && matter.closed_by && (
               <>

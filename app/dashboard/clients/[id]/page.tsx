@@ -193,50 +193,52 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       </div>
 
       <div className="detail-cols" style={{ marginBottom: "1.5rem" }}>
+        {/* Unified contact card — mirrors the Client card on a matter for continuity */}
         <div className="panel">
-        <h2 className="panel-title">Contact</h2>
-        <dl className="cc-fields">
-          <div>
-            <dt>{client.client_type === "business" ? "Contact person" : "Primary contact"}</dt>
-            <dd>
-              <button type="button" className="contact-picker" onClick={openContactModal}>
-                {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
+          <div className="panel-head">
+            <h2 className="panel-title">Contact</h2>
+            {client.client_type !== "business" && client.partner_name && (
+              <button type="button" className="ghost sm" onClick={splitPartner} title="Create a standalone client record for the second contact">
+                Split second contact →
               </button>
-            </dd>
+            )}
           </div>
-          {client.client_type === "business" && (
-            <div><dt>Title</dt><dd><Guarded field="contact_title" label="title" /></dd></div>
-          )}
-          <div><dt>Email</dt><dd><Guarded field="email" label="email" type="email" /></dd></div>
-          <div><dt>Phone</dt><dd><Guarded field="phone" label="phone number" type="tel" /></dd></div>
-          <div><dt>Address</dt><dd><Guarded field="address" label="address" /></dd></div>
-        </dl>
-        </div>
-        <div className="panel">
-          <h2 className="panel-title">Notes</h2>
-          <InlineTextarea value={client.notes} onSave={(v) => patch({ notes: v || null })} placeholder="Click to add notes…" />
-        </div>
-      </div>
-
-      {client.client_type !== "business" && client.partner_name && (
-        <div className="detail-cols">
-          <div className="panel">
-            <div className="panel-head">
-              <h2 className="panel-title">Second Contact</h2>
-              <button type="button" className="ghost sm" onClick={splitPartner} title="Create a standalone client record for this person">
-                Create separate record →
-              </button>
+          <dl className="cc-fields">
+            <div>
+              <dt>{client.client_type === "business" ? "Contact person" : "Primary contact"}</dt>
+              <dd>
+                <button type="button" className="contact-picker" onClick={openContactModal}>
+                  {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
+                </button>
+              </dd>
             </div>
-            <dl className="cc-fields">
-              <div><dt>Name</dt><dd><span className="inline-view static">{client.partner_name}</span></dd></div>
-              <div><dt>Email</dt><dd><span className="inline-view static">{client.partner_email || "—"}</span></dd></div>
-              <div><dt>Phone</dt><dd><span className="inline-view static">{client.partner_phone || "—"}</span></dd></div>
-            </dl>
+            {client.client_type === "business" && (
+              <div><dt>Title</dt><dd><Guarded field="contact_title" label="title" /></dd></div>
+            )}
+            <div><dt>Email</dt><dd><Guarded field="email" label="email" type="email" /></dd></div>
+            <div><dt>Phone</dt><dd><Guarded field="phone" label="phone number" type="tel" /></dd></div>
+            <div>
+              <dt>Address</dt>
+              <dd>
+                <Guarded field="address" label="address" />
+              </dd>
+            </div>
+            {client.partner_name && (
+              <div>
+                <dt>Second contact</dt>
+                <dd>
+                  {client.partner_name}
+                  {client.partner_phone ? ` · ${client.partner_phone}` : ""}
+                </dd>
+              </div>
+            )}
+          </dl>
+          <div className="cc-notes">
+            <dt>Client Notes</dt>
+            <InlineTextarea value={client.notes} onSave={(v) => patch({ notes: v || null })} placeholder="Click to add client notes…" />
           </div>
         </div>
-      )}
 
-      <div className="detail-cols">
         <div className="panel">
           <h2 className="panel-title">Matters <span className="count-badge">{matters.length}</span></h2>
           <div className="panel-scroll">
@@ -256,20 +258,20 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
+      </div>
 
-        <div className="panel">
-          <h2 className="panel-title">Activity</h2>
-          <div className="panel-scroll">
-            {activity.length === 0 ? <p className="muted-line">No activity for this client yet.</p> : (
-              <ul className="activity-list">{activity.map((a) => (
-                <li key={a.id}>
-                  <span className="act-tag tag-client">Client</span>
-                  <span className="act-desc">{a.description}</span>
-                  <span className="act-time">{timeAgo(a.created_at)}</span>
-                </li>
-              ))}</ul>
-            )}
-          </div>
+      <div className="panel">
+        <h2 className="panel-title">Activity</h2>
+        <div className="panel-scroll">
+          {activity.length === 0 ? <p className="muted-line">No activity for this client yet.</p> : (
+            <ul className="activity-list">{activity.map((a) => (
+              <li key={a.id}>
+                <span className="act-tag tag-client">Client</span>
+                <span className="act-desc">{a.description}</span>
+                <span className="act-time">{timeAgo(a.created_at)}</span>
+              </li>
+            ))}</ul>
+          )}
         </div>
       </div>
 

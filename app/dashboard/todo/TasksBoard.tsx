@@ -14,10 +14,8 @@ const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate(),
   ).padStart(2, "0")}`;
-function startOfWeek(d: Date): Date {
+function startOfDay(d: Date): Date {
   const x = new Date(d);
-  const dow = (x.getDay() + 6) % 7; // Monday = 0
-  x.setDate(x.getDate() - dow);
   x.setHours(0, 0, 0, 0);
   return x;
 }
@@ -91,7 +89,7 @@ export default function TasksBoard() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [matters, setMatters] = useState<MatterLite[]>([]);
   const [loading, setLoading] = useState(true);
-  const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
+  const [weekStart, setWeekStart] = useState<Date>(() => startOfDay(new Date()));
   const [filterWho, setFilterWho] = useState<string>("all");
 
   const [addOpen, setAddOpen] = useState(false);
@@ -302,7 +300,7 @@ export default function TasksBoard() {
         <button className="btn icon-plus-btn tb-addnew" type="button" onClick={() => openAdd({ scheduled_date: todayIso })} title="Add task" aria-label="Add task">
           +
         </button>
-        <button type="button" className="tb-today" onClick={() => setWeekStart(startOfWeek(new Date()))}>
+        <button type="button" className="tb-today" onClick={() => setWeekStart(startOfDay(new Date()))}>
           Today
         </button>
         <span className="tb-week-label">{weekLabel}</span>

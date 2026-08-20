@@ -237,6 +237,7 @@ export default function MattersPage() {
         rate_type: form.rate_type,
         description: form.description.trim() || null,
         hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
+        opened_by: userName,
       })
       .select("id")
       .single();

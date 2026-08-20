@@ -40,6 +40,7 @@ export type Matter = {
   notes: string | null;
   closed_at: string | null;
   closed_by: string | null;
+  opened_by: string | null;
   created_at: string;
 };
 
@@ -135,7 +136,7 @@ export type TaskComment = {
 
 // Distinct avatar color per person (Yari — the user — is blue).
 const PERSON_COLORS: Record<string, string> = {
-  "Yari Corsino": "#2f6bff",
+  "Yari Corsino": "#1e3a8a",
   "Isa Abdur-Rahman": "#2f8f83",
   "Paralegal": "#7c5cbf",
 };
