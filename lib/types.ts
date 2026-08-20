@@ -69,6 +69,7 @@ export type TimeEntry = {
   note: string | null;
   billable: boolean;
   invoiced: boolean;
+  rate: number | null;
   logged_at: string;
 };
 

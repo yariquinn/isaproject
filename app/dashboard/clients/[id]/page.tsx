@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { PRACTICE_AREAS, ATTORNEYS, CLIENT_TYPES, type ActivityItem, type Client, type Matter } from "@/lib/types";
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
+import { pushRecent } from "@/lib/recents";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -39,6 +40,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [newForm, setNewForm] = useState(NEW_FORM);
   const [splitOpen, setSplitOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [billingOther, setBillingOther] = useState(false);
   const [addMatterOpen, setAddMatterOpen] = useState(false);
   const [mForm, setMForm] = useState({ name: "", practice_area: PRACTICE_AREAS[0] as string, assigned_to: ATTORNEYS[0] as string });
   const [mSaving, setMSaving] = useState(false);
@@ -88,6 +90,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       supabase.from("matters").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
     ]);
     setClient((c as Client) ?? null);
+    if (c) pushRecent("client", (c as Client).id, (c as Client).name);
     setAllClients((all as Client[]) ?? []);
     setMatters((m as Matter[]) ?? []);
     await loadActivity();
@@ -222,15 +225,22 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       </span>
     );
 
-  const MatterRow = ({ m }: { m: Matter }) => (
-    <li>
-      <Link href={`/dashboard/matters/${m.id}`}>{m.name}</Link>
-      <span className="muted-line">{m.practice_area}</span>
-      <span className="mr-opened">
-        Opened {new Date((m.open_date || m.created_at) + (m.open_date ? "T00:00:00" : "")).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+  const MatterPill = ({ m }: { m: Matter }) => (
+    <Link
+      href={`/dashboard/matters/${m.id}`}
+      className={`matter-card matter-card-${m.status}`}
+    >
+      <span className="matter-card-main">
+        <span className="matter-card-name">{m.name}</span>
+        <span className="matter-card-date">
+          Opened {new Date((m.open_date || m.created_at) + (m.open_date ? "T00:00:00" : "")).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+        </span>
       </span>
-      <span className={`pill pill-${m.status}`}>{m.status === "closed" ? "Closed" : "Active"}</span>
-    </li>
+      <span className="matter-card-meta">
+        <span className="matter-card-area">{m.practice_area}</span>
+        <span className={`pill pill-${m.status}`}>{m.status === "closed" ? "Closed" : "Active"}</span>
+      </span>
+    </Link>
   );
 
   return (
@@ -258,7 +268,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
         <div className="head-actions">
-          <button type="button" className="ghost sm" onClick={() => setEditOpen(true)}>Edit</button>
+          <button type="button" className="ghost sm" onClick={() => { setBillingOther(false); setEditOpen(true); }}>Edit</button>
           <button type="button" className="ghost sm" onClick={() => patch({ archived: !client.archived })}>
             {client.archived ? "Reopen" : "Close"}
           </button>
@@ -367,13 +377,13 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             {matters.length === 0 ? <p className="muted-line">No matters yet.</p> : (
               <>
                 {openMatters.length > 0 && (
-                  <ul className="link-list">{openMatters.map((m) => <MatterRow key={m.id} m={m} />)}</ul>
+                  <div className="matter-card-list">{openMatters.map((m) => <MatterPill key={m.id} m={m} />)}</div>
                 )}
                 {openMatters.length > 0 && closedMatters.length > 0 && (
                   <div className="link-list-divider" />
                 )}
                 {closedMatters.length > 0 && (
-                  <ul className="link-list dim">{closedMatters.map((m) => <MatterRow key={m.id} m={m} />)}</ul>
+                  <div className="matter-card-list">{closedMatters.map((m) => <MatterPill key={m.id} m={m} />)}</div>
                 )}
               </>
             )}
@@ -422,10 +432,56 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 </select>
               </label>
             )}
-            <label>
-              Billing contact
-              <input value={client.billing_contact ?? ""} onChange={(e) => patch({ billing_contact: e.target.value || null })} placeholder="Same as primary" />
-            </label>
+            {(() => {
+              const bc = client.billing_contact;
+              const partner = client.partner_name;
+              const isExisting = !!bc && !!partner && bc === partner;
+              const mode = billingOther
+                ? "__other"
+                : bc == null || bc === ""
+                  ? "__same"
+                  : isExisting
+                    ? "__existing"
+                    : "__other";
+              return (
+                <>
+                  <label>
+                    Billing contact
+                    <select
+                      value={mode}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "__same") {
+                          setBillingOther(false);
+                          patch({ billing_contact: null });
+                        } else if (v === "__existing") {
+                          setBillingOther(false);
+                          patch({ billing_contact: partner });
+                        } else {
+                          setBillingOther(true);
+                          if (isExisting) patch({ billing_contact: "" });
+                        }
+                      }}
+                    >
+                      <option value="__same">Same as primary</option>
+                      {partner && <option value="__existing">{partner} (existing contact)</option>}
+                      <option value="__other">Other / new contact…</option>
+                    </select>
+                  </label>
+                  {mode === "__other" && (
+                    <label>
+                      Contact name
+                      <input
+                        autoFocus
+                        value={bc ?? ""}
+                        onChange={(e) => patch({ billing_contact: e.target.value || null })}
+                        placeholder="Billing contact name"
+                      />
+                    </label>
+                  )}
+                </>
+              );
+            })()}
             <div className="field-pair">
               <label>
                 Billing email

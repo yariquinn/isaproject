@@ -59,6 +59,7 @@ export default function TimeEntriesTab({
     note: string;
     seconds: number;
     date: string;
+    rate: number | null;
   }) => void;
   onChanged: () => void;
   rateControl?: React.ReactNode;
@@ -75,7 +76,13 @@ export default function TimeEntriesTab({
   const [nNote, setNNote] = useState<string>("");
   const [nLawyer, setNLawyer] = useState<string>(ATTORNEYS[0]);
   const [nDur, setNDur] = useState<string>("");
+  const [nRate, setNRate] = useState<string>("");
   const [loggedPeriod, setLoggedPeriod] = useState<string>("all");
+  const [moveQuery, setMoveQuery] = useState<string>("");
+
+  // New-entry rate defaults to the case rate until the user overrides it.
+  const caseRate = rate ?? 0;
+  const nRateEffective = nRate.trim() === "" ? caseRate : parseFloat(nRate) || 0;
 
   function commitNew() {
     const hrs = parseFloat(nDur);
@@ -86,9 +93,11 @@ export default function TimeEntriesTab({
       note: nNote,
       seconds: Math.round(hrs * 3600),
       date: nDate,
+      rate: nRate.trim() === "" ? null : nRateEffective,
     });
     setNNote("");
     setNDur("");
+    setNRate("");
     setNDate(todayStr());
     setNActivity(ACTIVITY_TYPES[0]);
   }
@@ -132,7 +141,8 @@ export default function TimeEntriesTab({
   }
 
   const rateVal = rate ?? 0;
-  const amt = (e: TimeEntry) => (e.duration_seconds / 3600) * rateVal;
+  const rateOf = (e: TimeEntry) => e.rate ?? rateVal;
+  const amt = (e: TimeEntry) => (e.duration_seconds / 3600) * rateOf(e);
 
   const periodFloor = periodStart(loggedPeriod);
   const sum = (pred: (e: TimeEntry) => boolean) => {
@@ -187,17 +197,20 @@ export default function TimeEntriesTab({
     <>
       <div className="te-summary-head">
         <span className="te-summary-title">Summary</span>
-        <select
-          className="inline-select te-period"
-          value={loggedPeriod}
-          onChange={(e) => setLoggedPeriod(e.target.value)}
-        >
-          {PERIODS.map((p) => (
-            <option key={p.key} value={p.key}>
-              {p.label}
-            </option>
-          ))}
-        </select>
+        <div className="te-summary-head-right">
+          {rateControl}
+          <select
+            className="inline-select te-period"
+            value={loggedPeriod}
+            onChange={(e) => setLoggedPeriod(e.target.value)}
+          >
+            {PERIODS.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="te-summary">
         {stat("Total", total)}
@@ -222,28 +235,42 @@ export default function TimeEntriesTab({
               }}
             />
           </label>
-          <label>
-            Move to matter
-            <select
-              defaultValue=""
-              onChange={(e) => {
-                if (e.target.value) bulkUpdate({ matter_id: e.target.value });
-                e.target.value = "";
-              }}
-            >
-              <option value="">Select…</option>
-              {matters.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="button" className="ghost sm" onClick={() => bulkUpdate({ billable: true })}>Billable</button>
-          <button type="button" className="ghost sm" onClick={() => bulkUpdate({ billable: false })}>Non-billable</button>
-          <button type="button" className="ghost sm" onClick={() => bulkUpdate({ invoiced: true })}>Invoiced</button>
-          <button type="button" className="ghost sm danger" onClick={bulkDelete}>Delete</button>
-          <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
+          <div className="bulk-move">
+            <label>
+              Move to matter
+              <input
+                type="search"
+                className="bulk-move-input"
+                placeholder="Search a matter…"
+                value={moveQuery}
+                onChange={(e) => setMoveQuery(e.target.value)}
+              />
+            </label>
+            {moveQuery.trim() !== "" && (
+              <div className="bulk-move-list">
+                {matters
+                  .filter((m) => m.name.toLowerCase().includes(moveQuery.trim().toLowerCase()))
+                  .slice(0, 8)
+                  .map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className="bulk-move-item"
+                      onClick={() => {
+                        bulkUpdate({ matter_id: m.id });
+                        setMoveQuery("");
+                      }}
+                    >
+                      {m.name}
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+          <button type="button" className="ghost sm bulk-btn" onClick={() => bulkUpdate({ billable: true })}>Billable</button>
+          <button type="button" className="ghost sm bulk-btn" onClick={() => bulkUpdate({ billable: false })}>Non-billable</button>
+          <button type="button" className="ghost sm bulk-btn danger" onClick={bulkDelete}>Delete</button>
+          <button type="button" className="ghost sm bulk-btn" onClick={() => setSelected(new Set())}>Clear</button>
         </div>
       )}
 
@@ -303,7 +330,7 @@ export default function TimeEntriesTab({
                   />
                 </td>
                 <td>
-                  <select value={nLawyer} onChange={(e) => setNLawyer(e.target.value)} aria-label="New entry lawyer">
+                  <select value={nLawyer} onChange={(e) => setNLawyer(e.target.value)} aria-label="New entry user">
                     {ATTORNEYS.map((a) => (
                       <option key={a} value={a}>{a}</option>
                     ))}
@@ -312,7 +339,22 @@ export default function TimeEntriesTab({
                 <td>
                   <input type="number" step="0.25" min={0} value={nDur} placeholder="hrs" onChange={(e) => setNDur(e.target.value)} onBlur={commitNew} aria-label="New entry hours" />
                 </td>
-                <td className="te-rate-cell">{rateControl}</td>
+                <td className="te-rate-cell">
+                  <span className="te-rate-inline">
+                    <span className="te-rate-dollar">$</span>
+                    <input
+                      type="number"
+                      step="1"
+                      min={0}
+                      className="te-rate-input"
+                      value={nRate}
+                      placeholder={String(caseRate)}
+                      onChange={(e) => setNRate(e.target.value)}
+                      aria-label="New entry rate"
+                    />
+                    <span className="te-rate-suffix">/hr</span>
+                  </span>
+                </td>
                 <td colSpan={2} className="te-new-hint">press Enter to add</td>
               </tr>
               {entries.map((e) => (
@@ -445,8 +487,36 @@ export default function TimeEntriesTab({
                       </span>
                     )}
                   </td>
-                  {/* Rate */}
-                  <td className="te-rate-cell">{money(rateVal)}/hr</td>
+                  {/* Rate — per-entry, defaults to the case rate */}
+                  <td className="te-rate-cell">
+                    {isEditing(e, "rate") ? (
+                      <input
+                        type="number"
+                        step="1"
+                        min={0}
+                        autoFocus
+                        className="te-rate-input"
+                        value={draft}
+                        onChange={(ev) => setDraft(ev.target.value)}
+                        onBlur={() => {
+                          const v = parseFloat(draft);
+                          save(e, "rate", draft.trim() === "" || isNaN(v) ? null : v);
+                        }}
+                        onKeyDown={(ev) => {
+                          if (ev.key === "Enter") ev.currentTarget.blur();
+                        }}
+                      />
+                    ) : (
+                      <span
+                        className="te-cell"
+                        title={e.rate == null ? "Using case rate — click to override" : "Custom rate — click to edit"}
+                        onClick={() => startEdit(e, "rate", e.rate == null ? "" : String(e.rate))}
+                      >
+                        {money(rateOf(e))}/hr
+                        {e.rate == null && <span className="te-rate-default">·default</span>}
+                      </span>
+                    )}
+                  </td>
                   {/* Billable toggle */}
                   <td>
                     <button

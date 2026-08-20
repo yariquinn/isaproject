@@ -366,7 +366,7 @@ function LogModal({
           />
         </label>
         <label>
-          Lawyer
+          User
           <select value={lawyer} onChange={(e) => setLawyer(e.target.value)}>
             {(ATTORNEYS as readonly string[]).includes(lawyer) ? null : (
               <option value={lawyer}>{lawyer}</option>

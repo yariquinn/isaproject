@@ -74,10 +74,40 @@ export default function ImportExport({
     URL.revokeObjectURL(url);
     setMenuOpen(false);
   };
-  const exportPdf = () => {
-    // Browser print dialog → "Save as PDF".
+  // Print/PDF the actual data table (all rows), not the current page view.
+  const printTable = () => {
     setMenuOpen(false);
-    window.print();
+    const title = filename.replace(/\.csv$/i, "");
+    const escHtml = (v: string | number | null | undefined) =>
+      (v == null ? "" : String(v)).replace(/[&<>]/g, (c) =>
+        c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;",
+      );
+    const thead = `<tr>${headers.map((h) => `<th>${escHtml(h)}</th>`).join("")}</tr>`;
+    const tbody = rows
+      .map((r) => `<tr>${r.map((c) => `<td>${escHtml(c)}</td>`).join("")}</tr>`)
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escHtml(title)}</title>
+      <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 24px; color: #1a1a1a; }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        .meta { color: #666; font-size: 12px; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #ddd; vertical-align: top; }
+        th { background: #f3f4f6; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #555; }
+        tr:nth-child(even) td { background: #fafafa; }
+        @media print { body { margin: 0; } }
+      </style></head><body>
+      <h1>${escHtml(title)}</h1>
+      <div class="meta">${rows.length} record${rows.length === 1 ? "" : "s"} · ${new Date().toLocaleDateString()}</div>
+      <table><thead>${thead}</thead><tbody>${tbody}</tbody></table>
+      <script>window.onload = function(){ window.focus(); window.print(); };</script>
+      </body></html>`;
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) return;
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   };
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -89,7 +119,7 @@ export default function ImportExport({
 
   return (
     <>
-      <button className="icon-btn print-btn" type="button" title="Print" aria-label="Print" onClick={() => window.print()}>
+      <button className="icon-btn print-btn" type="button" title="Print" aria-label="Print" onClick={printTable}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 6 2 18 2 18 9" />
           <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
@@ -117,7 +147,7 @@ export default function ImportExport({
         {menuOpen && (
           <div className="export-menu">
             <button type="button" onClick={downloadCsv}>Download CSV</button>
-            <button type="button" onClick={exportPdf}>Download PDF</button>
+            <button type="button" onClick={printTable}>Download PDF</button>
           </div>
         )}
       </div>

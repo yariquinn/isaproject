@@ -91,7 +91,7 @@ export default function TimeEntriesPage() {
                 <th>Matter</th>
                 <th>Activity</th>
                 <th>Description</th>
-                <th>Lawyer</th>
+                <th>User</th>
                 <th>Duration</th>
               </tr>
             </thead>

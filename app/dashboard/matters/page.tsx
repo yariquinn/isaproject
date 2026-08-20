@@ -439,7 +439,10 @@ export default function MattersPage() {
             </thead>
             <tbody>
               {rows.map((m) => (
-                <tr key={m.id} className={selected.has(m.id) ? "row-selected" : undefined}>
+                <tr
+                  key={m.id}
+                  className={`${selected.has(m.id) ? "row-selected " : ""}${m.status === "closed" ? "row-closed" : ""}`.trim() || undefined}
+                >
                   <td className="check-col">
                     <input
                       type="checkbox"

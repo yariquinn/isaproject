@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ActivityItem, EventItem, Invoice, Matter, TimeEntry, Todo } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
+import { getRecents, type RecentItem } from "@/lib/recents";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -212,7 +213,11 @@ export default function Overview() {
   const gearRef = useRef<HTMLDivElement>(null);
 
   // Which overview panels the user wants to see (persisted per browser).
-  const [prefs, setPrefs] = useState({ fin: true, mytasks: true, events: true, activity: true });
+  const [prefs, setPrefs] = useState({ fin: true, mytasks: true, events: true, activity: true, recents: true });
+  const [recents, setRecents] = useState<RecentItem[]>([]);
+  useEffect(() => {
+    setRecents(getRecents());
+  }, []);
   useEffect(() => {
     try {
       const raw = localStorage.getItem("overviewPrefs");
@@ -226,7 +231,7 @@ export default function Overview() {
       /* ignore */
     }
   }, []);
-  const setPref = (key: "fin" | "mytasks" | "events" | "activity", v: boolean) => {
+  const setPref = (key: "fin" | "mytasks" | "events" | "activity" | "recents", v: boolean) => {
     setPrefs((prev) => {
       const next = { ...prev, [key]: v };
       try {
@@ -458,6 +463,7 @@ export default function Overview() {
               <div className="ov-gear-head">Show on dashboard</div>
               {([
                 ["fin", "Financials"],
+                ["recents", "Recently Viewed"],
                 ["mytasks", "My Tasks"],
                 ["events", "Upcoming Events"],
                 ["activity", "Recent Activity"],
@@ -508,6 +514,26 @@ export default function Overview() {
           <span className="stat-label">Hours Logged</span>
         </Link>
       </div>
+
+      {prefs.recents && recents.length > 0 && (
+        <div className="ov-recents">
+          <div className="ov-recents-head">Recently Viewed</div>
+          <div className="ov-recents-row">
+            {recents.map((r) => (
+              <Link
+                key={`${r.kind}-${r.id}`}
+                href={r.kind === "client" ? `/dashboard/clients/${r.id}` : `/dashboard/matters/${r.id}`}
+                className="ov-recent-chip"
+              >
+                <span className={`ov-recent-kind ov-recent-${r.kind}`}>
+                  {r.kind === "client" ? "Client" : "Matter"}
+                </span>
+                <span className="ov-recent-name">{r.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {prefs.fin && (
       <div className="fin-section">

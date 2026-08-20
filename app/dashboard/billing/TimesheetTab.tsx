@@ -118,7 +118,7 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
               <th>Date</th>
               <th>Activity</th>
               <th>Description</th>
-              <th>Lawyer</th>
+              <th>User</th>
               <th>Hours</th>
             </tr>
           </thead>

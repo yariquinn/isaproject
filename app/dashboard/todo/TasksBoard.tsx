@@ -6,6 +6,21 @@ import { ATTORNEYS, PRIORITIES, personColor, type TaskComment, type Todo } from 
 import { usePortal } from "../PortalProvider";
 
 type MatterLite = { id: string; name: string };
+type TaskAttachment = {
+  id: string;
+  todo_id: string;
+  name: string;
+  path: string;
+  size: number | null;
+  uploaded_by: string | null;
+  created_at: string;
+};
+const fmtSize = (n: number | null) => {
+  if (!n) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+};
 
 const DAY_COUNT = 3; // 3-day view, paged with the arrows
 
@@ -99,7 +114,9 @@ export default function TasksBoard() {
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [collapsedPeople, setCollapsedPeople] = useState<Record<string, boolean>>({});
   const [view, setView] = useState<"calendar" | "list">("calendar");
+  const [lvEdit, setLvEdit] = useState<{ id: string; field: "title" | "assignee" | "scheduled_date" | "due_date" } | null>(null);
   const dragId = useRef<string | null>(null);
+  const lvEditing = (id: string, field: string) => lvEdit?.id === id && lvEdit.field === field;
 
   useEffect(() => {
     try {
@@ -334,24 +351,78 @@ export default function TasksBoard() {
           <p className="muted-line" style={{ padding: "1rem" }}>No tasks.</p>
         ) : (
           listTasks.map((t) => (
-            <div key={t.id} className={`tb-lv-row${t.done ? " done" : ""}`} onClick={() => setSelected(t)}>
-              <span className="tb-lv-task">
-                {t.title}
-                {commentCount(t.id) > 0 && (
-                  <span className="tb-lv-c">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                    {commentCount(t.id)}
+            <div key={t.id} className={`tb-lv-row${t.done ? " done" : ""}`}>
+              <span className="tb-lv-task" onClick={(e) => { e.stopPropagation(); setLvEdit({ id: t.id, field: "title" }); }}>
+                {lvEditing(t.id, "title") ? (
+                  <input
+                    className="tb-lv-input"
+                    autoFocus
+                    defaultValue={t.title}
+                    onClick={(e) => e.stopPropagation()}
+                    onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== t.title) patch(t.id, { title: v }); setLvEdit(null); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setLvEdit(null); }}
+                  />
+                ) : (
+                  <>
+                    {t.title}
+                    {commentCount(t.id) > 0 && (
+                      <span className="tb-lv-c">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                        {commentCount(t.id)}
+                      </span>
+                    )}
+                  </>
+                )}
+              </span>
+              <span className="tb-lv-matter" onClick={() => setSelected(t)}>{matterName(t.matter_id) || "—"}</span>
+              <span className="tb-lv-user" onClick={(e) => { e.stopPropagation(); setLvEdit({ id: t.id, field: "assignee" }); }}>
+                {lvEditing(t.id, "assignee") ? (
+                  <select
+                    className="tb-lv-input"
+                    autoFocus
+                    defaultValue={t.assignee ?? ATTORNEYS[0]}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => { patch(t.id, { assignee: e.target.value }); setLvEdit(null); }}
+                    onBlur={() => setLvEdit(null)}
+                  >
+                    {ATTORNEYS.map((a) => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                ) : (
+                  <span className="tb-card-who sm" style={{ background: personColor(t.assignee) }} title={t.assignee ?? undefined}>
+                    {initialsOf(t.assignee)}
                   </span>
                 )}
               </span>
-              <span className="tb-lv-matter">{matterName(t.matter_id) || "—"}</span>
-              <span className="tb-lv-user">
-                <span className="tb-card-who sm" style={{ background: personColor(t.assignee) }} title={t.assignee ?? undefined}>
-                  {initialsOf(t.assignee)}
-                </span>
+              <span className="tb-lv-day" onClick={(e) => { e.stopPropagation(); setLvEdit({ id: t.id, field: "scheduled_date" }); }}>
+                {lvEditing(t.id, "scheduled_date") ? (
+                  <input
+                    type="date"
+                    className="tb-lv-input"
+                    autoFocus
+                    defaultValue={t.scheduled_date ?? ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => { patch(t.id, { scheduled_date: e.target.value || null }); setLvEdit(null); }}
+                    onBlur={() => setLvEdit(null)}
+                  />
+                ) : (
+                  t.scheduled_date ? fmtDay(t.scheduled_date) : "Waiting"
+                )}
               </span>
-              <span className="tb-lv-day">{t.scheduled_date ? fmtDay(t.scheduled_date) : "Waiting"}</span>
-              <span className="tb-lv-due">{t.due_date ? fmtDay(t.due_date) : "—"}</span>
+              <span className="tb-lv-due" onClick={(e) => { e.stopPropagation(); setLvEdit({ id: t.id, field: "due_date" }); }}>
+                {lvEditing(t.id, "due_date") ? (
+                  <input
+                    type="date"
+                    className="tb-lv-input"
+                    autoFocus
+                    defaultValue={t.due_date ?? ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => { patch(t.id, { due_date: e.target.value || null }); setLvEdit(null); }}
+                    onBlur={() => setLvEdit(null)}
+                  />
+                ) : (
+                  t.due_date ? fmtDay(t.due_date) : "—"
+                )}
+              </span>
             </div>
           ))
         )}
@@ -699,6 +770,50 @@ function EditModal({
   onDelete: () => void;
 }) {
   const [msg, setMsg] = useState("");
+  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const loadAttachments = async () => {
+    const { data } = await supabase
+      .from("task_attachments")
+      .select("*")
+      .eq("todo_id", todo.id)
+      .order("created_at", { ascending: false });
+    setAttachments((data as TaskAttachment[]) ?? []);
+  };
+  useEffect(() => {
+    loadAttachments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todo.id]);
+
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    setUploading(true);
+    const path = `${todo.id}/${Date.now()}-${f.name.replace(/[^\w.\-]/g, "_")}`;
+    const { error } = await supabase.storage.from("task-attachments").upload(path, f);
+    if (!error) {
+      await supabase.from("task_attachments").insert({
+        todo_id: todo.id,
+        name: f.name,
+        path,
+        size: f.size,
+        uploaded_by: currentUser,
+      });
+      await loadAttachments();
+    }
+    setUploading(false);
+  };
+  const removeAttachment = async (a: TaskAttachment) => {
+    await supabase.storage.from("task-attachments").remove([a.path]);
+    await supabase.from("task_attachments").delete().eq("id", a.id);
+    await loadAttachments();
+  };
+  const attUrl = (a: TaskAttachment) =>
+    supabase.storage.from("task-attachments").getPublicUrl(a.path).data.publicUrl;
+
   const [t, setT] = useState({
     title: todo.title,
     assignee: todo.assignee ?? ATTORNEYS[0],
@@ -788,6 +903,29 @@ function EditModal({
           <input type="checkbox" checked={t.done} onChange={(e) => set("done", e.target.checked)} />
           Mark as done
         </label>
+        <div className="tm-attach">
+          <div className="tm-attach-head">
+            <span>Attachments {attachments.length > 0 && <span className="count-badge">{attachments.length}</span>}</span>
+            <button type="button" className="ghost sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              {uploading ? "Uploading…" : "+ Add file"}
+            </button>
+            <input ref={fileRef} type="file" onChange={onPickFile} style={{ display: "none" }} />
+          </div>
+          {attachments.length === 0 ? (
+            <p className="tm-attach-empty">No files attached.</p>
+          ) : (
+            <ul className="tm-attach-list">
+              {attachments.map((a) => (
+                <li key={a.id} className="tm-attach-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                  <a href={attUrl(a)} target="_blank" rel="noopener noreferrer" className="tm-attach-name" title={a.name}>{a.name}</a>
+                  <span className="tm-attach-size">{fmtSize(a.size)}</span>
+                  <button type="button" className="tm-attach-x" aria-label="Remove attachment" onClick={() => removeAttachment(a)}>✕</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         <div className="modal-actions">
           <button type="button" className="ghost danger" onClick={onDelete} style={{ marginRight: "auto" }}>Delete</button>
           <button type="button" className="ghost" onClick={onClose}>Cancel</button>

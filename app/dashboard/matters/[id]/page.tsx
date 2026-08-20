@@ -24,6 +24,7 @@ import {
   InlineTextarea,
 } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
+import { pushRecent } from "@/lib/recents";
 import MatterTasksList from "./MatterTasksList";
 import Disclaimer from "../../Disclaimer";
 import NotesFeed from "../../NotesFeed";
@@ -237,6 +238,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       ]);
     const matterRow = (m as Matter) ?? null;
     setMatter(matterRow);
+    if (matterRow) pushRecent("matter", matterRow.id, matterRow.name);
     setClients((cs as Client[]) ?? []);
     setEntries((e as TimeEntry[]) ?? []);
     setEvents((ev as EventItem[]) ?? []);
@@ -434,6 +436,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     note: string;
     seconds: number;
     date: string;
+    rate: number | null;
   }) {
     if (!matter) return;
     await supabase.from("time_entries").insert({
@@ -442,6 +445,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       lawyer: f.lawyer || "Isa",
       duration_seconds: f.seconds,
       note: f.note.trim() || null,
+      rate: f.rate,
       logged_at: f.date
         ? new Date(f.date + "T12:00:00").toISOString()
         : new Date().toISOString(),
@@ -771,9 +775,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                         Overdue
                       </span>
                     )}
-                    <span className={`du-kind-text${it.label === "Closing" ? " closing" : ""}`}>
-                      {it.label}
-                    </span>
+                    {!overdue && (
+                      <span className={`du-kind-text${it.label === "Closing" ? " closing" : ""}`}>
+                        {it.label}
+                      </span>
+                    )}
                     <span className="du-title">{it.title}</span>
                     <button
                       type="button"
@@ -1179,7 +1185,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             onChanged={loadAll}
             rateControl={
               <div className="te-rate">
-                <span className="te-rate-label">Rate</span>
+                <span className="te-rate-label">Case rate</span>
                 <InlineNumber
                   value={matter.hourly_rate}
                   prefix="$"

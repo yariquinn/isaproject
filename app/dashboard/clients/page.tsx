@@ -466,17 +466,24 @@ export default function ClientsPage() {
                   </td>
                   <td>
                     {activeMatters[c.id]?.length ? (
-                      <div className="active-matter-cell">
-                        {activeMatters[c.id].map((m) => (
-                          <Link
-                            key={m.id}
-                            href={`/dashboard/matters/${m.id}`}
-                            className="active-matter-chip"
-                          >
-                            {m.name}
-                          </Link>
-                        ))}
-                      </div>
+                      <span className="matter-pop-wrap">
+                        <span className="matter-count-badge">
+                          {activeMatters[c.id].length} matter
+                          {activeMatters[c.id].length === 1 ? "" : "s"}
+                        </span>
+                        <span className="matter-pop">
+                          <span className="matter-pop-head">Active matters</span>
+                          {activeMatters[c.id].map((m) => (
+                            <Link
+                              key={m.id}
+                              href={`/dashboard/matters/${m.id}`}
+                              className="matter-pop-item"
+                            >
+                              {m.name}
+                            </Link>
+                          ))}
+                        </span>
+                      </span>
                     ) : (
                       <span className="inline-placeholder">—</span>
                     )}
