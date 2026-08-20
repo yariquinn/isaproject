@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { ACTIVITY_TYPES, ATTORNEYS, type TimeEntry } from "@/lib/types";
 import { usePortal } from "../../PortalProvider";
@@ -40,6 +40,7 @@ export default function TimeEntriesTab({
   rate,
   onAddEntry,
   onChanged,
+  rateControl,
 }: {
   entries: TimeEntry[];
   rate: number | null;
@@ -51,6 +52,7 @@ export default function TimeEntriesTab({
     date: string;
   }) => void;
   onChanged: () => void;
+  rateControl?: React.ReactNode;
 }) {
   const { userName } = usePortal();
   const [edit, setEdit] = useState<EditCell>(null);
@@ -194,6 +196,7 @@ export default function TimeEntriesTab({
         {stat("Non-billable", nonBillable, "muted")}
         {stat("Invoiced", invoiced, "ok")}
         {stat("Un-invoiced", unInvoiced, "warn")}
+        {rateControl && <div className="te-rate-stat">{rateControl}</div>}
       </div>
 
       {selected.size > 0 && (

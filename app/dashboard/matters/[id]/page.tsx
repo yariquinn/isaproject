@@ -492,19 +492,22 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   );
 
   // Upcoming = open events (deadlines) + open tasks with a due date, merged.
-  type UpItem = { id: string; date: string; title: string; kind: "event" | "task" };
+  // Events show their own kind (e.g. "Closing"); tasks show "Task".
+  const evLabel = (k: string | null) =>
+    k ? k.charAt(0).toUpperCase() + k.slice(1) : "Deadline";
+  type UpItem = { id: string; date: string; title: string; kind: "event" | "task"; label: string };
   const upcomingItems: UpItem[] = [
-    ...upcomingEvents.map((e) => ({ id: e.id, date: e.event_date, title: e.title, kind: "event" as const })),
+    ...upcomingEvents.map((e) => ({ id: e.id, date: e.event_date, title: e.title, kind: "event" as const, label: evLabel(e.kind) })),
     ...todos
       .filter((t) => !t.done && t.due_date)
-      .map((t) => ({ id: t.id, date: t.due_date as string, title: t.title, kind: "task" as const })),
+      .map((t) => ({ id: t.id, date: t.due_date as string, title: t.title, kind: "task" as const, label: "Task" })),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const completedItems: UpItem[] = [
-    ...detailsCompleted.map((e) => ({ id: e.id, date: e.event_date, title: e.title, kind: "event" as const })),
+    ...detailsCompleted.map((e) => ({ id: e.id, date: e.event_date, title: e.title, kind: "event" as const, label: evLabel(e.kind) })),
     ...todos
       .filter((t) => t.done && t.due_date && new Date(t.due_date).getTime() >= Date.now() - 7 * 86400000)
-      .map((t) => ({ id: t.id, date: t.due_date as string, title: t.title, kind: "task" as const })),
+      .map((t) => ({ id: t.id, date: t.due_date as string, title: t.title, kind: "task" as const, label: "Task" })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
@@ -738,7 +741,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       })}
                     </span>
                     <span className={`du-kind du-kind-${it.kind}`}>
-                      {it.kind === "task" ? "Task" : "Deadline"}
+                      {it.label}
                     </span>
                     <span className="du-title">{it.title}</span>
                     <button
@@ -1139,8 +1142,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
         {bodyTab === "time" && (
-          <>
-            <div className="te-rate-row">
+          <TimeEntriesTab
+            entries={entries}
+            rate={matter.hourly_rate}
+            onAddEntry={addEntry}
+            onChanged={loadAll}
+            rateControl={
               <div className="te-rate">
                 <span className="te-rate-label">Rate</span>
                 <InlineNumber
@@ -1158,14 +1165,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   onSave={(v) => patch({ rate_type: v })}
                 />
               </div>
-            </div>
-            <TimeEntriesTab
-              entries={entries}
-              rate={matter.hourly_rate}
-              onAddEntry={addEntry}
-              onChanged={loadAll}
-            />
-          </>
+            }
+          />
         )}
 
         {bodyTab === "expenses" && (

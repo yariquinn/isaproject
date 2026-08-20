@@ -2948,12 +2948,10 @@ a.activity-row:hover .act-desc {
     margin-top: 1.25rem;
   }
 }
-/* Compact rate pill, right-aligned above the Time Entries table. */
-.te-rate-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
+/* Rate pill sits in the Time Entries summary row, pushed to the right. */
+.te-rate-stat {
+  margin-left: auto;
+  align-self: center;
 }
 .te-rate {
   display: inline-flex;
@@ -4265,7 +4263,7 @@ a.activity-row:hover .act-desc {
   align-items: center;
   justify-content: flex-start;
   gap: 0.4rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 .du-icon { color: #c0392b; }
 .du-label {
@@ -4283,7 +4281,7 @@ a.activity-row:hover .act-desc {
 }
 .du-list li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.6rem;
   font-size: 0.88rem;
 }
