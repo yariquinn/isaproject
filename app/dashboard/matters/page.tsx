@@ -479,7 +479,7 @@ export default function MattersPage() {
                   <td>
                     <InlineSelect
                       value={m.status}
-                      className={`pill-${m.status}${m.status === "closed" ? " closed-strong" : ""}`}
+                      className={`pill-${m.status}`}
                       options={[
                         { value: "open", label: "Active" },
                         { value: "closed", label: "Closed" },

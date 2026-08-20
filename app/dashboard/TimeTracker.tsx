@@ -203,6 +203,7 @@ export default function TimeTracker() {
         {runningCount > 0 && <span className="tracker-dot" />}
       </button>
 
+      {open && <div className="tracker-backdrop" onClick={() => setOpen(false)} />}
       {open && (
         <div className="tracker-pop">
           <div className="tracker-pop-head">

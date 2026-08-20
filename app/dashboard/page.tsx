@@ -509,15 +509,12 @@ export default function Overview() {
         </Link>
       </div>
 
+      {prefs.fin && (
       <div className="fin-section">
         <div className="fin-section-head">
           <h2 className="panel-title">Financials</h2>
-          <label className="switch" title="Show financials">
-            <input type="checkbox" checked={showFin} onChange={(e) => toggleFin(e.target.checked)} />
-            <span className="switch-track" />
-          </label>
         </div>
-        {!showFin ? null : loading ? (
+        {loading ? (
           <p className="muted-line">Loading…</p>
         ) : (
           <div className="fin-grid">
@@ -591,6 +588,7 @@ export default function Overview() {
           </div>
         )}
       </div>
+      )}
 
       {prefs.mytasks && (
       <div className="panel ov-mytasks">

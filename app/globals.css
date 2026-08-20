@@ -822,6 +822,50 @@ section.block.alt {
   display: inline-flex;
   margin-right: 0.9rem;
 }
+/* Time tracker relocated into the header (left of the alerts bell) */
+.app-header .tracker {
+  position: relative;
+  margin-right: 0.6rem;
+}
+.app-header .tracker-icon {
+  width: auto;
+  height: 34px;
+  padding: 0 0.7rem;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  color: var(--dash-fg);
+  border-radius: 9px;
+}
+.app-header .tracker-icon:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.app-header .tracker-icon.on {
+  border-color: #22a06b;
+  color: #157a4e;
+  background: color-mix(in srgb, #22a06b 12%, var(--dash-surface));
+}
+.app-header .tracker-icon-label {
+  font-size: 0.8rem;
+}
+.app-header .tracker-icon-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.app-header .tracker-pop {
+  left: auto;
+  right: 0;
+  bottom: auto;
+  top: calc(100% + 8px);
+  width: 300px;
+  z-index: 95;
+}
+.tracker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
 .hdr-bell-badge.green {
   background: #22a06b;
 }
@@ -1527,7 +1571,7 @@ section.block.alt {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  z-index: 50;
+  z-index: 100;
   padding: 4vh 1rem;
   overflow-y: auto;
 }
@@ -6168,12 +6212,17 @@ a.activity-row:hover .act-desc {
   min-height: 0;
 }
 .tb-card-comments {
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 0.15rem;
-  font-size: 0.68rem;
+  gap: 0.2rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--dash-muted);
+}
+/* When an avatar is also present (waiting list), keep comments before it */
+.tb-card-comments + .tb-card-who {
+  margin-left: 0.4rem;
 }
 .tb-cell {
   min-height: 58px;

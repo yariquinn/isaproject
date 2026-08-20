@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
-import TimeTracker from "./TimeTracker";
 import { logoutAction } from "./actions";
 
 type NavItem = { href: string; label: string; children?: NavItem[] };
@@ -269,10 +268,6 @@ export default function Sidebar({ userName }: { userName: string }) {
             );
           })}
         </nav>
-
-        <div className="sidebar-tracker">
-          <TimeTracker />
-        </div>
 
         <div className="sidebar-foot">
           <div className="user-card">

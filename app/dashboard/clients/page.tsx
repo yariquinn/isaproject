@@ -324,7 +324,7 @@ export default function ClientsPage() {
       ) : clients.length === 0 ? (
         <p className="muted-line">No clients yet.</p>
       ) : (
-        <div className="table-wrap printable">
+        <div className="table-wrap printable fill-table">
           {selected.size > 0 && (
             <div className="bulk-bar">
               <span className="bulk-count">{selected.size} selected</span>
