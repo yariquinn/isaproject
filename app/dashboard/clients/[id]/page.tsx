@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { ActivityItem, Client, Matter } from "@/lib/types";
+import { PRACTICE_AREAS, ATTORNEYS, type ActivityItem, type Client, type Matter } from "@/lib/types";
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
 
@@ -38,6 +38,37 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [contactQuery, setContactQuery] = useState("");
   const [newForm, setNewForm] = useState(NEW_FORM);
   const [splitOpen, setSplitOpen] = useState(false);
+  const [addMatterOpen, setAddMatterOpen] = useState(false);
+  const [mForm, setMForm] = useState({ name: "", practice_area: PRACTICE_AREAS[0] as string, assigned_to: ATTORNEYS[0] as string });
+  const [mSaving, setMSaving] = useState(false);
+
+  async function addMatter() {
+    if (!mForm.name.trim() || !client) return;
+    setMSaving(true);
+    const { data: created } = await supabase
+      .from("matters")
+      .insert({
+        name: mForm.name.trim(),
+        client_id: client.id,
+        practice_area: mForm.practice_area,
+        assigned_to: mForm.assigned_to,
+        status: "active",
+        priority: "-",
+        opened_by: userName,
+      })
+      .select("id")
+      .single();
+    await supabase.from("activity_log").insert({
+      kind: "matter_created",
+      client_id: client.id,
+      matter_id: created?.id ?? null,
+      description: `${userName} opened matter ${mForm.name.trim()}`,
+    });
+    setMSaving(false);
+    setAddMatterOpen(false);
+    setMForm({ name: "", practice_area: PRACTICE_AREAS[0], assigned_to: ATTORNEYS[0] });
+    if (created?.id) router.push(`/dashboard/matters/${created.id}`);
+  }
 
   async function loadActivity() {
     const { data } = await supabase
@@ -171,7 +202,20 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         onChange={(e) => setDraft(e.target.value)} onBlur={() => saveField(field, label)}
         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setActiveEdit(null); }} />
     ) : (
-      <span className="inline-view" onClick={() => setPrompt({ field, label })} title="Click to edit">
+      <span
+        className="inline-view"
+        onClick={() => {
+          // Businesses have a contact person who might change, so we ask.
+          // Individuals edit their own info directly — no prompt.
+          if (client?.client_type === "business") {
+            setPrompt({ field, label });
+          } else {
+            setDraft(client?.[field] ?? "");
+            setActiveEdit(field);
+          }
+        }}
+        title="Click to edit"
+      >
         {client[field] || <span className="inline-placeholder">—</span>}
       </span>
     );
@@ -215,7 +259,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <div className="panel">
           <div className="panel-head">
             <h2 className="panel-title">Contact</h2>
-            {client.client_type === "business" && client.partner_name && (
+            {client.client_type !== "business" && client.partner_name && (
               <button type="button" className="ghost sm" onClick={() => setSplitOpen(true)} title="Create a standalone client record for the second contact">
                 Split second contact →
               </button>
@@ -258,7 +302,10 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
 
         <div className="panel">
-          <h2 className="panel-title">Matters <span className="count-badge">{matters.length}</span></h2>
+          <div className="panel-head">
+            <h2 className="panel-title">Matters <span className="count-badge">{matters.length}</span></h2>
+            <button type="button" className="btn icon-plus-btn sm-plus" onClick={() => setAddMatterOpen(true)} title="Add matter" aria-label="Add matter">+</button>
+          </div>
           <div className="panel-scroll">
             {matters.length === 0 ? <p className="muted-line">No matters yet.</p> : (
               <>
@@ -291,6 +338,38 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           )}
         </div>
       </div>
+
+      {addMatterOpen && (
+        <div className="modal-backdrop" onClick={() => setAddMatterOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>New matter for {client.name}</h3>
+            <label>
+              Matter name
+              <input autoFocus value={mForm.name} onChange={(e) => setMForm({ ...mForm, name: e.target.value })} placeholder="e.g. 2025 Refinance" />
+            </label>
+            <div className="field-pair">
+              <label>
+                Practice area
+                <select value={mForm.practice_area} onChange={(e) => setMForm({ ...mForm, practice_area: e.target.value })}>
+                  {PRACTICE_AREAS.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </label>
+              <label>
+                Assigned to
+                <select value={mForm.assigned_to} onChange={(e) => setMForm({ ...mForm, assigned_to: e.target.value })}>
+                  {ATTORNEYS.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="ghost" onClick={() => setAddMatterOpen(false)}>Cancel</button>
+              <button type="button" className="btn" onClick={addMatter} disabled={mSaving || !mForm.name.trim()}>
+                {mSaving ? "Saving…" : "Create matter"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {splitOpen && client.partner_name && (
         <div className="modal-backdrop" onClick={() => setSplitOpen(false)}>

@@ -493,6 +493,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   // Upcoming = open events (deadlines) + open tasks with a due date, merged.
   // Events show their own kind (e.g. "Closing"); tasks show "Task".
+  const now0 = new Date();
+  const todayStrLocal = `${now0.getFullYear()}-${String(now0.getMonth() + 1).padStart(2, "0")}-${String(now0.getDate()).padStart(2, "0")}`;
   const evLabel = (k: string | null) =>
     k ? k.charAt(0).toUpperCase() + k.slice(1) : "Deadline";
   type UpItem = { id: string; date: string; title: string; kind: "event" | "task"; label: string };
@@ -549,10 +551,18 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               })}
               {matter.opened_by && <> by <strong className="strip-who">{matter.opened_by}</strong></>}
             </span>
-            {matter.status === "closed" && matter.closed_by && (
+            {matter.status === "closed" && matter.closed_at && (
               <>
                 <span className="strip-sep">·</span>
-                <span className="strip-item">Closed by {matter.closed_by}</span>
+                <span className="strip-item">
+                  Closed{" "}
+                  {new Date(matter.closed_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                  {matter.closed_by && <> by <strong className="strip-who">{matter.closed_by}</strong></>}
+                </span>
               </>
             )}
           </div>
@@ -725,24 +735,29 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             <div className="du">
               {upcomingItems.length > 0 && (
                 <div className="du-head">
-                  <svg className="du-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                    <line x1="12" y1="9" x2="12" y2="13" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
                   <span className="du-label">Upcoming Tasks &amp; Deadlines</span>
                 </div>
               )}
               <ul className="du-list">
-                {upcomingItems.slice(0, 5).map((it) => (
+                {upcomingItems.slice(0, 5).map((it) => {
+                  const overdue = it.date.slice(0, 10) < todayStrLocal;
+                  return (
                   <li key={`${it.kind}-${it.id}`}>
-                    <span className="du-date">
+                    <span className={`du-date${overdue ? " overdue" : ""}`}>
                       {new Date(it.date).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                       })}
                     </span>
-                    <span className={`du-kind du-kind-${it.kind}`}>
+                    {overdue && (
+                      <span className="du-overdue" title="Overdue">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        Overdue
+                      </span>
+                    )}
+                    <span className={`du-kind-text${it.label === "Closing" ? " closing" : ""}`}>
                       {it.label}
                     </span>
                     <span className="du-title">{it.title}</span>
@@ -765,7 +780,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       </svg>
                     </button>
                   </li>
-                ))}
+                  );
+                })}
                 {completedItems.map((it) => (
                   <li key={`${it.kind}-${it.id}`} className="du-item-done">
                     <span className="du-date">

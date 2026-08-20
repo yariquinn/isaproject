@@ -4159,7 +4159,8 @@ a.activity-row:hover .act-desc {
 .fin-section-head .panel-title {
   font-size: 0.85rem;
   font-weight: 600;
-  letter-spacing: 0;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--dash-fg);
 }
 .stat-row.ov-stats {
@@ -4821,6 +4822,32 @@ a.activity-row:hover .act-desc {
   background: #fbecec;
   color: #a12b2b;
 }
+/* Plain-text kind label (no pill) + overdue treatment */
+.du-kind-text {
+  flex: none;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
+.du-kind-text.closing {
+  color: #2f8f5b;
+}
+.du-date.overdue {
+  color: #c0392b;
+}
+.du-overdue {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c0392b;
+}
 
 /* Time-entry add row matches the Timesheet input style */
 .te-new-row td {
@@ -5234,6 +5261,12 @@ a.activity-row:hover .act-desc {
   align-items: center;
   justify-content: center;
   border-radius: 10px;
+}
+.icon-plus-btn.sm-plus {
+  width: 28px;
+  height: 28px;
+  font-size: 1.1rem;
+  border-radius: 8px;
 }
 
 /* Searchable matter picker (task modals) */
