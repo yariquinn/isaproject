@@ -2044,14 +2044,16 @@ section.block.alt {
   position: relative;
   display: inline-flex;
 }
-.head-search-row {
-  margin: 0.9rem 0 1.1rem;
+.filter-search-row {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.9rem 0 1.25rem;
 }
-.head-search-row .head-search {
+.filter-search-row .head-search {
   width: 100%;
-  max-width: 360px;
+  max-width: 340px;
   background-color: var(--dash-surface);
 }
 .icon-btn.filter-on {

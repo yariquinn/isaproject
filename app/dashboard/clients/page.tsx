@@ -352,17 +352,7 @@ export default function ClientsPage() {
           </button>
         </div>
       </div>
-      <div className="head-search-row">
-        <input
-          className="activity-search head-search"
-          type="search"
-          placeholder="Search clients…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-
-      <div className="matter-filters" style={{ marginBottom: "1.25rem" }}>
+      <div className="filter-search-row">
         <div className="filter-row" style={{ margin: 0 }}>
           {(["open", "archived", "all"] as const).map((v) => (
             <button
@@ -375,6 +365,13 @@ export default function ClientsPage() {
             </button>
           ))}
         </div>
+        <input
+          className="activity-search head-search"
+          type="search"
+          placeholder="Search clients…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
 
       {loading ? (

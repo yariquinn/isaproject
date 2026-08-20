@@ -348,17 +348,7 @@ export default function MattersPage() {
           </button>
         </div>
       </div>
-      <div className="head-search-row">
-        <input
-          className="activity-search head-search"
-          type="search"
-          placeholder="Search all matters…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-
-      <div className="matter-filters">
+      <div className="filter-search-row">
         <div className="filter-row" style={{ margin: 0 }}>
           {(["active", "closed", "all"] as const).map((s) => (
             <button
@@ -371,6 +361,13 @@ export default function MattersPage() {
             </button>
           ))}
         </div>
+        <input
+          className="activity-search head-search"
+          type="search"
+          placeholder="Search all matters…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
 
       {loading ? (
