@@ -4581,3 +4581,138 @@ a.activity-row:hover .act-desc {
 .toggle-switch:checked::before {
   transform: translateX(18px);
 }
+
+/* ============================================================
+   Overview: two-column layout with a right shortcuts rail,
+   financials donut, and a floating action button.
+   ============================================================ */
+.ov-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+.ov-main {
+  flex: 1;
+  min-width: 0;
+}
+.ov-rail {
+  flex: none;
+  width: 200px;
+  position: sticky;
+  top: 66px;
+}
+.ov-rail-title {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--dash-muted);
+  margin-bottom: 0.6rem;
+}
+.ov-rail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ov-rail-list .qa-btn,
+.ov-fab-menu .qa-btn {
+  width: 100%;
+  justify-content: flex-start;
+}
+@media (max-width: 1000px) {
+  .ov-rail { display: none; }
+}
+
+.ov-fin-panel {
+  margin-bottom: 1.5rem;
+}
+.fin-chart {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.fin-donut {
+  flex: none;
+}
+.fin-total-num {
+  font-size: 1.05rem;
+  font-weight: 700;
+  fill: var(--dash-fg);
+}
+.fin-total-label {
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  fill: var(--dash-muted);
+}
+.fin-legend {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 160px;
+}
+.fin-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+}
+.fin-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.fin-legend-label {
+  color: var(--dash-fg);
+}
+.fin-val {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--dash-fg);
+}
+
+.ov-fab-wrap {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+.ov-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.ov-fab.open {
+  transform: rotate(45deg);
+}
+.ov-fab:hover {
+  background: color-mix(in srgb, var(--accent) 86%, #ffffff);
+}
+.ov-fab-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 0.5rem;
+  width: 210px;
+}

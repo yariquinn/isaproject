@@ -108,13 +108,70 @@ function Ic({ name }: { name: string }) {
   }
 }
 
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  paid: { label: "Paid", color: "#4c9d6b" },
+  sent: { label: "Sent", color: "#6f9bd8" },
+  draft: { label: "Draft", color: "#9aa4b2" },
+  overdue: { label: "Overdue", color: "#c0392b" },
+  unpaid: { label: "Unpaid", color: "#d9a441" },
+};
+
+function Donut({ data }: { data: { label: string; value: number; color: string }[] }) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (total <= 0) return <p className="muted-line">No invoice data yet.</p>;
+  const r = 54;
+  const circ = 2 * Math.PI * r;
+  let acc = 0;
+  return (
+    <div className="fin-chart">
+      <svg width="140" height="140" viewBox="0 0 140 140" className="fin-donut">
+        <g transform="rotate(-90 70 70)">
+          <circle cx="70" cy="70" r={r} fill="none" stroke="var(--dash-border)" strokeWidth="20" />
+          {data.map((d, i) => {
+            const frac = d.value / total;
+            const dash = frac * circ;
+            const el = (
+              <circle
+                key={i}
+                cx="70"
+                cy="70"
+                r={r}
+                fill="none"
+                stroke={d.color}
+                strokeWidth="20"
+                strokeDasharray={`${dash} ${circ - dash}`}
+                strokeDashoffset={-acc * circ}
+              />
+            );
+            acc += frac;
+            return el;
+          })}
+        </g>
+        <text x="70" y="67" textAnchor="middle" className="fin-total-num">
+          ${total.toFixed(0)}
+        </text>
+        <text x="70" y="83" textAnchor="middle" className="fin-total-label">
+          TOTAL
+        </text>
+      </svg>
+      <ul className="fin-legend">
+        {data.map((d, i) => (
+          <li key={i}>
+            <span className="fin-dot" style={{ background: d.color }} />
+            <span className="fin-legend-label">{d.label}</span>
+            <span className="fin-val">${d.value.toFixed(0)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function Overview() {
   const { userName } = usePortal();
   const firstName = userName.split(" ")[0] || userName;
 
   const [clients, setClients] = useState(0);
-  const [openM, setOpenM] = useState(0);
-  const [closedM, setClosedM] = useState(0);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
@@ -126,14 +183,13 @@ export default function Overview() {
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<string>("month");
   const [qa, setQa] = useState<string | null>(null);
+  const [fabOpen, setFabOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [cRes, oRes, clRes, eRes, iRes, mRes, evRes, aRes] = await Promise.all([
+      const [cRes, eRes, iRes, mRes, evRes, aRes] = await Promise.all([
         supabase.from("clients").select("id", { count: "exact", head: true }),
-        supabase.from("matters").select("id", { count: "exact", head: true }).eq("status", "open"),
-        supabase.from("matters").select("id", { count: "exact", head: true }).eq("status", "closed"),
         supabase.from("time_entries").select("*"),
         supabase.from("invoices").select("*"),
         supabase.from("matters").select("*"),
@@ -141,8 +197,6 @@ export default function Overview() {
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100),
       ]);
       setClients(cRes.count ?? 0);
-      setOpenM(oRes.count ?? 0);
-      setClosedM(clRes.count ?? 0);
       setEntries((eRes.data as TimeEntry[]) ?? []);
       setInvoices((iRes.data as Invoice[]) ?? []);
       setMatters((mRes.data as Matter[]) ?? []);
@@ -152,7 +206,7 @@ export default function Overview() {
     })();
   }, []);
 
-  const { hours, revenue } = useMemo(() => {
+  const { hours, revenue, openedCount, closedCount, financials } = useMemo(() => {
     const start = periodStart(period);
     let secs = 0;
     for (const e of entries) {
@@ -166,8 +220,27 @@ export default function Overview() {
       if (new Date(when).getTime() < start) continue;
       rev += i.amount ?? 0;
     }
-    return { hours: secs / 3600, revenue: rev };
-  }, [entries, invoices, period]);
+    let opened = 0;
+    let closed = 0;
+    for (const m of matters) {
+      const od = m.open_date || m.created_at;
+      if (od && new Date(od).getTime() >= start) opened++;
+      if (m.closed_at && new Date(m.closed_at).getTime() >= start) closed++;
+    }
+    const byStatus: Record<string, number> = {};
+    for (const i of invoices) {
+      byStatus[i.status] = (byStatus[i.status] ?? 0) + (i.amount ?? 0);
+    }
+    const financials = Object.entries(byStatus)
+      .map(([status, value]) => ({
+        status,
+        value,
+        label: STATUS_META[status]?.label ?? status,
+        color: STATUS_META[status]?.color ?? "#9aa4b2",
+      }))
+      .filter((d) => d.value > 0);
+    return { hours: secs / 3600, revenue: rev, openedCount: opened, closedCount: closed, financials };
+  }, [entries, invoices, matters, period]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -186,37 +259,44 @@ export default function Overview() {
     .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
     .toUpperCase();
 
+  const shortcuts: { key: string; label: string; icon: string; href?: string; action?: string }[] = [
+    { key: "invoice", label: "Create invoice", icon: "invoice", action: "invoice" },
+    { key: "payment", label: "Record payment", icon: "payment", action: "payment" },
+    { key: "expense", label: "Add expense", icon: "expense", action: "expense" },
+    { key: "document", label: "Upload document", icon: "document", action: "document" },
+    { key: "timesheet", label: "Timesheet", icon: "timesheet", href: "/dashboard/billing?tab=timesheet" },
+    { key: "matter", label: "Add Matter", icon: "matter", href: "/dashboard/matters" },
+    { key: "client", label: "Add Client", icon: "client", href: "/dashboard/clients" },
+  ];
+  const renderShortcut = (s: (typeof shortcuts)[number]) =>
+    s.href ? (
+      <Link key={s.key} href={s.href} className="qa-btn" onClick={() => setFabOpen(false)}>
+        <span className="qa-icon"><Ic name={s.icon} /></span>
+        {s.label}
+      </Link>
+    ) : (
+      <button
+        key={s.key}
+        type="button"
+        className="qa-btn"
+        onClick={() => {
+          setQa(s.action!);
+          setFabOpen(false);
+        }}
+      >
+        <span className="qa-icon"><Ic name={s.icon} /></span>
+        {s.label}
+      </button>
+    );
+
   return (
-    <div>
+    <div className="ov-layout">
+      <div className="ov-main">
       <div className="greeting">
         <span className="greeting-date">{dateLine}</span>
         <h1 className="greeting-title">
           {greeting()}, <strong>{firstName}</strong>
         </h1>
-      </div>
-
-      <div className="quick-actions">
-        <button type="button" className="qa-btn" onClick={() => setQa("invoice")}>
-          <span className="qa-icon"><Ic name="invoice" /></span>Create invoice
-        </button>
-        <button type="button" className="qa-btn" onClick={() => setQa("payment")}>
-          <span className="qa-icon"><Ic name="payment" /></span>Record payment
-        </button>
-        <button type="button" className="qa-btn" onClick={() => setQa("expense")}>
-          <span className="qa-icon"><Ic name="expense" /></span>Add expense
-        </button>
-        <button type="button" className="qa-btn" onClick={() => setQa("document")}>
-          <span className="qa-icon"><Ic name="document" /></span>Upload document
-        </button>
-        <Link href="/dashboard/billing?tab=timesheet" className="qa-btn">
-          <span className="qa-icon"><Ic name="timesheet" /></span>Timesheet
-        </Link>
-        <Link href="/dashboard/matters" className="qa-btn">
-          <span className="qa-icon"><Ic name="matter" /></span>Add Matter
-        </Link>
-        <Link href="/dashboard/clients" className="qa-btn">
-          <span className="qa-icon"><Ic name="client" /></span>Add Client
-        </Link>
       </div>
 
       <div className="ov-stats-head">
@@ -240,12 +320,12 @@ export default function Overview() {
           <span className="stat-label">Clients</span>
         </Link>
         <Link href="/dashboard/matters?status=active" className="stat">
-          <span className="stat-num">{openM}</span>
-          <span className="stat-label">Open Matters</span>
+          <span className="stat-num">{openedCount}</span>
+          <span className="stat-label">Opened</span>
         </Link>
         <Link href="/dashboard/matters?status=closed" className="stat">
-          <span className="stat-num">{closedM}</span>
-          <span className="stat-label">Closed Matters</span>
+          <span className="stat-num">{closedCount}</span>
+          <span className="stat-label">Closed</span>
         </Link>
         <Link href="/dashboard/billing" className="stat">
           <span className="stat-num">{hours.toFixed(1)}</span>
@@ -255,6 +335,11 @@ export default function Overview() {
           <span className="stat-num">${revenue.toFixed(0)}</span>
           <span className="stat-label">Revenue</span>
         </Link>
+      </div>
+
+      <div className="panel ov-fin-panel">
+        <h2 className="panel-title">Financials</h2>
+        {loading ? <p className="muted-line">Loading…</p> : <Donut data={financials} />}
       </div>
 
       <div className="overview-cols equal">
@@ -360,6 +445,27 @@ export default function Overview() {
             )}
           </div>
         </div>
+      </div>
+      </div>
+
+      <aside className="ov-rail">
+        <div className="ov-rail-title">Shortcuts</div>
+        <div className="ov-rail-list">{shortcuts.map(renderShortcut)}</div>
+      </aside>
+
+      <div className="ov-fab-wrap">
+        {fabOpen && <div className="ov-fab-menu">{shortcuts.map(renderShortcut)}</div>}
+        <button
+          type="button"
+          className={`ov-fab${fabOpen ? " open" : ""}`}
+          onClick={() => setFabOpen((o) => !o)}
+          aria-label="Quick actions"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
       </div>
 
       {qa && DEMO_ACTIONS[qa] && (
