@@ -15,6 +15,7 @@ import {
   type Invoice,
   type Matter,
   type TimeEntry,
+  type Todo,
 } from "@/lib/types";
 import {
   InlineNumber,
@@ -138,6 +139,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [timelineType, setTimelineType] = useState<string>("");
@@ -207,7 +209,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   }
 
   async function loadAll() {
-    const [{ data: m }, { data: cs }, { data: e }, { data: ev }, { data: inv }] =
+    const [{ data: m }, { data: cs }, { data: e }, { data: ev }, { data: inv }, { data: td }] =
       await Promise.all([
         supabase.from("matters").select("*").eq("id", params.id).single(),
         supabase.from("clients").select("*").order("name"),
@@ -226,12 +228,18 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           .select("*")
           .eq("matter_id", params.id)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("todos")
+          .select("*")
+          .eq("matter_id", params.id)
+          .order("due_date"),
       ]);
     const matterRow = (m as Matter) ?? null;
     setMatter(matterRow);
     setClients((cs as Client[]) ?? []);
     setEntries((e as TimeEntry[]) ?? []);
     setEvents((ev as EventItem[]) ?? []);
+    setTodos((td as Todo[]) ?? []);
     setInvoices((inv as Invoice[]) ?? []);
     setTimelineType(matterRow?.case_timeline_type ?? "");
     await loadActivity();
@@ -333,6 +341,23 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       prev.map((e) => (e.id === ev.id ? { ...e, completed: false } : e)),
     );
     await supabase.from("events").update({ completed: false }).eq("id", ev.id);
+  }
+
+  async function completeTask(id: string, title: string) {
+    setTodos((prev) => prev.map((x) => (x.id === id ? { ...x, done: true } : x)));
+    await supabase.from("todos").update({ done: true }).eq("id", id);
+    await supabase.from("activity_log").insert({
+      kind: "matter_updated",
+      matter_id: matter?.id ?? null,
+      client_id: matter?.client_id ?? null,
+      description: `${userName} completed task: ${title}`,
+    });
+    loadActivity();
+  }
+
+  async function reopenTask(id: string) {
+    setTodos((prev) => prev.map((x) => (x.id === id ? { ...x, done: false } : x)));
+    await supabase.from("todos").update({ done: false }).eq("id", id);
   }
 
   // Notes are a running log: each submission is stamped and prepended so the
@@ -460,8 +485,35 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     (e) => new Date(e.event_date).getTime() >= Date.now() - 7 * 86400000,
   );
 
+  // Upcoming = open events (deadlines) + open tasks with a due date, merged.
+  type UpItem = { id: string; date: string; title: string; kind: "event" | "task" };
+  const upcomingItems: UpItem[] = [
+    ...upcomingEvents.map((e) => ({ id: e.id, date: e.event_date, title: e.title, kind: "event" as const })),
+    ...todos
+      .filter((t) => !t.done && t.due_date)
+      .map((t) => ({ id: t.id, date: t.due_date as string, title: t.title, kind: "task" as const })),
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const completedItems: UpItem[] = [
+    ...detailsCompleted.map((e) => ({ id: e.id, date: e.event_date, title: e.title, kind: "event" as const })),
+    ...todos
+      .filter((t) => t.done && t.due_date && new Date(t.due_date).getTime() >= Date.now() - 7 * 86400000)
+      .map((t) => ({ id: t.id, date: t.due_date as string, title: t.title, kind: "task" as const })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   return (
     <div>
+      <nav className="crumbs" aria-label="Breadcrumb">
+        <Link href="/dashboard/matters">Matters</Link>
+        <span className="crumb-sep">/</span>
+        {clientObj ? (
+          <Link href={`/dashboard/clients/${clientObj.id}`}>{clientObj.name}</Link>
+        ) : (
+          <span className="crumb-current">—</span>
+        )}
+        <span className="crumb-sep">/</span>
+        <span className="crumb-current">{matter.name}</span>
+      </nav>
       <div className="matter-head">
         <div className="matter-head-title">
           <h1 className="page-title editable-title">
@@ -655,9 +707,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             </dd>
           </div>
 
-          {(upcomingEvents.length > 0 || detailsCompleted.length > 0) && (
+          {(upcomingItems.length > 0 || completedItems.length > 0) && (
             <div className="du">
-              {upcomingEvents.length > 0 && (
+              {upcomingItems.length > 0 && (
                 <div className="du-head">
                   <svg className="du-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -668,21 +720,31 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </div>
               )}
               <ul className="du-list">
-                {upcomingEvents.slice(0, 4).map((ev) => (
-                  <li key={ev.id}>
+                {upcomingItems.slice(0, 5).map((it) => (
+                  <li key={`${it.kind}-${it.id}`}>
                     <span className="du-date">
-                      {new Date(ev.event_date).toLocaleDateString(undefined, {
+                      {new Date(it.date).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                       })}
                     </span>
-                    <span className="du-title">{ev.title}</span>
+                    <span className={`du-kind du-kind-${it.kind}`}>
+                      {it.kind === "task" ? "Task" : "Deadline"}
+                    </span>
+                    <span className="du-title">{it.title}</span>
                     <button
                       type="button"
                       className="du-check"
                       title="Mark complete"
                       aria-label="Mark complete"
-                      onClick={() => completeEvent(ev)}
+                      onClick={() => {
+                        if (it.kind === "event") {
+                          const ev = events.find((e) => e.id === it.id);
+                          if (ev) completeEvent(ev);
+                        } else {
+                          completeTask(it.id, it.title);
+                        }
+                      }}
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
@@ -690,21 +752,28 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     </button>
                   </li>
                 ))}
-                {detailsCompleted.map((ev) => (
-                  <li key={ev.id} className="du-item-done">
+                {completedItems.map((it) => (
+                  <li key={`${it.kind}-${it.id}`} className="du-item-done">
                     <span className="du-date">
-                      {new Date(ev.event_date).toLocaleDateString(undefined, {
+                      {new Date(it.date).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                       })}
                     </span>
-                    <span className="du-title done" title={ev.title}>{ev.title}</span>
+                    <span className="du-title done" title={it.title}>{it.title}</span>
                     <button
                       type="button"
                       className="du-check checked"
                       title="Checked off — click to reopen"
                       aria-label="Checked off — click to reopen"
-                      onClick={() => reopenEvent(ev)}
+                      onClick={() => {
+                        if (it.kind === "event") {
+                          const ev = events.find((e) => e.id === it.id);
+                          if (ev) reopenEvent(ev);
+                        } else {
+                          reopenTask(it.id);
+                        }
+                      }}
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />

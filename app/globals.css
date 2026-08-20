@@ -792,6 +792,22 @@ section.block.alt {
   color: var(--accent);
   text-decoration: none;
 }
+.app-header-brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--dash-fg);
+}
+.app-header-kicker {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  margin-bottom: 0.1rem;
+}
 .dash-content {
   padding: 1.5rem 2.25rem 2rem;
   flex: 1;
@@ -4227,6 +4243,23 @@ a.activity-row:hover .act-desc {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.du-kind {
+  flex: none;
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.06rem 0.4rem;
+  border-radius: 20px;
+}
+.du-kind-task {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.du-kind-event {
+  background: #fbecec;
+  color: #a12b2b;
 }
 
 /* Time-entry add row matches the Timesheet input style */

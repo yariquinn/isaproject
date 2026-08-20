@@ -182,6 +182,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
 
   return (
     <div>
+      <Link href="/dashboard/clients" className="back-link">← Clients</Link>
       <div className="page-head">
         <div className="head-name">
           <h1 className="page-title editable-title">
