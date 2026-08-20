@@ -103,7 +103,6 @@ export default function Fab() {
   return (
     <>
       <div className={`ov-fab-wrap${open ? " open" : ""}`}>
-        <div className="ov-fab-menu">{SHORTCUTS.map(renderShortcut)}</div>
         <button
           type="button"
           className="ov-fab"
@@ -115,6 +114,7 @@ export default function Fab() {
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
+        <div className="ov-fab-menu">{SHORTCUTS.map(renderShortcut)}</div>
       </div>
 
       {qa && DEMO_ACTIONS[qa] && (

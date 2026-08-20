@@ -145,27 +145,15 @@ export default function Sidebar({ userName }: { userName: string }) {
 
   const renderItem = (item: NavItem) => {
     const hasChildren = !!item.children?.length;
-    const isOpen = !collapsed[item.href];
     return (
       <div className="nav-item" key={item.href}>
         <div className={`nav-row${isActive(item.href) ? " active" : ""}`}>
-          {hasChildren ? (
-            <button
-              type="button"
-              className={`nav-caret${isOpen ? " open" : ""}`}
-              onClick={() => toggle(item.href)}
-              aria-label={isOpen ? "Collapse" : "Expand"}
-            >
-              ›
-            </button>
-          ) : (
-            <span className="nav-caret-spacer" />
-          )}
+          <span className="nav-caret-spacer" />
           <Link href={item.href} title={item.label} className="nav-link">
             <span className="nav-tx">{item.label}</span>
           </Link>
         </div>
-        {hasChildren && isOpen && (
+        {hasChildren && (
           <div className="nav-children">
             {item.children!.map((c) => (
               <Link

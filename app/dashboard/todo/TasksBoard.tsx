@@ -402,6 +402,68 @@ export default function TasksBoard() {
   );
 }
 
+// ---- searchable matter picker ----
+function MatterPicker({
+  matters,
+  value,
+  onChange,
+}: {
+  matters: MatterLite[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const selectedName = matters.find((m) => m.id === value)?.name ?? "";
+  const list = matters
+    .filter((m) => m.name.toLowerCase().includes(q.trim().toLowerCase()))
+    .slice(0, 8);
+  return (
+    <div className="mp-wrap">
+      <input
+        className="mp-input"
+        placeholder="No matter — type to search…"
+        value={open ? q : selectedName}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => {
+          setQ("");
+          setOpen(true);
+        }}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+      />
+      {open && (
+        <div className="mp-menu">
+          <button
+            type="button"
+            onMouseDown={() => {
+              onChange("");
+              setOpen(false);
+            }}
+          >
+            No matter
+          </button>
+          {list.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onMouseDown={() => {
+                onChange(m.id);
+                setOpen(false);
+              }}
+            >
+              {m.name}
+            </button>
+          ))}
+          {list.length === 0 && <span className="mp-empty">No matches</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- Add modal ----
 function TaskModal({
   title,
@@ -438,12 +500,7 @@ function TaskModal({
           </label>
           <label>
             Matter
-            <select value={draft.matter_id} onChange={(e) => set("matter_id", e.target.value)}>
-              <option value="">No matter</option>
-              {matters.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
+            <MatterPicker matters={matters} value={draft.matter_id} onChange={(id) => set("matter_id", id)} />
           </label>
         </div>
         <div className="field-pair">
@@ -550,12 +607,7 @@ function EditModal({
           </label>
           <label>
             Matter
-            <select value={t.matter_id} onChange={(e) => set("matter_id", e.target.value)}>
-              <option value="">No matter</option>
-              {matters.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
+            <MatterPicker matters={matters} value={t.matter_id} onChange={(id) => set("matter_id", id)} />
           </label>
         </div>
         <div className="field-pair">

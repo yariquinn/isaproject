@@ -24,7 +24,7 @@ import {
   InlineTextarea,
 } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
-import TodoWidget from "../../TodoWidget";
+import MatterTasksList from "./MatterTasksList";
 import Disclaimer from "../../Disclaimer";
 import NotesFeed from "../../NotesFeed";
 import TimeEntriesTab from "./TimeEntriesTab";
@@ -1207,7 +1207,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
         {bodyTab === "tasks" && (
-          <TodoWidget matterId={matter.id} compact />
+          <MatterTasksList matterId={matter.id} />
         )}
 
         {bodyTab === "documents" && (
