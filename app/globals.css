@@ -3721,7 +3721,39 @@ a.activity-row:hover .act-desc {
     border: none;
     box-shadow: none;
   }
-  .sidebar, .print-btn { display: none !important; }
+  .sidebar, .print-btn, .export-wrap, .ov-fab-wrap, .app-header { display: none !important; }
+}
+.export-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--dash-panel, var(--dash-bg));
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+.export-menu button {
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  background: transparent;
+  color: var(--dash-fg);
+  font-size: 0.82rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.export-menu button:hover {
+  background: var(--dash-hover, rgba(120, 130, 150, 0.12));
+  color: var(--accent);
 }
 
 /* Overview redesign */

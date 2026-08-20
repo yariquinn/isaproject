@@ -219,17 +219,19 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       </div>
 
       {client.client_type !== "business" && client.partner_name && (
-        <div className="panel" style={{ marginBottom: "1.5rem" }}>
-          <div className="panel-head">
-            <h2 className="panel-title">Second Contact</h2>
-            <button type="button" className="ghost sm" onClick={splitPartner} title="Create a standalone client record for this person">
-              Create separate record →
-            </button>
-          </div>
-          <div className="detail-grid">
-            <div className="detail-item"><span className="detail-label">Name</span><span className="inline-view static">{client.partner_name}</span></div>
-            <div className="detail-item"><span className="detail-label">Email</span><span className="inline-view static">{client.partner_email || "—"}</span></div>
-            <div className="detail-item"><span className="detail-label">Phone</span><span className="inline-view static">{client.partner_phone || "—"}</span></div>
+        <div className="detail-cols">
+          <div className="panel">
+            <div className="panel-head">
+              <h2 className="panel-title">Second Contact</h2>
+              <button type="button" className="ghost sm" onClick={splitPartner} title="Create a standalone client record for this person">
+                Create separate record →
+              </button>
+            </div>
+            <dl className="cc-fields">
+              <div><dt>Name</dt><dd><span className="inline-view static">{client.partner_name}</span></dd></div>
+              <div><dt>Email</dt><dd><span className="inline-view static">{client.partner_email || "—"}</span></dd></div>
+              <div><dt>Phone</dt><dd><span className="inline-view static">{client.partner_phone || "—"}</span></dd></div>
+            </dl>
           </div>
         </div>
       )}

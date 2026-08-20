@@ -14,6 +14,7 @@ import {
 } from "@/lib/types";
 import { InlineNumber, InlineSelect } from "../Inline";
 import { usePortal } from "../PortalProvider";
+import ExportMenu from "../ExportMenu";
 
 const EMPTY = {
   name: "",
@@ -263,19 +264,19 @@ export default function MattersPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <button
-            className="icon-btn print-btn"
-            onClick={() => window.print()}
-            type="button"
-            title="Print list"
-            aria-label="Print list"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 6 2 18 2 18 9" />
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-              <rect x="6" y="14" width="12" height="8" />
-            </svg>
-          </button>
+          <ExportMenu
+            filename="matters"
+            headers={["Matter", "Client", "Practice Area", "Pending Tasks", "Rate", "Priority", "Status"]}
+            rows={rows.map((m) => [
+              m.name,
+              m.client_id ? nameOf(m.client_id) : "",
+              m.practice_area ?? "",
+              pendingTasks[m.id] ?? 0,
+              m.hourly_rate != null ? `$${m.hourly_rate}${m.rate_type === "flat" ? " flat" : "/hr"}` : "",
+              m.priority,
+              m.status,
+            ])}
+          />
           <button className="btn icon-plus-btn" onClick={() => setOpen(true)} type="button" title="Add matter" aria-label="Add matter">
             +
           </button>
