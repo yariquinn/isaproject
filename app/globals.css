@@ -869,6 +869,84 @@ section.block.alt {
   background: #22a06b;
   border: 2px solid var(--dash-bg);
 }
+/* Header: live timer shown inline with matter name + controls */
+.app-header .tracker-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 34px;
+  padding: 0 0.35rem 0 0.6rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--dash-fg) 5%, transparent);
+  color: var(--dash-fg);
+}
+.app-header .tracker-live.running {
+  border-color: #22a06b;
+  background: color-mix(in srgb, #22a06b 9%, var(--dash-surface));
+  color: #157a4e;
+}
+.app-header .tracker-live .tracker-icon-glyph {
+  display: inline-flex;
+  color: currentColor;
+}
+.app-header .tracker-live-matter {
+  max-width: 130px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-header .tracker-live-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding-left: 0.1rem;
+}
+.app-header .tracker-live-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 0.4rem;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-header .tracker-live-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.app-header .tracker-live-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.app-header .tracker-live-btn.primary:hover {
+  color: #fff;
+  opacity: 0.9;
+}
+.app-header .tracker-live-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.app-header .tracker-live-btn.tc-x {
+  border-color: transparent;
+  background: transparent;
+  color: var(--dash-muted);
+  font-size: 0.85rem;
+}
+.app-header .tracker-live-btn.tc-x:hover {
+  color: #c0392b;
+  border-color: #c0392b;
+}
 .app-header .tracker-pop {
   left: auto;
   right: 0;
@@ -1968,10 +2046,13 @@ section.block.alt {
 }
 .head-search-row {
   margin: 0.9rem 0 1.1rem;
+  display: flex;
+  justify-content: flex-end;
 }
 .head-search-row .head-search {
   width: 100%;
-  max-width: 420px;
+  max-width: 360px;
+  background-color: var(--dash-surface);
 }
 .icon-btn.filter-on {
   border-color: var(--accent);

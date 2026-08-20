@@ -185,52 +185,50 @@ export default function TimeTracker() {
 
   return (
     <div className="tracker">
-      <button
-        className={`tracker-icon${activeTimer ? " on" : ""}`}
-        onClick={() => {
-          if (!activeTimer) setPicking(true);
-          setOpen((o) => !o);
-        }}
-        type="button"
-        title="Time tracker"
-        aria-label="Time tracker"
-      >
-        <span className="tracker-icon-glyph">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
-        </span>
-        {activeTimer ? (
-          <span className="tracker-icon-time">{fmt(elapsedOf(activeTimer, now))}</span>
-        ) : (
-          <span className="tracker-icon-label">Timer</span>
-        )}
-        {runningTimer && <span className="tracker-dot" />}
-      </button>
-
-      {open && <div className="tracker-backdrop" onClick={() => setOpen(false)} />}
-      {open && activeTimer && (
-        <div className="tracker-pop tracker-pop--ctrl">
-          <div className="tracker-ctrl-matter">{matterName(activeTimer.matter_id)}</div>
-          <div className="tracker-ctrl">
-            {activeTimer.is_running ? (
-              <button type="button" className="tc-btn" onClick={() => pause(activeTimer)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
-                Pause
-              </button>
-            ) : (
-              <button type="button" className="tc-btn" onClick={() => resume(activeTimer)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z" /></svg>
-                Play
-              </button>
-            )}
-            <button type="button" className="tc-btn primary" onClick={() => openLog(activeTimer)} disabled={Math.floor(elapsedOf(activeTimer, now)) === 0}>
-              Log
+      {activeTimer ? (
+        <div className={`tracker-live${runningTimer ? " running" : ""}`}>
+          <span className="tracker-icon-glyph">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
+          </span>
+          <span className="tracker-live-matter" title={matterName(activeTimer.matter_id)}>
+            {matterName(activeTimer.matter_id)}
+          </span>
+          <span className="tracker-live-time">{fmt(elapsedOf(activeTimer, now))}</span>
+          {activeTimer.is_running ? (
+            <button type="button" className="tracker-live-btn" title="Pause" aria-label="Pause" onClick={() => pause(activeTimer)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
             </button>
-            <button type="button" className="tc-btn tc-x" aria-label="Discard timer" onClick={() => { removeTimer(activeTimer); setOpen(false); }}>
-              ✕
+          ) : (
+            <button type="button" className="tracker-live-btn" title="Resume" aria-label="Resume" onClick={() => resume(activeTimer)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z" /></svg>
             </button>
-          </div>
+          )}
+          <button type="button" className="tracker-live-btn primary" onClick={() => openLog(activeTimer)} disabled={Math.floor(elapsedOf(activeTimer, now)) === 0} title="Log time">
+            Log
+          </button>
+          <button type="button" className="tracker-live-btn tc-x" aria-label="Discard timer" title="Discard" onClick={() => removeTimer(activeTimer)}>
+            ✕
+          </button>
         </div>
+      ) : (
+        <button
+          className="tracker-icon"
+          onClick={() => {
+            setPicking(true);
+            setOpen((o) => !o);
+          }}
+          type="button"
+          title="Time tracker"
+          aria-label="Time tracker"
+        >
+          <span className="tracker-icon-glyph">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
+          </span>
+          <span className="tracker-icon-label">Timer</span>
+        </button>
       )}
+
+      {open && !activeTimer && <div className="tracker-backdrop" onClick={() => setOpen(false)} />}
       {open && !activeTimer && (
         <div className="tracker-pop tracker-pop--pick">
           {matters.length === 0 ? (
