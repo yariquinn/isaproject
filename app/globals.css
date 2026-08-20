@@ -3179,6 +3179,28 @@ a.activity-row:hover .act-desc {
   opacity: 0.4;
   cursor: default;
 }
+/* Reusable notes feed (billing notes, etc.) — same layout as the matter
+   Notes panel, but flows to the container width. */
+.notes-feed-block {
+  display: flex;
+  flex-direction: column;
+}
+.notes-feed-log {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
+  padding-right: 0.25rem;
+}
+.billing-notes-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--dash-fg);
+  margin-bottom: 0.15rem;
+}
+.billing-notes {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--dash-border);
+}
 /* Activity items in the notes feed — visually distinct from comments:
    a hollow marker (not a filled initials avatar) and muted text. */
 .feed-dot {

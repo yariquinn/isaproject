@@ -26,7 +26,7 @@ import {
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import TodoWidget from "../../TodoWidget";
 import Disclaimer from "../../Disclaimer";
-import Collapsible from "../../Collapsible";
+import NotesFeed from "../../NotesFeed";
 import TimeEntriesTab from "./TimeEntriesTab";
 
 const MATTER_DOCS = [
@@ -1251,17 +1251,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         {bodyTab === "invoices" && (
           <>
             {clientObj && (
-              <div style={{ marginBottom: "1.25rem" }}>
-                <Collapsible title="Billing Notes" empty={!clientObj.billing_notes}>
-                  <p className="field-note">
-                    How {clientObj.name} likes to be billed.
-                  </p>
-                  <InlineTextarea
-                    value={clientObj.billing_notes}
-                    onSave={(v) => saveBillingNotes(clientObj.id, v)}
-                    placeholder="e.g. Flat monthly retainer, invoice on the 1st…"
-                  />
-                </Collapsible>
+              <div className="billing-notes" style={{ marginBottom: "1.25rem" }}>
+                <h3 className="billing-notes-title">Billing Notes</h3>
+                <p className="field-note">How {clientObj.name} likes to be billed.</p>
+                <NotesFeed
+                  value={clientObj.billing_notes}
+                  onSave={(next) => saveBillingNotes(clientObj.id, next ?? "")}
+                  userName={userName}
+                  placeholder="Add a billing note…"
+                  wide
+                />
               </div>
             )}
             {invoices.length === 0 ? (
