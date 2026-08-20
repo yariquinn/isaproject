@@ -4397,3 +4397,135 @@ a.activity-row:hover .act-desc {
   border-color: var(--dash-border);
   color: var(--dash-muted);
 }
+
+/* ============================================================
+   Tasks Kanban board
+   ============================================================ */
+.kb-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+.kb-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.85rem;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .kb-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .kb-board { grid-template-columns: 1fr; }
+}
+.kb-col {
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-top: 3px solid var(--dash-border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem;
+  min-height: 120px;
+}
+.kb-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--dash-muted);
+  margin-bottom: 0.6rem;
+}
+.kb-count {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 20px;
+  padding: 0 0.4rem;
+  font-size: 0.62rem;
+}
+.kb-col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.kb-card {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.kb-card:hover {
+  border-color: var(--dash-muted);
+}
+.kb-card-title {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--dash-fg);
+  margin-bottom: 0.4rem;
+  line-height: 1.35;
+}
+.kb-card-title.done {
+  text-decoration: line-through;
+  color: var(--dash-muted);
+}
+.kb-card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.kb-chip {
+  font-size: 0.64rem;
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 20px;
+  padding: 0.05rem 0.45rem;
+  color: var(--dash-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kb-due {
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--dash-muted);
+}
+.kb-due.overdue {
+  color: #c0392b;
+}
+.kb-assignee {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.kb-empty {
+  font-size: 0.72rem;
+  color: var(--dash-muted);
+  text-align: center;
+  padding: 0.7rem 0;
+  border: 1px dashed var(--dash-border);
+  border-radius: 8px;
+}
+.kb-high { background: #fdf1f1; border-top-color: #d98a8a; }
+.kb-medium { background: #fbf6ec; border-top-color: #d9a441; }
+.kb-low { background: #eef3fb; border-top-color: #6f9bd8; }
+.kb-none { background: #f6f7f9; border-top-color: #9aa4b2; }
+.kb-done { background: #eef6f0; border-top-color: #4c9d6b; }
+:root[data-theme="dark"] .kb-high { background: rgba(217, 138, 138, 0.1); }
+:root[data-theme="dark"] .kb-medium { background: rgba(217, 164, 65, 0.1); }
+:root[data-theme="dark"] .kb-low { background: rgba(111, 155, 216, 0.1); }
+:root[data-theme="dark"] .kb-none { background: rgba(154, 164, 178, 0.08); }
+:root[data-theme="dark"] .kb-done { background: rgba(76, 157, 107, 0.1); }

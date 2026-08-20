@@ -1,11 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ATTORNEYS, PRIORITIES, type Todo } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
 
 type MatterLite = { id: string; name: string };
+
+const BOARD_COLS = [
+  { key: "high", label: "High", cls: "kb-high" },
+  { key: "medium", label: "Medium", cls: "kb-medium" },
+  { key: "low", label: "Low", cls: "kb-low" },
+  { key: "-", label: "No priority", cls: "kb-none" },
+  { key: "done", label: "Done", cls: "kb-done" },
+] as const;
+
+function initialsOf(n: string | null): string {
+  const parts = (n || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "—";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export default function TodoWidget({
   compact = false,
@@ -31,6 +46,27 @@ export default function TodoWidget({
   const [editMatter, setEditMatter] = useState<string>("");
   const [editDue, setEditDue] = useState<string>("");
   const [editPriority, setEditPriority] = useState<string>("-");
+  const [view, setView] = useState<"list" | "board">("board");
+  const dragId = useRef<string | null>(null);
+
+  async function dropTo(colKey: string) {
+    const id = dragId.current;
+    dragId.current = null;
+    if (!id) return;
+    const t = todos.find((x) => x.id === id);
+    if (!t) return;
+    if (colKey === "done") {
+      if (t.done) return;
+      setTodos((prev) => prev.map((x) => (x.id === id ? { ...x, done: true } : x)));
+      await supabase.from("todos").update({ done: true }).eq("id", id);
+    } else {
+      if (t.priority === colKey && !t.done) return;
+      setTodos((prev) =>
+        prev.map((x) => (x.id === id ? { ...x, priority: colKey, done: false } : x)),
+      );
+      await supabase.from("todos").update({ priority: colKey, done: false }).eq("id", id);
+    }
+  }
 
   async function load() {
     let q = supabase
@@ -305,36 +341,120 @@ export default function TodoWidget({
         </div>
       </div>
 
-      {!compact && todos.length > 0 && (
-        <div className="todo-table-head">
-          <span />
-          <span>Priority</span>
-          <span>Task</span>
-          {!matterId && <span>Matter</span>}
-          <span>Due</span>
-          <span>Assignee</span>
+      {!compact && (
+        <div className="kb-toolbar">
+          <div className="seg">
+            <button
+              type="button"
+              className={view === "board" ? "active" : undefined}
+              onClick={() => setView("board")}
+            >
+              Board
+            </button>
+            <button
+              type="button"
+              className={view === "list" ? "active" : undefined}
+              onClick={() => setView("list")}
+            >
+              List
+            </button>
+          </div>
         </div>
       )}
 
-      <div className={compact ? "panel-scroll" : undefined}>
-        {loading ? (
+      {!compact && view === "board" ? (
+        loading ? (
           <p className="muted-line">Loading…</p>
-        ) : todos.length === 0 ? (
-          <p className="todo-empty">Nothing on your list — you&rsquo;re all caught up.</p>
         ) : (
-          <ul className={`todo-list ${matterId ? "todo-list--compact" : "todo-list--full"}`}>
-            {open.map((t) => (
-              <Row key={t.id} t={t} />
-            ))}
-            {done.length > 0 && !compact && (
-              <li className="todo-divider">Completed · {done.length}</li>
+          <div className="kb-board">
+            {BOARD_COLS.map((col) => {
+              const items =
+                col.key === "done"
+                  ? done
+                  : open.filter((t) => (t.priority || "-") === col.key);
+              return (
+                <div
+                  key={col.key}
+                  className={`kb-col ${col.cls}`}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => dropTo(col.key)}
+                >
+                  <div className="kb-col-head">
+                    <span>{col.label}</span>
+                    <span className="kb-count">{items.length}</span>
+                  </div>
+                  <div className="kb-col-body">
+                    {items.map((t) => {
+                      const mName = matterName(t.matter_id);
+                      const overdue = !!t.due_date && !t.done && t.due_date < todayStr;
+                      return (
+                        <div
+                          key={t.id}
+                          className="kb-card"
+                          draggable
+                          onDragStart={() => {
+                            dragId.current = t.id;
+                          }}
+                          onClick={() => openTodo(t)}
+                        >
+                          <div className={`kb-card-title${t.done ? " done" : ""}`}>
+                            {t.title}
+                          </div>
+                          <div className="kb-card-meta">
+                            {mName && <span className="kb-chip">{mName}</span>}
+                            {t.due_date && (
+                              <span className={`kb-due${overdue ? " overdue" : ""}`}>
+                                {fmtDue(t.due_date)}
+                              </span>
+                            )}
+                            <span className="kb-assignee" title={t.assignee ?? undefined}>
+                              {initialsOf(t.assignee)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {items.length === 0 && <div className="kb-empty">Drop here</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : (
+        <>
+          {!compact && todos.length > 0 && (
+            <div className="todo-table-head">
+              <span />
+              <span>Priority</span>
+              <span>Task</span>
+              {!matterId && <span>Matter</span>}
+              <span>Due</span>
+              <span>Assignee</span>
+            </div>
+          )}
+
+          <div className={compact ? "panel-scroll" : undefined}>
+            {loading ? (
+              <p className="muted-line">Loading…</p>
+            ) : todos.length === 0 ? (
+              <p className="todo-empty">Nothing on your list — you&rsquo;re all caught up.</p>
+            ) : (
+              <ul className={`todo-list ${matterId ? "todo-list--compact" : "todo-list--full"}`}>
+                {open.map((t) => (
+                  <Row key={t.id} t={t} />
+                ))}
+                {done.length > 0 && !compact && (
+                  <li className="todo-divider">Completed · {done.length}</li>
+                )}
+                {(compact ? [] : done).map((t) => (
+                  <Row key={t.id} t={t} />
+                ))}
+              </ul>
             )}
-            {(compact ? [] : done).map((t) => (
-              <Row key={t.id} t={t} />
-            ))}
-          </ul>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       {selected && (
         <div className="modal-backdrop" onClick={() => setSelected(null)}>
