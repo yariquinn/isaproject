@@ -3805,6 +3805,71 @@ a.activity-row:hover .act-desc {
   color: #8a5a1f;
   border: 1px solid #e6d3b3;
   vertical-align: middle;
+  cursor: default;
+}
+/* Hover popover listing the matter's pending tasks */
+.task-pop-wrap {
+  position: relative;
+  display: inline-block;
+}
+.task-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  min-width: 220px;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: none;
+}
+.task-pop-wrap:hover .task-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.task-pop-head {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  padding: 0.1rem 0.35rem 0.3rem;
+}
+.task-pop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.32rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--dash-fg);
+}
+.task-pop-item:hover {
+  background: color-mix(in srgb, var(--dash-fg) 4%, transparent);
+}
+.task-pop-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-pop-who {
+  flex: none;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--dash-muted);
 }
 .cc-notes {
   margin-top: 0.9rem;

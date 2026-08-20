@@ -56,6 +56,7 @@ export default function MattersPage() {
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pendingTasks, setPendingTasks] = useState<Record<string, number>>({});
+  const [matterTasks, setMatterTasks] = useState<Record<string, { title: string; assignee: string | null }[]>>({});
   const [ncOpen, setNcOpen] = useState(false);
   const [nc, setNc] = useState({ name: "", client_type: "individual", email: "", phone: "" });
 
@@ -103,15 +104,20 @@ export default function MattersPage() {
         .select("*")
         .order("created_at", { ascending: false }),
       supabase.from("clients").select("*").order("name"),
-      supabase.from("todos").select("matter_id").eq("done", false),
+      supabase.from("todos").select("matter_id,title,assignee").eq("done", false),
     ]);
     setMatters((m as Matter[]) ?? []);
     setClients((c as Client[]) ?? []);
     const counts: Record<string, number> = {};
-    for (const t of (td as { matter_id: string | null }[]) ?? []) {
-      if (t.matter_id) counts[t.matter_id] = (counts[t.matter_id] ?? 0) + 1;
+    const lists: Record<string, { title: string; assignee: string | null }[]> = {};
+    for (const t of (td as { matter_id: string | null; title: string; assignee: string | null }[]) ?? []) {
+      if (t.matter_id) {
+        counts[t.matter_id] = (counts[t.matter_id] ?? 0) + 1;
+        (lists[t.matter_id] ??= []).push({ title: t.title, assignee: t.assignee });
+      }
     }
     setPendingTasks(counts);
+    setMatterTasks(lists);
     setLoading(false);
   }
 
@@ -425,8 +431,19 @@ export default function MattersPage() {
                   </td>
                   <td>
                     {pendingTasks[m.id] ? (
-                      <span className="task-badge" title="Pending tasks">
-                        {pendingTasks[m.id]} task{pendingTasks[m.id] === 1 ? "" : "s"}
+                      <span className="task-pop-wrap">
+                        <span className="task-badge">
+                          {pendingTasks[m.id]} task{pendingTasks[m.id] === 1 ? "" : "s"}
+                        </span>
+                        <span className="task-pop">
+                          <span className="task-pop-head">Pending tasks</span>
+                          {(matterTasks[m.id] ?? []).map((t, i) => (
+                            <span className="task-pop-item" key={i}>
+                              <span className="task-pop-title">{t.title}</span>
+                              {t.assignee && <span className="task-pop-who">{t.assignee.split(" ")[0]}</span>}
+                            </span>
+                          ))}
+                        </span>
                       </span>
                     ) : (
                       <span className="inline-placeholder">—</span>
