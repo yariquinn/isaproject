@@ -241,34 +241,40 @@ export default function TimeTracker() {
                     onChange={(e) => setPickQuery(e.target.value)}
                     style={{ width: "100%" }}
                   />
-                  <div className="tracker-pick-list">
-                    {matters
-                      .filter((m) => {
+                  {pickQuery.trim() === "" ? (
+                    <p className="tracker-pick-hint">Start typing to find a matter…</p>
+                  ) : (
+                    <div className="tracker-pick-list">
+                      {(() => {
                         const q = pickQuery.trim().toLowerCase();
-                        if (!q) return true;
-                        return (
-                          m.name.toLowerCase().includes(q) ||
-                          (m.practice_area || "").toLowerCase().includes(q) ||
-                          (m.assigned_to || "").toLowerCase().includes(q)
-                        );
-                      })
-                      .slice(0, 8)
-                      .map((m) => (
-                        <button
-                          key={m.id}
-                          type="button"
-                          className="matter-pick-item"
-                          onClick={() => {
-                            setPickQuery("");
-                            setPicking(false);
-                            startForMatter(m);
-                          }}
-                        >
-                          <span className="mp-name">{m.name}</span>
-                          <span className="mp-sub">{m.practice_area} · {m.assigned_to || "Unassigned"}</span>
-                        </button>
-                      ))}
-                  </div>
+                        const results = matters
+                          .filter(
+                            (m) =>
+                              m.name.toLowerCase().includes(q) ||
+                              (m.practice_area || "").toLowerCase().includes(q) ||
+                              (m.assigned_to || "").toLowerCase().includes(q),
+                          )
+                          .slice(0, 8);
+                        if (results.length === 0)
+                          return <p className="tracker-pick-hint">No matching matters.</p>;
+                        return results.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            className="matter-pick-item"
+                            onClick={() => {
+                              setPickQuery("");
+                              setPicking(false);
+                              startForMatter(m);
+                            }}
+                          >
+                            <span className="mp-name">{m.name}</span>
+                            <span className="mp-sub">{m.practice_area} · {m.assigned_to || "Unassigned"}</span>
+                          </button>
+                        ));
+                      })()}
+                    </div>
+                  )}
                 </>
               )}
             </div>
