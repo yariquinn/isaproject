@@ -205,7 +205,6 @@ export default function TimeEntriesTab({
         {stat("Non-billable", nonBillable, "muted")}
         {stat("Invoiced", invoiced, "ok")}
         {stat("Un-invoiced", unInvoiced, "warn")}
-        {rateControl && <div className="te-rate-stat">{rateControl}</div>}
       </div>
 
       {selected.size > 0 && (
@@ -267,6 +266,7 @@ export default function TimeEntriesTab({
                 <th>Description</th>
                 <th>User</th>
                 <th>Duration</th>
+                <th className="te-rate-th">Rate</th>
                 <th>Billable</th>
                 <th>Invoiced</th>
               </tr>
@@ -312,6 +312,7 @@ export default function TimeEntriesTab({
                 <td>
                   <input type="number" step="0.25" min={0} value={nDur} placeholder="hrs" onChange={(e) => setNDur(e.target.value)} onBlur={commitNew} aria-label="New entry hours" />
                 </td>
+                <td className="te-rate-cell">{rateControl}</td>
                 <td colSpan={2} className="te-new-hint">press Enter to add</td>
               </tr>
               {entries.map((e) => (
@@ -444,6 +445,8 @@ export default function TimeEntriesTab({
                       </span>
                     )}
                   </td>
+                  {/* Rate */}
+                  <td className="te-rate-cell">{money(rateVal)}/hr</td>
                   {/* Billable toggle */}
                   <td>
                     <button

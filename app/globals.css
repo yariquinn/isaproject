@@ -3527,6 +3527,17 @@ a.activity-row:hover .act-desc {
   margin-left: auto;
   align-self: center;
 }
+.te-rate-th {
+  text-align: center !important;
+}
+.te-rate-cell {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--dash-fg);
+}
+.te-rate-cell .te-rate {
+  justify-content: center;
+}
 .te-rate {
   display: inline-flex;
   align-items: center;
