@@ -547,16 +547,10 @@ function TaskModal({
             <MatterPicker matters={matters} value={draft.matter_id} onChange={(id) => set("matter_id", id)} />
           </label>
         </div>
-        <div className="field-pair">
-          <label>
-            Day <span className="field-hint">(blank = waiting list)</span>
-            <input type="date" value={draft.scheduled_date} onChange={(e) => set("scheduled_date", e.target.value)} />
-          </label>
-          <label>
-            Due date
-            <input type="date" value={draft.due_date} onChange={(e) => set("due_date", e.target.value)} />
-          </label>
-        </div>
+        <label>
+          Due date
+          <input type="date" value={draft.due_date} onChange={(e) => set("due_date", e.target.value)} />
+        </label>
         <div className="field-pair">
           <label>
             Priority
@@ -683,16 +677,10 @@ function EditModal({
             <MatterPicker matters={matters} value={t.matter_id} onChange={(id) => set("matter_id", id)} />
           </label>
         </div>
-        <div className="field-pair">
-          <label>
-            Day <span className="field-hint">(blank = waiting list)</span>
-            <input type="date" value={t.scheduled_date} onChange={(e) => set("scheduled_date", e.target.value)} />
-          </label>
-          <label>
-            Due date
-            <input type="date" value={t.due_date} onChange={(e) => set("due_date", e.target.value)} />
-          </label>
-        </div>
+        <label>
+          Due date
+          <input type="date" value={t.due_date} onChange={(e) => set("due_date", e.target.value)} />
+        </label>
         <div className="field-pair">
           <label>
             Priority

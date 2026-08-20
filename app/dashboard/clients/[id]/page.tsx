@@ -215,7 +215,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <div className="panel">
           <div className="panel-head">
             <h2 className="panel-title">Contact</h2>
-            {client.client_type !== "business" && client.partner_name && (
+            {client.client_type === "business" && client.partner_name && (
               <button type="button" className="ghost sm" onClick={() => setSplitOpen(true)} title="Create a standalone client record for the second contact">
                 Split second contact →
               </button>
