@@ -3993,6 +3993,7 @@ a.activity-row:hover .act-desc {
   border: 1px solid #e6d3b3;
   vertical-align: middle;
   cursor: default;
+  white-space: nowrap;
 }
 /* Hover popover listing the matter's pending tasks */
 .task-pop-wrap {
@@ -6014,6 +6015,34 @@ a.activity-row:hover .act-desc {
 }
 .tb-viewseg {
   flex: none;
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 3px;
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+}
+.tb-viewseg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: var(--dash-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.tb-viewseg button:hover {
+  color: var(--dash-fg);
+}
+.tb-viewseg button.active {
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--dash-border);
 }
 /* List view */
 .tb-listview {
