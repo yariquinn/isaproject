@@ -4189,7 +4189,7 @@ a.activity-row:hover .act-desc {
   align-items: stretch;
   justify-content: center;
   gap: 0.3rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.9rem;
 }
 .notes-head-center .notes-title {
   margin: 0;
@@ -4659,6 +4659,10 @@ a.activity-row:hover .act-desc {
 .matter-pop-item:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   color: var(--accent);
+}
+.cc-primary-contact {
+  font-weight: 700;
+  color: var(--dash-fg);
 }
 .cc-notes {
   margin-top: 0.9rem;

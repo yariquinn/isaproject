@@ -514,7 +514,6 @@ export default function TasksBoard() {
             ) : (
               people.map((person) => {
                 const open = !collapsedPeople[person];
-                const personMins = days.reduce((s, d) => s + cellMinutes(person, iso(d)), 0);
                 return (
                 <div className="tb-row-contents" key={person} style={{ display: "contents" }}>
                   <div className="tb-person">
@@ -528,7 +527,6 @@ export default function TasksBoard() {
                     </button>
                     <span className="tb-person-avatar" style={{ background: personColor(person) }}>{initialsOf(person)}</span>
                     <span className="tb-person-name">{person}</span>
-                    {personMins > 0 && <span className="tb-person-total">{fmtDur(personMins)}</span>}
                   </div>
                   {days.map((d) => {
                     const dIso = iso(d);

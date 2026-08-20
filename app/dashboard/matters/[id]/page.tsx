@@ -613,7 +613,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               <dl className="cc-fields">
                 <div>
                   <dt>{clientObj.client_type === "business" ? "Contact" : "Primary contact"}</dt>
-                  <dd>
+                  <dd className="cc-primary-contact">
                     <InlineText
                       value={clientObj.primary_contact}
                       onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
