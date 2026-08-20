@@ -58,6 +58,20 @@ export default function TimeTracker() {
     return () => clearInterval(id);
   }, []);
 
+  // The floating action button can ask the tracker to open + start a timer.
+  useEffect(() => {
+    const onOpen = () => {
+      setOpen(true);
+      const m = currentMatterId
+        ? matters.find((x) => x.id === currentMatterId)
+        : null;
+      if (m) startForMatter(m);
+      else setPicking(true);
+    };
+    window.addEventListener("open-timer", onOpen);
+    return () => window.removeEventListener("open-timer", onOpen);
+  }, [currentMatterId, matters]);
+
   const matterName = (id: string | null) =>
     matters.find((m) => m.id === id)?.name ?? "Untitled timer";
 

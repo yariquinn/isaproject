@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { AUTH_COOKIE } from "@/lib/auth";
 import Sidebar from "./Sidebar";
 import AppHeader from "./AppHeader";
+import Fab from "./Fab";
 import { PortalProvider } from "./PortalProvider";
 
 export const metadata = {
@@ -24,6 +25,7 @@ export default function DashboardLayout({
           <AppHeader />
           <div className="dash-content">{children}</div>
         </div>
+        <Fab />
       </div>
     </PortalProvider>
   );

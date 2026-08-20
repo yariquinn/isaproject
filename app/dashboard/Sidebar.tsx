@@ -63,7 +63,6 @@ export default function Sidebar({ userName }: { userName: string }) {
             <span className="brand-name">Isa Abdur-Rahman</span>
             <span className="brand-sub">Employee Portal</span>
           </div>
-          <ThemeToggle />
         </div>
 
         <nav className="sidebar-nav">
@@ -91,12 +90,9 @@ export default function Sidebar({ userName }: { userName: string }) {
 
         <div className="sidebar-foot">
           <div className="user-card">
-            <div className="user-avatar">{initials}</div>
-            <div className="user-meta">
-              <span className="user-name">{userName}</span>
-              <span className="user-sub">Employee</span>
-            </div>
+            <div className="user-avatar" title={userName}>{initials}</div>
             <div className="user-actions">
+              <ThemeToggle />
               <Link
                 href="/dashboard/settings"
                 className={`signout-icon${isActive("/dashboard/settings") ? " active" : ""}`}
