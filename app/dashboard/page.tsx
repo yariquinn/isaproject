@@ -448,16 +448,11 @@ export default function Overview() {
       </div>
       </div>
 
-      <aside className="ov-rail">
-        <div className="ov-rail-title">Shortcuts</div>
-        <div className="ov-rail-list">{shortcuts.map(renderShortcut)}</div>
-      </aside>
-
-      <div className="ov-fab-wrap">
-        {fabOpen && <div className="ov-fab-menu">{shortcuts.map(renderShortcut)}</div>}
+      <div className={`ov-fab-wrap${fabOpen ? " open" : ""}`}>
+        <div className="ov-fab-menu">{shortcuts.map(renderShortcut)}</div>
         <button
           type="button"
-          className={`ov-fab${fabOpen ? " open" : ""}`}
+          className="ov-fab"
           onClick={() => setFabOpen((o) => !o)}
           aria-label="Quick actions"
         >

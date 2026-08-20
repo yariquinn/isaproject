@@ -4699,11 +4699,12 @@ a.activity-row:hover .act-desc {
   box-shadow: var(--shadow-md);
   transition: transform 0.15s ease, background 0.15s ease;
 }
-.ov-fab.open {
-  transform: rotate(45deg);
-}
 .ov-fab:hover {
   background: color-mix(in srgb, var(--accent) 86%, #ffffff);
+}
+.ov-fab-wrap:hover .ov-fab,
+.ov-fab-wrap.open .ov-fab {
+  transform: rotate(45deg);
 }
 .ov-fab-menu {
   display: flex;
@@ -4715,4 +4716,16 @@ a.activity-row:hover .act-desc {
   box-shadow: var(--shadow-md);
   padding: 0.5rem;
   width: 210px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+.ov-fab-wrap:hover .ov-fab-menu,
+.ov-fab-wrap.open .ov-fab-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
 }
