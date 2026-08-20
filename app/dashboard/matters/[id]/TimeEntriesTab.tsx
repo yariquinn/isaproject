@@ -13,6 +13,15 @@ function fmtHm(seconds: number): string {
   return `${h}h ${m}m`;
 }
 const money = (n: number) => `$${n.toFixed(2)}`;
+const initialsOf = (name: string) =>
+  (name || "")
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "—";
 
 type EditCell = { id: string; field: keyof TimeEntry } | null;
 
@@ -400,8 +409,8 @@ export default function TimeEntriesTab({
                         ))}
                       </select>
                     ) : (
-                      <span className="te-cell" onClick={() => startEdit(e, "lawyer", e.lawyer)}>
-                        {e.lawyer}
+                      <span className="te-cell" onClick={() => startEdit(e, "lawyer", e.lawyer)} title={e.lawyer}>
+                        <span className="te-initials">{initialsOf(e.lawyer)}</span>
                       </span>
                     )}
                   </td>
