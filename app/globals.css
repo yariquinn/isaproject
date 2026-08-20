@@ -3718,18 +3718,18 @@ a.activity-row:hover .act-desc {
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--dash-border);
   border-radius: 12px;
-  background: color-mix(in srgb, #22a06b 6%, var(--dash-surface));
+  background: color-mix(in srgb, var(--dash-muted) 7%, var(--dash-surface));
   text-decoration: none;
   transition: border-color 0.12s ease, background 0.12s ease;
 }
 .matter-card:hover {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, var(--dash-surface));
+  background: color-mix(in srgb, var(--dash-muted) 12%, var(--dash-surface));
   text-decoration: none;
 }
 .matter-card-closed {
   opacity: 0.72;
-  background: color-mix(in srgb, var(--dash-muted) 8%, var(--dash-surface));
+  background: color-mix(in srgb, var(--dash-muted) 4%, var(--dash-surface));
 }
 .matter-card-main {
   display: flex;
@@ -3951,6 +3951,7 @@ a.activity-row:hover .act-desc {
   text-align: center;
   font-variant-numeric: tabular-nums;
   color: var(--dash-fg);
+  white-space: nowrap;
 }
 .te-rate-cell .te-rate {
   justify-content: center;

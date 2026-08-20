@@ -576,7 +576,7 @@ export default function Overview() {
         <div className="ov-recents">
           <div className="ov-recents-head">Recently Viewed</div>
           <div className="ov-recents-row">
-            {recents.map((r) => (
+            {recents.slice(0, 5).map((r) => (
               <Link
                 key={`${r.kind}-${r.id}`}
                 href={r.kind === "client" ? `/dashboard/clients/${r.id}` : `/dashboard/matters/${r.id}`}

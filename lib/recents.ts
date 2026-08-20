@@ -10,7 +10,7 @@ export type RecentItem = {
 };
 
 const KEY = "recentRecords";
-const MAX = 8;
+const MAX = 5;
 
 export function pushRecent(kind: RecentKind, id: string, name: string): void {
   if (typeof window === "undefined" || !id || !name) return;
