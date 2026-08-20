@@ -513,7 +513,6 @@ export default function TimeEntriesTab({
                         onClick={() => startEdit(e, "rate", e.rate == null ? "" : String(e.rate))}
                       >
                         {money(rateOf(e))}/hr
-                        {e.rate == null && <span className="te-rate-default">·default</span>}
                       </span>
                     )}
                   </td>
