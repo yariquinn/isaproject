@@ -34,11 +34,8 @@ const SECTIONS: Section[] = [
     key: "schedule",
     label: "Schedule",
     items: [
-      {
-        href: "/dashboard/calendar",
-        label: "Calendar",
-        children: [{ href: "/dashboard/deadlines", label: "Deadlines" }],
-      },
+      { href: "/dashboard/calendar", label: "Calendar" },
+      { href: "/dashboard/deadlines", label: "Deadlines" },
     ],
   },
   {
