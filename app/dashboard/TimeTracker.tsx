@@ -187,13 +187,16 @@ export default function TimeTracker() {
     <div className="tracker">
       <button
         className={`tracker-icon${runningCount > 0 ? " on" : ""}`}
-        onClick={() =>
-          setOpen((o) => {
-            const next = !o;
-            if (next && timers.length === 0) setPicking(true);
-            return next;
-          })
-        }
+        onClick={() => {
+          // Running → go straight to logging (no status box). Idle → search to start.
+          if (runningTimer) {
+            openLog(runningTimer);
+            setOpen(false);
+            return;
+          }
+          setPicking(true);
+          setOpen((o) => !o);
+        }}
         type="button"
         title="Time tracker"
         aria-label="Time tracker"
@@ -209,125 +212,59 @@ export default function TimeTracker() {
         {runningCount > 0 && <span className="tracker-dot" />}
       </button>
 
-      {open && <div className="tracker-backdrop" onClick={() => setOpen(false)} />}
-      {open && (
-        <div className="tracker-pop">
-          <div className="tracker-pop-head">
-            <span className="tracker-pop-title">Time Tracker</span>
-            <button
-              className="tracker-add"
-              onClick={() => {
-                setPicking((p) => !p);
-                setPickQuery("");
-              }}
-              type="button"
-            >
-              {picking ? "Cancel" : "+ New"}
-            </button>
-          </div>
-        <div className="tracker-body">
-          {picking && (
-            <div className="tracker-pick">
-              {matters.length === 0 ? (
-                <p className="muted-line" style={{ fontSize: "0.8rem" }}>Add a matter first, then start a timer.</p>
+      {open && !runningTimer && <div className="tracker-backdrop" onClick={() => setOpen(false)} />}
+      {open && !runningTimer && (
+        <div className="tracker-pop tracker-pop--pick">
+          {matters.length === 0 ? (
+            <p className="muted-line" style={{ fontSize: "0.8rem" }}>Add a matter first, then start a timer.</p>
+          ) : (
+            <>
+              <input
+                className="activity-search"
+                type="search"
+                autoFocus
+                placeholder="Search a matter to start…"
+                value={pickQuery}
+                onChange={(e) => setPickQuery(e.target.value)}
+                style={{ width: "100%" }}
+              />
+              {pickQuery.trim() === "" ? (
+                <p className="tracker-pick-hint">Start typing to find a matter…</p>
               ) : (
-                <>
-                  <input
-                    className="activity-search"
-                    type="search"
-                    autoFocus
-                    placeholder="Search a matter to start…"
-                    value={pickQuery}
-                    onChange={(e) => setPickQuery(e.target.value)}
-                    style={{ width: "100%" }}
-                  />
-                  {pickQuery.trim() === "" ? (
-                    <p className="tracker-pick-hint">Start typing to find a matter…</p>
-                  ) : (
-                    <div className="tracker-pick-list">
-                      {(() => {
-                        const q = pickQuery.trim().toLowerCase();
-                        const results = matters
-                          .filter(
-                            (m) =>
-                              m.name.toLowerCase().includes(q) ||
-                              (m.practice_area || "").toLowerCase().includes(q) ||
-                              (m.assigned_to || "").toLowerCase().includes(q),
-                          )
-                          .slice(0, 8);
-                        if (results.length === 0)
-                          return <p className="tracker-pick-hint">No matching matters.</p>;
-                        return results.map((m) => (
-                          <button
-                            key={m.id}
-                            type="button"
-                            className="matter-pick-item"
-                            onClick={() => {
-                              setPickQuery("");
-                              setPicking(false);
-                              startForMatter(m);
-                            }}
-                          >
-                            <span className="mp-name">{m.name}</span>
-                            <span className="mp-sub">{m.practice_area} · {m.assigned_to || "Unassigned"}</span>
-                          </button>
-                        ));
-                      })()}
-                    </div>
-                  )}
-                </>
+                <div className="tracker-pick-list">
+                  {(() => {
+                    const q = pickQuery.trim().toLowerCase();
+                    const results = matters
+                      .filter(
+                        (m) =>
+                          m.name.toLowerCase().includes(q) ||
+                          (m.practice_area || "").toLowerCase().includes(q) ||
+                          (m.assigned_to || "").toLowerCase().includes(q),
+                      )
+                      .slice(0, 8);
+                    if (results.length === 0)
+                      return <p className="tracker-pick-hint">No matching matters.</p>;
+                    return results.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className="matter-pick-item"
+                        onClick={() => {
+                          setPickQuery("");
+                          setPicking(false);
+                          setOpen(false);
+                          startForMatter(m);
+                        }}
+                      >
+                        <span className="mp-name">{m.name}</span>
+                        <span className="mp-sub">{m.practice_area} · {m.assigned_to || "Unassigned"}</span>
+                      </button>
+                    ));
+                  })()}
+                </div>
               )}
-            </div>
+            </>
           )}
-          {timers.length === 0 && !picking && (
-            <p className="muted-line" style={{ fontSize: "0.8rem", padding: "0.25rem 0" }}>
-              No timers yet.
-            </p>
-          )}
-          {timers.map((t) => {
-            const secs = elapsedOf(t, now);
-            return (
-              <div
-                key={t.id}
-                className={`timer-chip${t.is_running ? " on" : ""}`}
-              >
-                <div className="timer-meta">
-                  <span className="timer-label">
-                    {matterName(t.matter_id)}
-                  </span>
-                  <span className="timer-clock">{fmt(secs)}</span>
-                </div>
-                <div className="timer-controls">
-                  {t.is_running ? (
-                    <button onClick={() => pause(t)} type="button">
-                      Pause
-                    </button>
-                  ) : (
-                    <button onClick={() => resume(t)} type="button">
-                      Start
-                    </button>
-                  )}
-                  <button
-                    onClick={() => openLog(t)}
-                    type="button"
-                    disabled={Math.floor(secs) === 0}
-                    className="timer-log"
-                  >
-                    Log
-                  </button>
-                  <button
-                    onClick={() => removeTimer(t)}
-                    type="button"
-                    className="timer-del"
-                    aria-label="Delete timer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
         </div>
       )}
 
