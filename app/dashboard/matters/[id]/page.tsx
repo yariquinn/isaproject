@@ -617,7 +617,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 )}
               </dl>
               <div className="cc-notes">
-                <dt>Notes</dt>
+                <dt>Client Notes</dt>
                 <InlineTextarea
                   value={clientObj.notes}
                   onSave={(v) => saveClientNotes(clientObj.id, v)}
@@ -689,7 +689,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             )}
           </dl>
           <div className="details-desc">
-            <dt>Description</dt>
+            <dt>Matter Description</dt>
             <dd>
               <InlineTextarea
                 value={matter.description}
@@ -708,7 +708,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     <line x1="12" y1="9" x2="12" y2="13" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
-                  <span className="du-label">Upcoming</span>
+                  <span className="du-label">Upcoming Tasks &amp; Deadlines</span>
                 </div>
               )}
               <ul className="du-list">
@@ -774,8 +774,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           className="panel notes-panel"
           style={stackCards ? undefined : { flex: "1 1 0", minWidth: 0 }}
         >
-          <div className="notes-head">
-            <h2 className="panel-title">Notes</h2>
+          <div className="notes-head notes-head-center">
             <div className="notes-filter">
               {(["all", "comment", "activity"] as const).map((f) => (
                 <button

@@ -533,12 +533,13 @@ section.block.alt {
 }
 .brand-sub {
   display: block;
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.13em;
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #aeb6c0;
-  margin-top: 0.35rem;
+  color: #7f8893;
+  margin-top: 0.7rem;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
 }
 .sidebar-nav {
   display: flex;
@@ -1064,10 +1065,17 @@ section.block.alt {
   color: #285d38;
   border-color: #bcdcc4;
 }
-.pill-inactive,
-.pill-closed {
+.pill-inactive {
   background: var(--dash-bg);
   color: var(--dash-muted);
+}
+.pill-closed {
+  background: #fbecec;
+  color: #a12b2b;
+}
+:root[data-theme="dark"] .pill-closed {
+  background: rgba(192, 57, 43, 0.18);
+  color: #e79a9a;
 }
 
 /* Documents */
@@ -1445,8 +1453,12 @@ section.block.alt {
   color: #2e7d46;
 }
 .status-closed {
-  background: var(--dash-border);
-  color: var(--dash-muted);
+  background: #fbecec;
+  color: #a12b2b;
+}
+:root[data-theme="dark"] .status-closed {
+  background: rgba(192, 57, 43, 0.18);
+  color: #e79a9a;
 }
 .strip-sep {
   color: var(--dash-muted);
@@ -2603,9 +2615,32 @@ a.activity-row:hover .act-desc {
 .tl-col {
   background: var(--dash-bg);
   border: 1px solid var(--dash-border);
+  border-top: 3px solid var(--dash-border);
   border-radius: var(--radius-sm);
   padding: 0.6rem;
   min-height: 90px;
+}
+/* Color-coordinate the three board columns: To Do / In Progress / Done. */
+.tl-col:nth-child(1) {
+  background: #f7f8fa;
+  border-top-color: #9aa4b2;
+}
+.tl-col:nth-child(2) {
+  background: #fbf6ec;
+  border-top-color: #d9a441;
+}
+.tl-col:nth-child(3) {
+  background: #eef6f0;
+  border-top-color: #4c9d6b;
+}
+:root[data-theme="dark"] .tl-col:nth-child(1) {
+  background: rgba(154, 164, 178, 0.08);
+}
+:root[data-theme="dark"] .tl-col:nth-child(2) {
+  background: rgba(217, 164, 65, 0.1);
+}
+:root[data-theme="dark"] .tl-col:nth-child(3) {
+  background: rgba(76, 157, 107, 0.1);
 }
 .tl-col-head {
   font-size: 0.68rem;
@@ -2877,6 +2912,9 @@ a.activity-row:hover .act-desc {
 }
 .notes-head .panel-title {
   margin-bottom: 0;
+}
+.notes-head-center {
+  justify-content: center;
 }
 .notes-filter {
   display: inline-flex;
@@ -3241,8 +3279,8 @@ a.activity-row:hover .act-desc {
 }
 .cc-fields > div {
   display: grid;
-  grid-template-columns: 8.5rem 1fr;
-  gap: 0.5rem;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.5rem 0.75rem;
   align-items: baseline;
 }
 .cc-fields dt {
