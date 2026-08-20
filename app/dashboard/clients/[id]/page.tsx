@@ -266,7 +266,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         {/* Unified contact card — mirrors the Client card on a matter for continuity */}
         <div className="panel">
           <div className="panel-head">
-            <h2 className="panel-title">Contact</h2>
+            <h2 className="combo-title">Contact</h2>
             {client.client_type !== "business" && client.partner_name && (
               <button
                 type="button"
@@ -342,7 +342,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
 
         <div className="panel">
           <div className="panel-head">
-            <h2 className="panel-title">Matters <span className="count-badge">{matters.length}</span></h2>
+            <h2 className="combo-title">Matters <span className="count-badge">{matters.length}</span></h2>
             <button type="button" className="btn icon-plus-btn sm-plus" onClick={() => setAddMatterOpen(true)} title="Add matter" aria-label="Add matter">+</button>
           </div>
           <div className="panel-scroll">
@@ -364,7 +364,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       </div>
 
       <div className="panel">
-        <h2 className="panel-title">Activity</h2>
+        <h2 className="combo-title">Activity</h2>
         <div className="panel-scroll">
           {activity.length === 0 ? <p className="muted-line">No activity for this client yet.</p> : (
             <ul className="activity-list">{activity.map((a) => (
