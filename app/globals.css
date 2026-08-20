@@ -815,7 +815,33 @@ section.block.alt {
   gap: 0.55rem;
 }
 .hdr-bell-wrap {
+  margin-right: 0.5rem;
+}
+.hdr-timer-wrap {
+  position: relative;
+  display: inline-flex;
   margin-right: 0.9rem;
+}
+.hdr-bell-badge.green {
+  background: #22a06b;
+}
+.online-stack {
+  display: inline-flex;
+  align-items: center;
+}
+.online-stack .online-avatar.sm:not(:first-child) {
+  margin-left: -8px;
+}
+.online-avatar.sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.6rem;
+}
+.online-more {
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--dash-muted);
 }
 .online-label {
   font-size: 0.6rem;

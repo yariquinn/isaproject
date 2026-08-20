@@ -38,7 +38,50 @@ export default function AppHeader() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [bellOpen, setBellOpen] = useState(false);
   const [meOpen, setMeOpen] = useState(false);
+  const [online, setOnline] = useState<string[]>([]);
+  const [runningTimers, setRunningTimers] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  const initialsFor = (n: string) =>
+    (n || "").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "U";
+
+  // Real-time presence: track this user, render everyone currently online.
+  useEffect(() => {
+    const channel = supabase.channel("presence:online", { config: { presence: { key: userName } } });
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState() as Record<string, unknown[]>;
+        setOnline(Object.keys(state));
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({ name: userName, online_at: new Date().toISOString() });
+        }
+      });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userName]);
+
+  // Running-timer count for the header badge (light polling).
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { count } = await supabase
+        .from("timers")
+        .select("id", { count: "exact", head: true })
+        .eq("is_running", true);
+      if (active) setRunningTimers(count ?? 0);
+    };
+    load();
+    const id = setInterval(load, 8000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  const others = online.filter((n) => n !== userName);
 
   useEffect(() => {
     (async () => {
@@ -166,8 +209,35 @@ export default function AppHeader() {
           )}
         </div>
 
-        {/* Me / settings */}
+        {/* Timers */}
+        <div className="hdr-timer-wrap">
+          <button
+            type="button"
+            className="hdr-bell"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-timer"))}
+            aria-label={`Timers (${runningTimers} running)`}
+            title="Time tracker"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" />
+            </svg>
+            {runningTimers > 0 && <span className="hdr-bell-badge green">{runningTimers}</span>}
+          </button>
+        </div>
+
+        {/* Presence — everyone currently online */}
         <span className="online-label">Online</span>
+        {others.length > 0 && (
+          <div className="online-stack">
+            {others.slice(0, 5).map((n) => (
+              <span key={n} className="online-avatar sm" style={{ background: personColor(n) }} title={`${n} · online`}>
+                {initialsFor(n)}
+                <span className="online-dot" aria-hidden="true" />
+              </span>
+            ))}
+            {others.length > 5 && <span className="online-more">+{others.length - 5}</span>}
+          </div>
+        )}
         <div className="hdr-me-wrap">
           <button
             type="button"
