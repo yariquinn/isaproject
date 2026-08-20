@@ -1909,6 +1909,13 @@ section.block.alt {
   font-size: 0.75rem;
   color: var(--dash-muted);
 }
+.page-title.upper {
+  display: inline-flex;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 1.3rem;
+}
 .rel-pill {
   display: inline-block;
   margin-left: 0.5rem;
@@ -6033,7 +6040,7 @@ a.activity-row:hover .act-desc {
   display: inline-flex;
   gap: 0.25rem;
   padding: 3px;
-  background: color-mix(in srgb, var(--dash-fg) 10%, var(--dash-bg));
+  background: color-mix(in srgb, var(--dash-fg) 5%, var(--dash-bg));
   border: 1px solid var(--dash-border);
   border-radius: 999px;
 }

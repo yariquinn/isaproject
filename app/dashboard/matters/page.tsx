@@ -266,7 +266,7 @@ export default function MattersPage() {
   return (
     <div>
       <div className="page-head">
-        <h1 className="page-title">Matters <span className="count-badge">{matters.length}</span></h1>
+        <h1 className="page-title upper">Matters <span className="count-badge">{matters.length}</span></h1>
         <div className="head-controls">
           <input
             className="activity-search"

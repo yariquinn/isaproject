@@ -278,7 +278,7 @@ export default function ClientsPage() {
   return (
     <div>
       <div className="page-head">
-        <h1 className="page-title">Clients <span className="count-badge">{clients.length}</span></h1>
+        <h1 className="page-title upper">Clients <span className="count-badge">{clients.length}</span></h1>
         <div className="head-controls">
           <input
             className="activity-search"
