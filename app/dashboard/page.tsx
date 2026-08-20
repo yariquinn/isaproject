@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { ActivityItem, EventItem, Invoice, Matter, TimeEntry } from "@/lib/types";
+import type { ActivityItem, EventItem, Invoice, Matter, TimeEntry, Todo } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
 
 function timeAgo(iso: string): string {
@@ -170,6 +170,26 @@ function InvoiceBar({ paid, open, overdue }: { paid: number; open: number; overd
   );
 }
 
+// Small revenue line graph for the Revenue card.
+function Sparkline({ data }: { data: number[] }) {
+  const w = 240, h = 60, pad = 4;
+  const max = Math.max(1, ...data);
+  const step = data.length > 1 ? (w - pad * 2) / (data.length - 1) : 0;
+  const pts = data.map((v, i) => {
+    const x = pad + i * step;
+    const y = h - pad - (v / max) * (h - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const line = pts.join(" ");
+  const area = `${pad},${h - pad} ${line} ${pad + (data.length - 1) * step},${h - pad}`;
+  return (
+    <svg className="fin-spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" role="img" aria-label="Revenue trend">
+      <polygon points={area} fill="color-mix(in srgb, #4c9d6b 14%, transparent)" />
+      <polyline points={line} fill="none" stroke="#4c9d6b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function Overview() {
   const { userName } = usePortal();
   const firstName = userName.split(" ")[0] || userName;
@@ -180,12 +200,15 @@ export default function Overview() {
   const [matters, setMatters] = useState<Matter[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [filter, setFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<string>("month");
   const [showFin, setShowFin] = useState(true);
+  const [finRange, setFinRange] = useState<"7d" | "year">("7d");
+  const [revLine, setRevLine] = useState(false);
 
   useEffect(() => {
     try {
@@ -207,13 +230,14 @@ export default function Overview() {
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [cRes, eRes, iRes, mRes, evRes, aRes] = await Promise.all([
+      const [cRes, eRes, iRes, mRes, evRes, aRes, tRes] = await Promise.all([
         supabase.from("clients").select("id", { count: "exact", head: true }),
         supabase.from("time_entries").select("*"),
         supabase.from("invoices").select("*"),
         supabase.from("matters").select("*"),
         supabase.from("events").select("*").gte("event_date", today).order("event_date").limit(6),
         supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100),
+        supabase.from("todos").select("*").eq("done", false),
       ]);
       setClients(cRes.count ?? 0);
       setEntries((eRes.data as TimeEntry[]) ?? []);
@@ -221,6 +245,7 @@ export default function Overview() {
       setMatters((mRes.data as Matter[]) ?? []);
       setEvents((evRes.data as EventItem[]) ?? []);
       setActivity((aRes.data as ActivityItem[]) ?? []);
+      setTodos((tRes.data as Todo[]) ?? []);
       setLoading(false);
     })();
   }, []);
@@ -311,6 +336,59 @@ export default function Overview() {
     };
   }, [entries, invoices, matters, period]);
 
+  // Last 12 months of earnings + revenue, for the chart's "This Year" view
+  // and the Revenue sparkline.
+  const monthly = useMemo(() => {
+    const rateOf = (id: string | null) => matters.find((m) => m.id === id)?.hourly_rate ?? 0;
+    const now = new Date();
+    const out: { label: string; earn: number; rev: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const start = d.getTime();
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1).getTime();
+      let earn = 0, rev = 0;
+      for (const e of entries) {
+        if (!e.billable) continue;
+        const t = new Date(e.logged_at).getTime();
+        if (t >= start && t < end) earn += (e.duration_seconds / 3600) * (rateOf(e.matter_id) ?? 0);
+      }
+      for (const inv of invoices) {
+        if (inv.status !== "paid") continue;
+        const t = new Date(inv.issued_date ?? inv.created_at).getTime();
+        if (t >= start && t < end) rev += inv.amount ?? 0;
+      }
+      out.push({ label: d.toLocaleDateString(undefined, { month: "short" }), earn, rev });
+    }
+    return out;
+  }, [entries, invoices, matters]);
+
+  const chartData = finRange === "year"
+    ? monthly.map((m) => ({ label: m.label, amount: m.earn }))
+    : weekEarnings;
+
+  // My Tasks: the current user's open tasks + upcoming firm events (closings, etc.)
+  const myItems = useMemo(() => {
+    const mine = todos
+      .filter((t) => t.assignee === userName && !t.done)
+      .map((t) => ({
+        id: `t-${t.id}`,
+        kind: "task" as const,
+        title: t.title,
+        date: t.due_date,
+        href: t.matter_id ? `/dashboard/matters/${t.matter_id}` : "/dashboard/todo",
+      }));
+    const evs = events.map((e) => ({
+      id: `e-${e.id}`,
+      kind: e.kind || "event",
+      title: e.title,
+      date: e.event_date.slice(0, 10),
+      href: e.matter_id ? `/dashboard/matters/${e.matter_id}` : "/dashboard/deadlines",
+    }));
+    return [...mine, ...evs]
+      .sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"))
+      .slice(0, 8);
+  }, [todos, events, userName]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return activity.filter((a) => {
@@ -324,6 +402,8 @@ export default function Overview() {
   const matterName = (id: string | null) =>
     id ? matters.find((m) => m.id === id)?.name ?? null : null;
 
+  const now1 = new Date();
+  const todayLocal = `${now1.getFullYear()}-${String(now1.getMonth() + 1).padStart(2, "0")}-${String(now1.getDate()).padStart(2, "0")}`;
   const dateLine = new Date()
     .toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })
     .toUpperCase();
@@ -385,12 +465,34 @@ export default function Overview() {
         ) : (
           <div className="fin-grid">
             <div className="fin-card fin-revenue">
-              <span className="fin-card-label">Revenue</span>
-              <span className="fin-hero">{money(revenue)}</span>
-              {revenueDelta != null && (
-                <span className={`fin-delta ${revenueDelta >= 0 ? "up" : "down"}`}>
-                  {revenueDelta >= 0 ? "+" : ""}{revenueDelta}% vs prev
-                </span>
+              <div className="fin-card-head">
+                <span className="fin-card-label">Revenue</span>
+                <button
+                  type="button"
+                  className={`fin-graph-toggle${revLine ? " on" : ""}`}
+                  onClick={() => setRevLine((v) => !v)}
+                  title={revLine ? "Show amount" : "Show trend"}
+                  aria-label="Toggle revenue graph"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" />
+                  </svg>
+                </button>
+              </div>
+              {revLine ? (
+                <>
+                  <span className="fin-hero">{money(revenue)}</span>
+                  <Sparkline data={monthly.map((m) => m.rev)} />
+                </>
+              ) : (
+                <>
+                  <span className="fin-hero">{money(revenue)}</span>
+                  {revenueDelta != null && (
+                    <span className={`fin-delta ${revenueDelta >= 0 ? "up" : "down"}`}>
+                      {revenueDelta >= 0 ? "+" : ""}{revenueDelta}% vs prev
+                    </span>
+                  )}
+                </>
               )}
             </div>
 
@@ -412,16 +514,57 @@ export default function Overview() {
             </div>
 
             <div className="fin-card fin-week">
-              <div className="fin-card-head">
-                <span className="fin-card-label">Earnings — last 7 days</span>
-                <span className="fin-week-total">
-                  {money(weekEarnings.reduce((s, d) => s + d.amount, 0))}
-                </span>
+              <div className="fin-week-top">
+                <div className="fin-week-headline">
+                  <span className="fin-card-label">Earnings</span>
+                  <span className="fin-week-hero">
+                    {money(chartData.reduce((s, d) => s + d.amount, 0))}
+                  </span>
+                </div>
+                <div className="fin-week-controls">
+                  <span className="fin-legend"><span className="fin-legend-dot" />Earnings</span>
+                  <select className="inline-select" value={finRange} onChange={(e) => setFinRange(e.target.value as "7d" | "year")}>
+                    <option value="7d">This Week</option>
+                    <option value="year">This Year</option>
+                  </select>
+                </div>
               </div>
-              <WeekBars data={weekEarnings} />
+              <WeekBars data={chartData} />
             </div>
           </div>
         )}
+      </div>
+
+      <div className="panel ov-mytasks">
+        <h2 className="panel-title">My Tasks</h2>
+        <div className="ov-scroll">
+          {loading ? (
+            <p className="muted-line">Loading…</p>
+          ) : myItems.length === 0 ? (
+            <p className="muted-line">Nothing on your plate — you&rsquo;re all caught up.</p>
+          ) : (
+            <ul className="mytasks-list">
+              {myItems.map((it) => {
+                const overdue = !!it.date && it.date < todayLocal;
+                const kindLabel = it.kind === "task" ? "Task" : it.kind.charAt(0).toUpperCase() + it.kind.slice(1);
+                return (
+                  <li key={it.id}>
+                    <Link href={it.href} className="mytasks-row">
+                      <span className={`mytasks-tag tag-${it.kind === "task" ? "task" : "event"}`}>{kindLabel}</span>
+                      <span className="mytasks-title">{it.title}</span>
+                      <span className={`mytasks-date${overdue ? " overdue" : ""}`}>
+                        {overdue ? "Overdue · " : ""}
+                        {it.date
+                          ? new Date(it.date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                          : "No date"}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
 
       <div className="overview-cols equal">
