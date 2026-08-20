@@ -87,10 +87,10 @@ export default function MatterTasksList({ matterId }: { matterId: string }) {
     await supabase.from("todos").delete().eq("id", id);
   }
 
-  const Row = ({ t }: { t: Todo }) => {
+  const renderRow = (t: Todo) => {
     const st = statusOf(t);
     return (
-      <div className="mt-row">
+      <div className="mt-row" key={t.id}>
         <div className="mt-cell mt-task">
           <button
             type="button"
@@ -196,18 +196,10 @@ export default function MatterTasksList({ matterId }: { matterId: string }) {
     );
   };
 
-  const Group = ({
-    label,
-    items,
-    which,
-  }: {
-    label: string;
-    items: Todo[];
-    which: "active" | "done";
-  }) => {
+  const renderGroup = (label: string, items: Todo[], which: "active" | "done") => {
     const open = !collapse[which];
     return (
-      <div className="mt-group">
+      <div className="mt-group" key={which}>
         <div className="mt-group-head">
           <div className="mt-group-left">
             <button
@@ -228,9 +220,7 @@ export default function MatterTasksList({ matterId }: { matterId: string }) {
         </div>
         {open && (
           <div className="mt-rows">
-            {items.map((t) => (
-              <Row key={t.id} t={t} />
-            ))}
+            {items.map((t) => renderRow(t))}
             {which === "active" && (
               <div className="mt-addrow">
                 <span className="mt-check ghost" />
@@ -255,8 +245,8 @@ export default function MatterTasksList({ matterId }: { matterId: string }) {
 
   return (
     <div className="mt-list">
-      <Group label="Active tasks" items={active} which="active" />
-      {done.length > 0 && <Group label="Completed tasks" items={done} which="done" />}
+      {renderGroup("Active tasks", active, "active")}
+      {done.length > 0 && renderGroup("Completed tasks", done, "done")}
     </div>
   );
 }
