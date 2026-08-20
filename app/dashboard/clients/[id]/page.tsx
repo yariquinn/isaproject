@@ -158,6 +158,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       .single();
     if (created) {
       const nc = created as Client;
+      await supabase.from("clients").update({ partner_split: true }).eq("id", client.id);
       await supabase.from("activity_log").insert({
         kind: "client_added",
         client_id: nc.id,
@@ -260,7 +261,13 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           <div className="panel-head">
             <h2 className="panel-title">Contact</h2>
             {client.client_type !== "business" && client.partner_name && (
-              <button type="button" className="ghost sm" onClick={() => setSplitOpen(true)} title="Create a standalone client record for the second contact">
+              <button
+                type="button"
+                className="ghost sm"
+                disabled={client.partner_split}
+                onClick={() => { if (!client.partner_split) setSplitOpen(true); }}
+                title={client.partner_split ? "Already split into its own client record" : "Create a standalone client record for the second contact"}
+              >
                 Split second contact →
               </button>
             )}
@@ -291,6 +298,31 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 <dd>
                   {client.partner_name}
                   {client.partner_phone ? ` · ${client.partner_phone}` : ""}
+                  {client.partner_relationship && (
+                    <span className="rel-pill">{client.partner_relationship}</span>
+                  )}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt>Billing contact</dt>
+              <dd>
+                <InlineText
+                  value={client.billing_contact}
+                  onSave={(v) => patch({ billing_contact: v || null })}
+                  placeholder="Same as primary — click to set"
+                />
+              </dd>
+            </div>
+            {(client.billing_contact || client.billing_email) && (
+              <div>
+                <dt>Billing email</dt>
+                <dd>
+                  <InlineText
+                    value={client.billing_email}
+                    onSave={(v) => patch({ billing_email: v || null })}
+                    placeholder="Add billing email…"
+                  />
                 </dd>
               </div>
             )}

@@ -14,6 +14,11 @@ export type Client = {
   status: string;
   archived: boolean;
   created_by: string | null;
+  partner_relationship: string | null;
+  partner_split: boolean;
+  billing_contact: string | null;
+  billing_email: string | null;
+  billing_phone: string | null;
   billing_notes: string | null;
   created_at: string;
 };

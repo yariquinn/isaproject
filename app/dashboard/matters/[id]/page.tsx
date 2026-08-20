@@ -402,7 +402,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   async function saveClientField(
     clientId: string,
-    field: "primary_contact" | "email" | "phone" | "address" | "contact_title",
+    field: "primary_contact" | "email" | "phone" | "address" | "contact_title" | "billing_contact",
     v: string,
   ) {
     const next = v.trim() || null;
@@ -595,7 +595,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         >
           <div className="combo-grid">
             <div className="combo-col">
-          <h2 className="panel-title">Client</h2>
+          <h2 className="combo-title">Client</h2>
           {matter.client_id && clientObj ? (
             <>
               <div className="cc-name">
@@ -676,9 +676,23 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     <dd>
                       {clientObj.partner_name}
                       {clientObj.partner_phone ? ` · ${clientObj.partner_phone}` : ""}
+                      {clientObj.partner_relationship && (
+                        <span className="rel-pill">{clientObj.partner_relationship}</span>
+                      )}
                     </dd>
                   </div>
                 )}
+                <div>
+                  <dt>Billing contact</dt>
+                  <dd>
+                    <InlineText
+                      value={clientObj.billing_contact}
+                      onSave={(v) => saveClientField(clientObj.id, "billing_contact", v)}
+                      placeholder="Same as primary"
+                    />
+                    {clientObj.billing_email ? ` · ${clientObj.billing_email}` : ""}
+                  </dd>
+                </div>
               </dl>
               <div className="cc-notes">
                 <dt>Client Notes</dt>
@@ -694,7 +708,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           )}
         </div>
             <div className="combo-col">
-          <h2 className="panel-title">Details</h2>
+          <h2 className="combo-title">Details</h2>
           <dl className="details-grid">
             <div>
               <dt>Practice Area</dt>

@@ -1308,6 +1308,12 @@ section.block.alt {
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
 }
+/* Fills the remaining viewport height; scrolls internally only when rows overflow */
+.table-wrap.fill-table {
+  min-height: calc(100vh - 200px);
+  max-height: calc(100vh - 185px);
+  overflow-y: auto;
+}
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -1736,6 +1742,23 @@ section.block.alt {
   height: 1px;
   background: color-mix(in srgb, var(--dash-fg) 20%, transparent);
   margin: 0.7rem 0;
+}
+.rel-pill {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  vertical-align: middle;
+}
+.ghost:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .status-pill {
   display: inline-flex;
@@ -3865,11 +3888,17 @@ a.activity-row:hover .act-desc {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.task-pop-who {
+.task-pop-avatar {
   flex: none;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--dash-muted);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .cc-notes {
   margin-top: 0.9rem;
@@ -4222,11 +4251,11 @@ a.activity-row:hover .act-desc {
 }
 .ov-stats-title,
 .fin-section-head .panel-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--dash-fg);
+  color: var(--dash-muted);
 }
 .stat-row.ov-stats {
   display: grid;
@@ -4823,6 +4852,14 @@ a.activity-row:hover .act-desc {
   text-transform: uppercase;
   font-weight: 700;
   color: #c0392b;
+}
+.combo-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--dash-muted);
+  margin-bottom: 0.85rem;
 }
 .du-list {
   list-style: none;

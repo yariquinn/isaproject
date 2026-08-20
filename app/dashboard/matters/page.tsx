@@ -9,9 +9,13 @@ import {
   PRACTICE_AREAS,
   PRIORITIES,
   RATE_TYPES,
+  personColor,
   type Client,
   type Matter,
 } from "@/lib/types";
+
+const initialsOf = (n: string | null) =>
+  (n || "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
 import { InlineNumber, InlineSelect } from "../Inline";
 import { usePortal } from "../PortalProvider";
 import ExportMenu from "../ExportMenu";
@@ -331,7 +335,7 @@ export default function MattersPage() {
       ) : rows.length === 0 ? (
         <p className="muted-line">No matters match these filters.</p>
       ) : (
-        <div className="table-wrap printable">
+        <div className="table-wrap printable fill-table">
           {selected.size > 0 && (
             <div className="bulk-bar">
               <span className="bulk-count">{selected.size} selected</span>
@@ -440,7 +444,11 @@ export default function MattersPage() {
                           {(matterTasks[m.id] ?? []).map((t, i) => (
                             <span className="task-pop-item" key={i}>
                               <span className="task-pop-title">{t.title}</span>
-                              {t.assignee && <span className="task-pop-who">{t.assignee.split(" ")[0]}</span>}
+                              {t.assignee && (
+                                <span className="task-pop-avatar" style={{ background: personColor(t.assignee) }} title={t.assignee}>
+                                  {initialsOf(t.assignee)}
+                                </span>
+                              )}
                             </span>
                           ))}
                         </span>

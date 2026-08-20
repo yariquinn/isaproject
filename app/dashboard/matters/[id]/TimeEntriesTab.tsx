@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
-import { ACTIVITY_TYPES, ATTORNEYS, type TimeEntry } from "@/lib/types";
+import { ACTIVITY_TYPES, ATTORNEYS, personColor, type TimeEntry } from "@/lib/types";
 import { usePortal } from "../../PortalProvider";
 
 type MatterLite = { id: string; name: string };
@@ -265,7 +265,7 @@ export default function TimeEntriesTab({
                 <th>Date</th>
                 <th>Activity</th>
                 <th>Description</th>
-                <th>Lawyer</th>
+                <th>User</th>
                 <th>Duration</th>
                 <th>Billable</th>
                 <th>Invoiced</th>
@@ -410,7 +410,7 @@ export default function TimeEntriesTab({
                       </select>
                     ) : (
                       <span className="te-cell" onClick={() => startEdit(e, "lawyer", e.lawyer)} title={e.lawyer}>
-                        <span className="te-initials">{initialsOf(e.lawyer)}</span>
+                        <span className="te-initials" style={{ background: personColor(e.lawyer) }}>{initialsOf(e.lawyer)}</span>
                       </span>
                     )}
                   </td>
