@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { EventItem, Todo } from "@/lib/types";
+import type { EventItem, TaskComment, Todo } from "@/lib/types";
+import { personColor } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
 import { logoutAction } from "./actions";
 
@@ -12,7 +13,16 @@ const iso = (d: Date) =>
 const fmt = (d: string) =>
   new Date(d + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-type Alert = { id: string; kind: "task" | "event"; title: string; date: string; href: string; overdue: boolean };
+type Alert = {
+  id: string;
+  kind: "task" | "event" | "mention";
+  title: string;
+  matter: string | null;
+  date: string;
+  href: string;
+  overdue: boolean;
+  high: boolean;
+};
 
 export default function AppHeader() {
   const { userName } = usePortal();
@@ -34,19 +44,27 @@ export default function AppHeader() {
     (async () => {
       const today = iso(new Date());
       const horizon = iso(new Date(Date.now() + 14 * 86400000));
-      const [{ data: todos }, { data: events }] = await Promise.all([
+      const firstName = (userName || "").split(/\s+/)[0] || userName;
+      const since = new Date(Date.now() - 14 * 86400000).toISOString();
+      const [{ data: todos }, { data: events }, { data: mentions }, { data: matters }] = await Promise.all([
         supabase.from("todos").select("*").eq("done", false).not("due_date", "is", null).lte("due_date", horizon),
         supabase.from("events").select("*").eq("completed", false).gte("event_date", today).lte("event_date", horizon),
+        supabase.from("task_comments").select("*").ilike("body", `%@${firstName}%`).gte("created_at", since).order("created_at", { ascending: false }),
+        supabase.from("matters").select("id,name"),
       ]);
+      const matterName = (id: string | null) =>
+        id ? (matters as { id: string; name: string }[] | null)?.find((m) => m.id === id)?.name ?? null : null;
       const list: Alert[] = [];
       for (const t of (todos as Todo[]) ?? []) {
         list.push({
           id: `t-${t.id}`,
           kind: "task",
           title: t.title,
+          matter: matterName(t.matter_id),
           date: t.due_date as string,
           href: t.matter_id ? `/dashboard/matters/${t.matter_id}` : "/dashboard/todo",
           overdue: (t.due_date as string) < today,
+          high: t.priority === "high",
         });
       }
       for (const e of (events as EventItem[]) ?? []) {
@@ -54,12 +72,31 @@ export default function AppHeader() {
           id: `e-${e.id}`,
           kind: "event",
           title: e.title,
+          matter: matterName(e.matter_id),
           date: e.event_date.slice(0, 10),
           href: e.matter_id ? `/dashboard/matters/${e.matter_id}` : "/dashboard/deadlines",
           overdue: false,
+          high: false,
         });
       }
-      list.sort((a, b) => a.date.localeCompare(b.date));
+      for (const c of (mentions as TaskComment[]) ?? []) {
+        if (c.author === userName) continue; // don't alert on your own mentions
+        list.push({
+          id: `m-${c.id}`,
+          kind: "mention",
+          title: c.body,
+          matter: c.author ? `${c.author} mentioned you` : "You were mentioned",
+          date: c.created_at.slice(0, 10),
+          href: "/dashboard/todo",
+          overdue: false,
+          high: false,
+        });
+      }
+      // Soonest first; overdue floats to the very top.
+      list.sort((a, b) => {
+        if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+        return a.date.localeCompare(b.date);
+      });
       setAlerts(list);
     })();
   }, []);
@@ -108,11 +145,18 @@ export default function AppHeader() {
                 <div className="hdr-alert-list">
                   {alerts.map((a) => (
                     <Link key={a.id} href={a.href} className="hdr-alert" onClick={() => setBellOpen(false)}>
-                      <span className={`hdr-alert-tag tag-${a.kind}`}>{a.kind === "task" ? "Task" : "Event"}</span>
-                      <span className="hdr-alert-title">{a.title}</span>
+                      <span className={`hdr-alert-tag tag-${a.kind}`}>
+                        {a.kind === "task" ? "Task" : a.kind === "event" ? "Event" : "Mention"}
+                      </span>
+                      <div className="hdr-alert-main">
+                        <div className="hdr-alert-title-row">
+                          {a.high && <span className="hdr-alert-flag" title="High priority" />}
+                          <span className="hdr-alert-title">{a.title}</span>
+                        </div>
+                        {a.matter && <span className="hdr-alert-matter">{a.matter}</span>}
+                      </div>
                       <span className={`hdr-alert-date${a.overdue ? " overdue" : ""}`}>
-                        {a.overdue ? "Overdue · " : ""}
-                        {fmt(a.date)}
+                        {a.overdue ? "Overdue" : fmt(a.date)}
                       </span>
                     </Link>
                   ))}
@@ -128,6 +172,7 @@ export default function AppHeader() {
           <button
             type="button"
             className="online-avatar hdr-me"
+            style={{ background: personColor(userName) }}
             onClick={() => {
               setMeOpen((o) => !o);
               setBellOpen(false);

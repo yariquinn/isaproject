@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { ATTORNEYS, PRIORITIES, type Todo } from "@/lib/types";
+import { ATTORNEYS, PRIORITIES, personColor, type TaskComment, type Todo } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
 
 type MatterLite = { id: string; name: string };
@@ -98,20 +98,37 @@ export default function TasksBoard() {
   const [draft, setDraft] = useState<Draft>(emptyDraft());
   const [selected, setSelected] = useState<Todo | null>(null);
 
+  const [comments, setComments] = useState<TaskComment[]>([]);
+  const [collapsedPeople, setCollapsedPeople] = useState<Record<string, boolean>>({});
   const dragId = useRef<string | null>(null);
 
   async function load() {
-    const [{ data }, { data: ms }] = await Promise.all([
+    const [{ data }, { data: ms }, { data: cs }] = await Promise.all([
       supabase.from("todos").select("*").order("start_time", { nullsFirst: true }),
       supabase.from("matters").select("id,name").order("name"),
+      supabase.from("task_comments").select("*").order("created_at"),
     ]);
     setTodos((data as Todo[]) ?? []);
     setMatters((ms as MatterLite[]) ?? []);
+    setComments((cs as TaskComment[]) ?? []);
     setLoading(false);
   }
   useEffect(() => {
     load();
   }, []);
+
+  const commentCount = (todoId: string) => comments.filter((c) => c.todo_id === todoId).length;
+
+  async function addComment(todoId: string, body: string) {
+    const text = body.trim();
+    if (!text) return;
+    const { data } = await supabase
+      .from("task_comments")
+      .insert({ todo_id: todoId, author: userName, body: text })
+      .select("*")
+      .single();
+    if (data) setComments((prev) => [...prev, data as TaskComment]);
+  }
 
   const matterName = (id: string | null) =>
     id ? matters.find((m) => m.id === id)?.name ?? null : null;
@@ -260,8 +277,16 @@ export default function TasksBoard() {
           {t.priority && t.priority !== "-" && (
             <span className={`tb-prio prio-${t.priority}`} />
           )}
+          {commentCount(t.id) > 0 && (
+            <span className="tb-card-comments" title={`${commentCount(t.id)} comment(s)`}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              {commentCount(t.id)}
+            </span>
+          )}
           {compact && (
-            <span className="tb-card-who" title={t.assignee ?? undefined}>
+            <span className="tb-card-who" style={{ background: personColor(t.assignee) }} title={t.assignee ?? undefined}>
               {initialsOf(t.assignee)}
             </span>
           )}
@@ -322,20 +347,32 @@ export default function TasksBoard() {
             {loading ? (
               <div className="tb-loading" style={{ gridColumn: `1 / span ${DAY_COUNT + 1}` }}>Loading…</div>
             ) : (
-              people.map((person) => (
+              people.map((person) => {
+                const open = !collapsedPeople[person];
+                const personMins = days.reduce((s, d) => s + cellMinutes(person, iso(d)), 0);
+                return (
                 <div className="tb-row-contents" key={person} style={{ display: "contents" }}>
                   <div className="tb-person">
-                    <span className="tb-person-avatar">{initialsOf(person)}</span>
+                    <button
+                      type="button"
+                      className={`nav-caret tb-person-caret${open ? " open" : ""}`}
+                      onClick={() => setCollapsedPeople((c) => ({ ...c, [person]: !c[person] }))}
+                      aria-label={open ? "Collapse" : "Expand"}
+                    >
+                      ›
+                    </button>
+                    <span className="tb-person-avatar" style={{ background: personColor(person) }}>{initialsOf(person)}</span>
                     <span className="tb-person-name">{person}</span>
+                    {personMins > 0 && <span className="tb-person-total">{fmtDur(personMins)}</span>}
                   </div>
                   {days.map((d) => {
                     const dIso = iso(d);
-                    const items = cellTasks(person, dIso);
+                    const items = open ? cellTasks(person, dIso) : [];
                     const mins = cellMinutes(person, dIso);
                     return (
                       <div
                         key={dIso}
-                        className="tb-cell"
+                        className={`tb-cell${open ? "" : " collapsed"}`}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={() => dropOn(person, dIso)}
                       >
@@ -357,7 +394,8 @@ export default function TasksBoard() {
                     );
                   })}
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -398,6 +436,9 @@ export default function TasksBoard() {
         <EditModal
           todo={selected}
           matters={matters}
+          comments={comments.filter((c) => c.todo_id === selected.id)}
+          currentUser={userName}
+          onAddComment={(body) => addComment(selected.id, body)}
           onClose={() => setSelected(null)}
           onSave={saveSelected}
           onDelete={() => removeTask(selected.id)}
@@ -548,20 +589,42 @@ function TaskModal({
   );
 }
 
+function fmtWhen(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+    " · " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+function renderBody(body: string) {
+  return body.split(/(@\S+)/g).map((part, i) =>
+    part.startsWith("@") ? (
+      <span key={i} className="tm-mention">{part}</span>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
 // ---- Edit modal ----
 function EditModal({
   todo,
   matters,
+  comments,
+  currentUser,
+  onAddComment,
   onClose,
   onSave,
   onDelete,
 }: {
   todo: Todo;
   matters: MatterLite[];
+  comments: TaskComment[];
+  currentUser: string;
+  onAddComment: (body: string) => void;
   onClose: () => void;
   onSave: (next: Partial<Todo>) => void;
   onDelete: () => void;
 }) {
+  const [msg, setMsg] = useState("");
   const [t, setT] = useState({
     title: todo.title,
     assignee: todo.assignee ?? ATTORNEYS[0],
@@ -597,7 +660,9 @@ function EditModal({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal task-modal-wide" onClick={(e) => e.stopPropagation()}>
+        <div className="tm-grid">
+        <div className="tm-fields">
         <h3>Task</h3>
         <label>
           Task
@@ -659,6 +724,52 @@ function EditModal({
           <button type="button" className="ghost danger" onClick={onDelete} style={{ marginRight: "auto" }}>Delete</button>
           <button type="button" className="ghost" onClick={onClose}>Cancel</button>
           <button type="button" className="btn" onClick={save}>Save</button>
+        </div>
+        </div>
+
+        <div className="tm-chat">
+          <div className="tm-chat-head">Comments <span className="count-badge">{comments.length}</span></div>
+          <div className="tm-chat-body">
+            {comments.length === 0 ? (
+              <p className="tm-empty">No comments yet. Use @ to mention someone.</p>
+            ) : (
+              comments.map((c) => (
+                <div className="tm-msg" key={c.id}>
+                  <span className="tm-msg-avatar" style={{ background: personColor(c.author) }}>{initialsOf(c.author)}</span>
+                  <div className="tm-msg-main">
+                    <div className="tm-msg-head">
+                      <span className="tm-msg-author">{c.author || "—"}</span>
+                      <span className="tm-msg-time">{fmtWhen(c.created_at)}</span>
+                    </div>
+                    <div className="tm-msg-body">{renderBody(c.body)}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="tm-chat-input">
+            <input
+              value={msg}
+              onChange={(e) => setMsg(e.target.value)}
+              placeholder={`Comment as ${currentUser.split(" ")[0]}… @ to mention`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && msg.trim()) {
+                  onAddComment(msg);
+                  setMsg("");
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="tm-send"
+              onClick={() => { if (msg.trim()) { onAddComment(msg); setMsg(""); } }}
+              disabled={!msg.trim()}
+              aria-label="Send comment"
+            >
+              ›
+            </button>
+          </div>
+        </div>
         </div>
       </div>
     </div>

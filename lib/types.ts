@@ -125,6 +125,32 @@ export const ATTORNEYS = [
   "Paralegal",
 ] as const;
 
+export type TaskComment = {
+  id: string;
+  todo_id: string;
+  author: string | null;
+  body: string;
+  created_at: string;
+};
+
+// Distinct avatar color per person (Yari — the user — is blue).
+const PERSON_COLORS: Record<string, string> = {
+  "Yari Corsino": "#2f6bff",
+  "Isa Abdur-Rahman": "#2f8f83",
+  "Paralegal": "#7c5cbf",
+};
+const PERSON_PALETTE = [
+  "#2f6bff", "#e0699a", "#e6884f", "#3fa373",
+  "#7c5cbf", "#d9a441", "#4c9d6b", "#c0673b",
+];
+export function personColor(name: string | null | undefined): string {
+  if (!name) return "#94a3b8";
+  if (PERSON_COLORS[name]) return PERSON_COLORS[name];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return PERSON_PALETTE[h % PERSON_PALETTE.length];
+}
+
 export const PRIORITIES = [
   { value: "-", label: "—" },
   { value: "high", label: "High" },
