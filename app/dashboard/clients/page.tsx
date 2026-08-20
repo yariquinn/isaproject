@@ -297,8 +297,8 @@ export default function ClientsPage() {
               <rect x="6" y="14" width="12" height="8" />
             </svg>
           </button>
-          <button className="btn" onClick={() => setAddOpen(true)} type="button">
-            + Add Client
+          <button className="btn icon-plus-btn" onClick={() => setAddOpen(true)} type="button" title="Add client" aria-label="Add client">
+            +
           </button>
         </div>
       </div>

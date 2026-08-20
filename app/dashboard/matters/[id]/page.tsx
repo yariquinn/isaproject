@@ -1011,9 +1011,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             ["tasks", "Tasks"],
             ["documents", "Documents"],
             ["contacts", "Contacts"],
-            ...(matter.show_conflict_check
-              ? ([["conflict", "Conflict Check"]] as [string, string][])
-              : []),
             ["events", `Events (${upcomingEvents.length})`],
             ["invoices", `Invoices (${invoices.length})`],
             ...(matter.show_case_timeline
@@ -1209,15 +1206,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </>
         )}
 
-        {bodyTab === "conflict" && (
-          <>
-            <p className="muted-line">No conflict check has been run for this matter.</p>
-            <Disclaimer>
-              Conflict checking against existing clients and matters is a placeholder for now.
-            </Disclaimer>
-          </>
-        )}
-
         {bodyTab === "tasks" && (
           <TodoWidget matterId={matter.id} compact />
         )}
@@ -1388,7 +1376,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             <label className="toggle-row">
               <span>
                 <span className="toggle-title">Conflict Check</span>
-                <span className="toggle-sub">Adds a Conflict Check tab.</span>
+                <span className="toggle-sub">Mark that a conflict check was run.</span>
               </span>
               <input
                 type="checkbox"

@@ -276,8 +276,8 @@ export default function MattersPage() {
               <rect x="6" y="14" width="12" height="8" />
             </svg>
           </button>
-          <button className="btn" onClick={() => setOpen(true)} type="button">
-            + Add Matter
+          <button className="btn icon-plus-btn" onClick={() => setOpen(true)} type="button" title="Add matter" aria-label="Add matter">
+            +
           </button>
         </div>
       </div>

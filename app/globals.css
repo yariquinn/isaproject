@@ -4701,7 +4701,6 @@ a.activity-row:hover .act-desc {
 .ov-fab:hover {
   background: color-mix(in srgb, var(--accent) 86%, #ffffff);
 }
-.ov-fab-wrap:hover .ov-fab,
 .ov-fab-wrap.open .ov-fab {
   transform: rotate(45deg);
 }
@@ -4717,9 +4716,8 @@ a.activity-row:hover .act-desc {
   width: 210px;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(8px);
   pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  transition: opacity 0.12s ease;
 }
 .ov-fab-wrap:hover .ov-fab-menu,
 .ov-fab-wrap.open .ov-fab-menu {
@@ -4727,4 +4725,17 @@ a.activity-row:hover .act-desc {
   visibility: visible;
   transform: none;
   pointer-events: auto;
+}
+
+/* Compact + button (Add matter / Add client) */
+.icon-plus-btn {
+  padding: 0;
+  width: 38px;
+  height: 38px;
+  font-size: 1.35rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
 }
