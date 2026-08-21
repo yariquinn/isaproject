@@ -1058,6 +1058,8 @@ section.block.alt {
   margin-right: 0;
   background: transparent;
   border-bottom: none;
+  display: inline-flex;
+  align-items: center;
 }
 .app-header .tracker-icon {
   position: relative;
