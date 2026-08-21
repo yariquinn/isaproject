@@ -824,6 +824,19 @@ section.block.alt {
   border-radius: 12px;
   box-shadow: var(--shadow-md);
 }
+.hdr-search-group + .hdr-search-group {
+  margin-top: 0.15rem;
+  border-top: 1px solid var(--dash-border);
+  padding-top: 0.15rem;
+}
+.hdr-search-group-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  padding: 0.35rem 0.55rem 0.15rem;
+}
 .hdr-search-hit {
   display: flex;
   align-items: center;

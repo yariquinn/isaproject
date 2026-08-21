@@ -25,11 +25,23 @@ type Alert = {
   high: boolean;
 };
 
-type SearchHit = { kind: "client" | "matter"; id: string; name: string; sub: string | null; closed: boolean };
+type SearchGroup = "clients" | "matters" | "invoices" | "contacts" | "tasks" | "events" | "time" | "expenses";
+type SearchHit = { id: string; title: string; sub: string | null; href: string; closed: boolean };
+const GROUP_ORDER: SearchGroup[] = ["clients", "matters", "invoices", "contacts", "tasks", "events", "time", "expenses"];
+const GROUP_LABELS: Record<SearchGroup, string> = {
+  clients: "Clients", matters: "Matters", invoices: "Invoices", contacts: "Contacts",
+  tasks: "Tasks", events: "Events", time: "Time Entries", expenses: "Expenses",
+};
+const matterHref = (mid: string | null, fallback: string) => (mid ? `/dashboard/matters/${mid}` : fallback);
+const emptyGroups = (): Record<SearchGroup, SearchHit[]> => ({
+  clients: [], matters: [], invoices: [], contacts: [], tasks: [], events: [], time: [], expenses: [],
+});
 
 function GlobalSearch() {
   const [q, setQ] = useState("");
-  const [hits, setHits] = useState<SearchHit[]>([]);
+  const [groups, setGroups] = useState<Record<SearchGroup, SearchHit[]>>(
+    () => emptyGroups(),
+  );
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -56,28 +68,47 @@ function GlobalSearch() {
   useEffect(() => {
     const term = q.trim();
     if (term === "") {
-      setHits([]);
+      setGroups(emptyGroups());
       return;
     }
     let cancelled = false;
+    const like = `%${term}%`;
     const run = async () => {
-      const [{ data: clients }, { data: matters }] = await Promise.all([
-        supabase.from("clients").select("id,name,primary_contact,archived").ilike("name", `%${term}%`),
-        supabase.from("matters").select("id,name,practice_area,status").ilike("name", `%${term}%`),
+      const [clients, matters, invoices, contacts, todos, events, times, expenses] = await Promise.all([
+        supabase.from("clients").select("id,name,primary_contact,archived").ilike("name", like).limit(6),
+        supabase.from("matters").select("id,name,status").ilike("name", like).limit(6),
+        supabase.from("invoices").select("id,number,status,matter_id").ilike("number", like).limit(6),
+        supabase.from("contacts").select("id,name,organization,archived").ilike("name", like).limit(6),
+        supabase.from("todos").select("id,title,matter_id,done").ilike("title", like).limit(6),
+        supabase.from("events").select("id,title,matter_id,event_date").ilike("title", like).limit(6),
+        supabase.from("time_entries").select("id,note,activity,matter_id").or(`note.ilike.${like},activity.ilike.${like}`).limit(6),
+        supabase.from("expenses").select("id,description,amount,matter_id").ilike("description", like).limit(6),
       ]);
       if (cancelled) return;
-      const list: SearchHit[] = [];
-      for (const c of (clients as { id: string; name: string; primary_contact: string | null; archived: boolean | null }[]) ?? [])
-        list.push({ kind: "client", id: c.id, name: c.name, sub: c.primary_contact, closed: !!c.archived });
-      for (const m of (matters as { id: string; name: string; practice_area: string | null; status: string | null }[]) ?? [])
-        list.push({ kind: "matter", id: m.id, name: m.name, sub: null, closed: m.status === "closed" });
-      // Active first, archived/closed last (stable within each group).
-      list.sort((a, b) => (a.closed ? 1 : 0) - (b.closed ? 1 : 0));
-      setHits(list);
+      const next = emptyGroups();
+      for (const c of (clients.data as { id: string; name: string; primary_contact: string | null; archived: boolean | null }[]) ?? [])
+        next.clients.push({ id: c.id, title: c.name, sub: c.primary_contact, href: `/dashboard/clients/${c.id}`, closed: !!c.archived });
+      for (const m of (matters.data as { id: string; name: string; status: string | null }[]) ?? [])
+        next.matters.push({ id: m.id, title: m.name, sub: null, href: `/dashboard/matters/${m.id}`, closed: m.status === "closed" });
+      for (const i of (invoices.data as { id: string; number: string | null; status: string | null; matter_id: string | null }[]) ?? [])
+        next.invoices.push({ id: i.id, title: i.number || "Invoice", sub: i.status, href: `/dashboard/invoices/${i.id}${i.matter_id ? `?from=/dashboard/matters/${i.matter_id}` : ""}`, closed: false });
+      for (const c of (contacts.data as { id: string; name: string; organization: string | null; archived: boolean | null }[]) ?? [])
+        next.contacts.push({ id: c.id, title: c.name, sub: c.organization, href: `/dashboard/contacts`, closed: !!c.archived });
+      for (const t of (todos.data as { id: string; title: string; matter_id: string | null; done: boolean }[]) ?? [])
+        next.tasks.push({ id: t.id, title: t.title, sub: null, href: matterHref(t.matter_id, "/dashboard/todo"), closed: t.done });
+      for (const e of (events.data as { id: string; title: string; matter_id: string | null; event_date: string | null }[]) ?? [])
+        next.events.push({ id: e.id, title: e.title, sub: e.event_date ? fmt(e.event_date.slice(0, 10)) : null, href: matterHref(e.matter_id, "/dashboard/deadlines"), closed: false });
+      for (const t of (times.data as { id: string; note: string | null; activity: string | null; matter_id: string | null }[]) ?? [])
+        next.time.push({ id: t.id, title: t.note || t.activity || "Time entry", sub: t.activity, href: matterHref(t.matter_id, "/dashboard/billing?tab=time"), closed: false });
+      for (const x of (expenses.data as { id: string; description: string | null; amount: number | null; matter_id: string | null }[]) ?? [])
+        next.expenses.push({ id: x.id, title: x.description || "Expense", sub: x.amount != null ? `$${x.amount}` : null, href: matterHref(x.matter_id, "/dashboard/billing"), closed: false });
+      setGroups(next);
     };
-    const t = setTimeout(run, 150);
+    const t = setTimeout(run, 180);
     return () => { cancelled = true; clearTimeout(t); };
   }, [q]);
+
+  const total = GROUP_ORDER.reduce((s, g) => s + groups[g].length, 0);
 
   return (
     <div className="hdr-search">
@@ -91,7 +122,7 @@ function GlobalSearch() {
             ref={inputRef}
             type="search"
             className="hdr-search-input"
-            placeholder="Search clients & matters…"
+            placeholder="Search everything…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onFocus={() => setOpen(true)}
@@ -99,21 +130,25 @@ function GlobalSearch() {
         </div>
         {open && q.trim() !== "" && (
           <div className="hdr-search-menu">
-            {hits.length === 0 ? (
+            {total === 0 ? (
               <p className="hdr-empty">No matches.</p>
             ) : (
-              hits.map((h) => (
-                <Link
-                  key={`${h.kind}-${h.id}`}
-                  href={h.kind === "client" ? `/dashboard/clients/${h.id}` : `/dashboard/matters/${h.id}`}
-                  className={`hdr-search-hit${h.closed ? " closed" : ""}`}
-                  onClick={() => { setOpen(false); setQ(""); }}
-                >
-                  <span className={`hdr-search-kind hdr-search-${h.kind}`}>{h.kind === "client" ? "Client" : "Matter"}</span>
-                  <span className="hdr-search-name">{h.name}</span>
-                  <span className="hdr-search-status-slot">{h.closed && <span className="hdr-search-status">Archived</span>}</span>
-                  <span className="hdr-search-sub">{h.sub}</span>
-                </Link>
+              GROUP_ORDER.filter((g) => groups[g].length > 0).map((g) => (
+                <div className="hdr-search-group" key={g}>
+                  <div className="hdr-search-group-label">{GROUP_LABELS[g]}</div>
+                  {groups[g].map((h) => (
+                    <Link
+                      key={`${g}-${h.id}`}
+                      href={h.href}
+                      className={`hdr-search-hit${h.closed ? " closed" : ""}`}
+                      onClick={() => { setOpen(false); setQ(""); }}
+                    >
+                      <span className="hdr-search-name">{h.title}</span>
+                      <span className="hdr-search-status-slot">{h.closed && <span className="hdr-search-status">{g === "tasks" ? "Done" : "Archived"}</span>}</span>
+                      <span className="hdr-search-sub">{h.sub}</span>
+                    </Link>
+                  ))}
+                </div>
               ))
             )}
           </div>
