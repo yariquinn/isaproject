@@ -27,6 +27,11 @@ export default function ContactsPanel() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [csort, setCsort] = useState<{ key: "name" | "organization"; dir: 1 | -1 } | null>(null);
+  const toggleCsort = (key: "name" | "organization") =>
+    setCsort((s) => (s && s.key === key ? { key, dir: (s.dir === 1 ? -1 : 1) as 1 | -1 } : { key, dir: 1 }));
+  const csortArrow = (key: "name" | "organization") =>
+    !csort || csort.key !== key ? "↕" : csort.dir === 1 ? "↑" : "↓";
   const [filterOpen, setFilterOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -125,7 +130,7 @@ export default function ContactsPanel() {
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return contacts.filter((c) => {
+    const filtered = contacts.filter((c) => {
       if (roleFilter !== "all" && c.role !== roleFilter) return false;
       if (q === "") return true;
       return (
@@ -136,7 +141,13 @@ export default function ContactsPanel() {
         contactRoleLabel(c.role).toLowerCase().includes(q)
       );
     });
-  }, [contacts, query, roleFilter]);
+    if (!csort) return filtered;
+    return [...filtered].sort((a, b) => {
+      const av = (csort.key === "name" ? a.name : a.organization || "").toLowerCase();
+      const bv = (csort.key === "name" ? b.name : b.organization || "").toLowerCase();
+      return av.localeCompare(bv) * csort.dir;
+    });
+  }, [contacts, query, roleFilter, csort]);
 
   return (
     <>
@@ -212,9 +223,9 @@ export default function ContactsPanel() {
             </colgroup>
             <thead>
               <tr>
-                <th>Name</th>
+                <th className="sortable" onClick={() => toggleCsort("name")}>Name {csortArrow("name")}</th>
                 {cols.role && <th>Type</th>}
-                {cols.organization && <th>Firm</th>}
+                {cols.organization && <th className="sortable" onClick={() => toggleCsort("organization")}>Firm {csortArrow("organization")}</th>}
                 {cols.email && <th>Email</th>}
                 {cols.phone && <th>Phone</th>}
                 {cols.address && <th>Business Address</th>}

@@ -370,6 +370,14 @@ export default function TasksBoard() {
                 ) : (
                   <>
                     {t.title}
+                    {t.due_date && !t.done && t.due_date.slice(0, 10) < todayIso && (
+                      <span className="tb-overdue" title="Overdue">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        Overdue
+                      </span>
+                    )}
                     {commentCount(t.id) > 0 && (
                       <span className="tb-lv-c">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
@@ -424,15 +432,10 @@ export default function TasksBoard() {
                     onChange={(e) => { patch(t.id, { due_date: e.target.value || null }); setLvEdit(null); }}
                     onBlur={() => setLvEdit(null)}
                   />
-                ) : t.due_date && !t.done && t.due_date.slice(0, 10) < todayIso ? (
-                  <span className="tb-overdue" title="Overdue">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                    Overdue
-                  </span>
                 ) : (
-                  t.due_date ? fmtDay(t.due_date) : "—"
+                  <span className={t.due_date && !t.done && t.due_date.slice(0, 10) < todayIso ? "tb-lv-due-overdue" : undefined}>
+                    {t.due_date ? fmtDay(t.due_date) : "—"}
+                  </span>
                 )}
               </span>
             </div>
