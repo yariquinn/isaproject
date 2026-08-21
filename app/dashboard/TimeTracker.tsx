@@ -244,9 +244,7 @@ export default function TimeTracker() {
                 onChange={(e) => setPickQuery(e.target.value)}
                 style={{ width: "100%" }}
               />
-              {pickQuery.trim() === "" ? (
-                <p className="tracker-pick-hint">Start typing to find a matter…</p>
-              ) : (
+              {pickQuery.trim() === "" ? null : (
                 <div className="tracker-pick-list">
                   {(() => {
                     const q = pickQuery.trim().toLowerCase();
