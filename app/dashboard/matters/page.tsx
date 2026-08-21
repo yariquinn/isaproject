@@ -585,15 +585,19 @@ export default function MattersPage() {
                   )}
                   {cols.priority && (
                   <td>
-                    <InlineSelect
-                      value={m.priority}
-                      className={`prio-${m.priority}`}
-                      options={PRIORITIES.map((p) => ({
-                        value: p.value,
-                        label: p.label,
-                      }))}
-                      onSave={(v) => patch(m.id, { priority: v })}
-                    />
+                    {m.status === "closed" ? (
+                      <span className="inline-placeholder">—</span>
+                    ) : (
+                      <InlineSelect
+                        value={m.priority}
+                        className={`prio-${m.priority}`}
+                        options={PRIORITIES.map((p) => ({
+                          value: p.value,
+                          label: p.label,
+                        }))}
+                        onSave={(v) => patch(m.id, { priority: v })}
+                      />
+                    )}
                   </td>
                   )}
                   {cols.status && (
