@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { PRACTICE_AREAS, ATTORNEYS, CLIENT_TYPES, CONTACT_TITLES, type ActivityItem, type Client, type Matter } from "@/lib/types";
+import { PRACTICE_AREAS, ATTORNEYS, CONTACT_TITLES, type ActivityItem, type Client, type Matter } from "@/lib/types";
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
@@ -436,18 +436,6 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <div className="modal-backdrop" onClick={() => setEditOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Edit client</h3>
-            <div className="seg seg-full" style={{ marginBottom: "0.9rem" }}>
-              {CLIENT_TYPES.map((t) => (
-                <button
-                  key={t.value}
-                  type="button"
-                  className={client.client_type === t.value ? "active" : undefined}
-                  onClick={() => patch({ client_type: t.value })}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
             <div className="couple-fields">
               <p className="field-note">Second contact (optional)</p>
               <div className="field-pair">

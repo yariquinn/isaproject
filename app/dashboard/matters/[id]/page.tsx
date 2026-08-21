@@ -222,6 +222,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [bodyTab, setBodyTab] = useState<
     "time" | "expenses" | "tasks" | "documents" | "contacts" | "conflict" | "events" | "invoices" | "notes" | "timeline" | "activity"
   >("time");
+  // Switching tabs must not scroll the page — keep the viewport where it is.
+  const changeBodyTab = (key: typeof bodyTab) => {
+    const y = window.scrollY;
+    setBodyTab(key);
+    requestAnimationFrame(() => window.scrollTo(0, y));
+  };
   const cardsRef = useRef<HTMLDivElement>(null);
   const latestCombo = useRef(66);
   const [comboPct, setComboPct] = useState(66);
@@ -1157,7 +1163,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             key={key}
             type="button"
             className={bodyTab === key ? "active" : undefined}
-            onClick={() => setBodyTab(key as typeof bodyTab)}
+            onClick={() => changeBodyTab(key as typeof bodyTab)}
           >
             {label}
             {count != null && <span className="count-badge">{count}</span>}
@@ -1165,7 +1171,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         ))}
       </div>
 
-      <div className="panel">
+      <div className="panel" style={{ minHeight: "60vh" }}>
         {bodyTab === "timeline" && (
           <div className="timeline-body">
             <div className="timeline-controls" style={{ marginBottom: "0.9rem" }}>
