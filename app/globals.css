@@ -7159,7 +7159,7 @@ a.activity-row:hover .act-desc {
   height: 52px;
   border-radius: 50%;
   border: none;
-  background: var(--accent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 82%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 70%, #000));
   color: #fff;
   display: inline-flex;
   align-items: center;

@@ -102,15 +102,30 @@ export default function ClientsPage() {
       }
       return "";
     };
+    // Normalizers for de-duplication.
+    const nk = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+    const ek = (s: string | null | undefined) => (s ?? "").trim().toLowerCase();
+    const pk = (s: string | null | undefined) => (s ?? "").replace(/\D/g, "");
+    // Existing individuals already in the system, keyed by normalized name.
+    const existingByName = new Map<string, { email: string; phone: string }[]>();
+    for (const c of clients) {
+      if ((c.client_type ?? "individual") !== "individual") continue;
+      const key = nk(c.name);
+      const arr = existingByName.get(key) ?? [];
+      arr.push({ email: ek(c.email), phone: pk(c.phone) });
+      existingByName.set(key, arr);
+    }
+
     const toInsert: Record<string, unknown>[] = [];
     let skipped = 0;
+    const notImported: { name: string; reason: string }[] = [];
     for (const r of records) {
       const entity = get(r, "entity name", "business name");
       const first = get(r, "first name", "firstname");
       const last = get(r, "last name", "lastname");
       if (entity || get(r, "primary contact")) {
         const primary = get(r, "primary contact");
-        if (!entity || !primary) { skipped++; continue; }
+        if (!entity || !primary) { skipped++; notImported.push({ name: entity || primary || "(business row)", reason: "Missing Entity Name or Primary Contact" }); continue; }
         toInsert.push({
           name: entity,
           client_type: "business",
@@ -127,19 +142,33 @@ export default function ClientsPage() {
           created_by: userName,
         });
       } else if (first || last) {
-        if (!first || !last) { skipped++; continue; }
+        if (!first || !last) { skipped++; notImported.push({ name: `${first} ${last}`.trim() || "(individual row)", reason: "Missing First or Last name" }); continue; }
+        const fullName = `${first} ${last}`;
+        const email = get(r, "email");
+        const phone = get(r, "phone");
+        // Same-name individual already present → import only if email OR phone differs.
+        const matches = existingByName.get(nk(fullName));
+        if (matches && matches.some((m) => m.email === ek(email) && m.phone === pk(phone))) {
+          skipped++;
+          notImported.push({ name: fullName, reason: "Duplicate — a client with this name and the same email & phone already exists" });
+          continue;
+        }
+        // Record so later rows in the same file also dedupe against this one.
+        const arr = existingByName.get(nk(fullName)) ?? [];
+        arr.push({ email: ek(email), phone: pk(phone) });
+        existingByName.set(nk(fullName), arr);
         toInsert.push({
-          name: `${first} ${last}`,
+          name: fullName,
           client_type: "individual",
-          email: get(r, "email") || null,
-          phone: get(r, "phone") || null,
+          email: email || null,
+          phone: phone || null,
           address: get(r, "address") || null,
           created_by: userName,
         });
       } else {
         // legacy fallback: a single Name column
         const name = get(r, "name");
-        if (!name) { skipped++; continue; }
+        if (!name) { skipped++; notImported.push({ name: "(blank row)", reason: "No name provided" }); continue; }
         toInsert.push({
           name,
           client_type: get(r, "type").toLowerCase() === "business" ? "business" : "individual",
@@ -152,10 +181,12 @@ export default function ClientsPage() {
     if (toInsert.length) await supabase.from("clients").insert(toInsert);
     load();
     if (typeof window !== "undefined") {
-      window.alert(
-        `Imported ${toInsert.length} client(s).` +
-          (skipped ? `\nSkipped ${skipped} row(s) missing required fields (individuals need First + Last name; businesses need Entity Name + Primary Contact).` : ""),
-      );
+      let msg = `Imported ${toInsert.length} client(s).`;
+      if (skipped) {
+        msg += `\n\nNot imported (${skipped}):\n`;
+        msg += notImported.map((n) => `• ${n.name} — ${n.reason}`).join("\n");
+      }
+      window.alert(msg);
     }
   }
   const [activeMatters, setActiveMatters] = useState<
