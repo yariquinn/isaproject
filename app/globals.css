@@ -2051,6 +2051,22 @@ section.block.alt {
   .inv-toolbar, .app-header, .dash-sidebar, .sidebar { display: none !important; }
   .inv-sheet { overflow: visible; padding: 0; }
   .modal.inv-modal { max-height: none; box-shadow: none; }
+  /* Collapse the app shell so the absolutely-positioned printable sheet
+     doesn't leave tall in-flow chrome behind it (which prints as blank pages). */
+  html, body, .dash, .dash-main, .dash-content,
+  .inv-editor, .inv-editor-full {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  .back-link { display: none !important; }
+}
+.inv-meta-static {
+  font-size: 0.82rem;
+  color: var(--dash-fg);
+  padding: 0.2rem 0;
 }
 /* Opt-in tables lay out to a fixed grid and wrap long tokens (e.g. client
    emails), so the table can never exceed its container → no horizontal scroll. */

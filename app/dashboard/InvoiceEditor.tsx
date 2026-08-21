@@ -18,6 +18,7 @@ type Invoice = {
   client_id: string | null;
   number: string | null;
   status: string | null;
+  created_at: string | null;
   issued_date: string | null;
   due_date: string | null;
   notes: string | null;
@@ -175,7 +176,7 @@ export default function InvoiceEditor({
         </div>
       </div>
 
-      <div className="inv-sheet">
+      <div className="inv-sheet printable">
         {/* Header */}
         <div className="inv-head">
           <div className="inv-firm">
@@ -187,6 +188,7 @@ export default function InvoiceEditor({
           <div className="inv-meta">
             <div className="inv-word">INVOICE</div>
             <div className="inv-meta-row"><span>Invoice #</span><input value={inv.number ?? ""} onChange={(e) => patchInv({ number: e.target.value })} /></div>
+            <div className="inv-meta-row"><span>Created</span><span className="inv-meta-static">{fmtDate(inv.created_at)}</span></div>
             <div className="inv-meta-row"><span>Date</span><input type="date" value={inv.issued_date?.slice(0, 10) ?? ""} onChange={(e) => patchInv({ issued_date: e.target.value || null })} /></div>
             <div className="inv-meta-row"><span>Due</span><input type="date" value={inv.due_date?.slice(0, 10) ?? ""} onChange={(e) => patchInv({ due_date: e.target.value || null })} /></div>
             <div className="inv-meta-row"><span>Status</span>
