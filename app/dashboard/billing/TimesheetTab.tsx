@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ACTIVITY_TYPES, ATTORNEYS } from "@/lib/types";
+import { getRecents } from "@/lib/recents";
 import { usePortal } from "../PortalProvider";
 
 type MatterLite = { id: string; name: string; client_id: string | null };
@@ -117,6 +118,17 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
   const [entries, setEntries] = useState<{ duration_seconds: number; billable: boolean; logged_at: string }[]>([]);
   const [period, setPeriod] = useState<Period>("month");
   const [compare, setCompare] = useState<Compare>("none");
+  const [recentMatters, setRecentMatters] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    setRecentMatters(getRecents().filter((r) => r.kind === "matter").slice(0, 4).map((r) => ({ id: r.id, name: r.name })));
+  }, []);
+  // Drop a recent matter into the first empty grid row.
+  const fillRecent = (id: string, name: string) =>
+    setRows((prev) => {
+      const idx = prev.findIndex((r) => !r.matter_id);
+      const target = idx === -1 ? 0 : idx;
+      return prev.map((r, i) => (i === target ? { ...r, matter_id: id, matterQuery: name } : r));
+    });
 
   const loadEntries = () => {
     supabase.from("time_entries").select("duration_seconds,billable,logged_at")
@@ -213,15 +225,29 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
 
   return (
     <>
-      <div className="ts-summary-head">
-        <select className="inline-select" value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
-          {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-        </select>
-        <select className="inline-select" value={compare} onChange={(e) => setCompare(e.target.value as Compare)} disabled={period === "all"}>
-          <option value="none">No comparison</option>
-          <option value="prev">vs previous period</option>
-          <option value="yoy">vs last year</option>
-        </select>
+      <div className="ts-summary-head" style={{ justifyContent: "space-between" }}>
+        <div className="ts-recents">
+          {recentMatters.length > 0 && (
+            <>
+              <span className="ts-recents-label">Recent</span>
+              {recentMatters.map((m) => (
+                <button key={m.id} type="button" className="ts-recent-chip" title={`Add time to ${m.name}`} onClick={() => fillRecent(m.id, m.name)}>
+                  {m.name}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+        <div className="ts-summary-head-right">
+          <select className="inline-select" value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
+            {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
+          <select className="inline-select" value={compare} onChange={(e) => setCompare(e.target.value as Compare)} disabled={period === "all"}>
+            <option value="none">No comparison</option>
+            <option value="prev">vs previous period</option>
+            <option value="yoy">vs last year</option>
+          </select>
+        </div>
       </div>
       <div className="te-summary">
         <div className="te-stat">

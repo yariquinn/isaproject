@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { Client, Invoice, Matter, TimeEntry, InvoiceBucket } from "@/lib/types";
 import { ATTORNEYS, ACTIVITY_TYPES, invoiceBucket } from "@/lib/types";
@@ -35,8 +36,9 @@ const EMPTY_TIME = {
   billable: true,
 };
 
-export default function BillingPage() {
+function BillingInner() {
   const { pushUndo } = useUndo();
+  const searchParams = useSearchParams();
   const confirm = useConfirm();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
@@ -68,11 +70,14 @@ export default function BillingPage() {
 
   useEffect(() => {
     load();
-    const t = new URLSearchParams(window.location.search).get("tab");
-    if (t === "time" || t === "invoices") setTab(t);
-    else setTab("dashboard");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // React to sidebar navigation between ?tab=invoices / ?tab=time / (none):
+  // these links share this route, so the tab must follow the query string.
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    setTab(t === "time" || t === "invoices" ? t : "dashboard");
+  }, [searchParams]);
 
   const matterName = (id: string | null) =>
     matters.find((m) => m.id === id)?.name ?? "—";
@@ -466,5 +471,13 @@ export default function BillingPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<p className="muted-line">Loading…</p>}>
+      <BillingInner />
+    </Suspense>
   );
 }

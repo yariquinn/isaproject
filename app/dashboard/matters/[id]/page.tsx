@@ -784,12 +784,21 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   <div>
                     <dt>Billing contact</dt>
                     <dd>
-                      <InlineText
-                        value={clientObj.billing_contact}
-                        onSave={(v) => saveClientField(clientObj.id, "billing_contact", v)}
-                        placeholder="Same as primary"
-                      />
-                      {clientObj.billing_email ? ` · ${clientObj.billing_email}` : ""}
+                      {clientObj.billing_contact ? (
+                        <>
+                          <InlineText
+                            value={clientObj.billing_contact}
+                            onSave={(v) => saveClientField(clientObj.id, "billing_contact", v)}
+                            placeholder="Same as primary"
+                          />
+                          {clientObj.billing_email ? ` · ${clientObj.billing_email}` : ""}
+                        </>
+                      ) : (
+                        <span className="billing-same">
+                          Same as primary
+                          {(clientObj.primary_contact || clientObj.name) ? ` · ${clientObj.primary_contact || clientObj.name}` : ""}
+                        </span>
+                      )}
                     </dd>
                   </div>
                 )}
