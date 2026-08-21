@@ -68,9 +68,30 @@ export default function BillingPage() {
   const outstanding = invoices
     .filter((i) => i.status !== "paid")
     .reduce((s, i) => s + (i.amount ?? 0), 0);
-  const totalSeconds = useMemo(
-    () => entries.reduce((s, e) => s + e.duration_seconds, 0),
+  // Time-entries filters: period + matter + user (shows everyone by default).
+  const [timePeriod, setTimePeriod] = useState<"all" | "day" | "week" | "month">("all");
+  const [timeMatter, setTimeMatter] = useState<string>("all");
+  const [timeUser, setTimeUser] = useState<string>("all");
+  const timeUsers = useMemo(
+    () => Array.from(new Set(entries.map((e) => e.lawyer).filter(Boolean))).sort() as string[],
     [entries],
+  );
+  const shownEntries = useMemo(() => {
+    const now = new Date();
+    const cutoff = new Date(now);
+    if (timePeriod === "day") cutoff.setDate(now.getDate() - 1);
+    else if (timePeriod === "week") cutoff.setDate(now.getDate() - 7);
+    else if (timePeriod === "month") cutoff.setMonth(now.getMonth() - 1);
+    return entries.filter((e) => {
+      if (timeMatter !== "all" && e.matter_id !== timeMatter) return false;
+      if (timeUser !== "all" && e.lawyer !== timeUser) return false;
+      if (timePeriod !== "all" && new Date(e.logged_at) < cutoff) return false;
+      return true;
+    });
+  }, [entries, timePeriod, timeMatter, timeUser]);
+  const totalSeconds = useMemo(
+    () => shownEntries.reduce((s, e) => s + e.duration_seconds, 0),
+    [shownEntries],
   );
 
   const bucketCounts = useMemo(() => {
@@ -127,11 +148,11 @@ export default function BillingPage() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  const allEntriesSelected = entries.length > 0 && entries.every((e) => selEntries.has(e.id));
+  const allEntriesSelected = shownEntries.length > 0 && shownEntries.every((e) => selEntries.has(e.id));
   const toggleAllEntries = () =>
-    setSelEntries((prev) => {
+    setSelEntries(() => {
       if (allEntriesSelected) return new Set();
-      return new Set(entries.map((e) => e.id));
+      return new Set(shownEntries.map((e) => e.id));
     });
   async function bulkEntries(patch: Record<string, unknown>) {
     const ids = [...selEntries];
@@ -327,12 +348,30 @@ export default function BillingPage() {
         <>
           <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
             <div className="stat" style={{ cursor: "default" }}>
-              <span className="stat-num">{entries.length}</span>
+              <span className="stat-num">{shownEntries.length}</span>
               <span className="stat-label">Entries</span>
             </div>
             <div className="stat" style={{ cursor: "default" }}>
               <span className="stat-num">{(totalSeconds / 3600).toFixed(1)}</span>
               <span className="stat-label">Total Hours</span>
+            </div>
+          </div>
+
+          <div className="ts-summary-head" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: "0.6rem" }}>
+            <div className="filter-row" style={{ margin: 0 }}>
+              {([["all", "All time"], ["day", "Today"], ["week", "This week"], ["month", "This month"]] as const).map(([v, l]) => (
+                <button key={v} type="button" className={`filter-chip${timePeriod === v ? " active" : ""}`} onClick={() => setTimePeriod(v)}>{l}</button>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "0.6rem" }}>
+              <select className="inline-select" value={timeUser} onChange={(e) => setTimeUser(e.target.value)}>
+                <option value="all">All users</option>
+                {timeUsers.map((u) => <option key={u} value={u}>{u}</option>)}
+              </select>
+              <select className="inline-select" value={timeMatter} onChange={(e) => setTimeMatter(e.target.value)}>
+                <option value="all">All matters</option>
+                {matters.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
             </div>
           </div>
 
@@ -348,8 +387,8 @@ export default function BillingPage() {
 
           {loading ? (
             <p className="muted-line">Loading…</p>
-          ) : entries.length === 0 ? (
-            <p className="muted-line">No time entries yet.</p>
+          ) : shownEntries.length === 0 ? (
+            <p className="muted-line">No time entries match these filters.</p>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
@@ -368,7 +407,7 @@ export default function BillingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {entries.map((e) => (
+                  {shownEntries.map((e) => (
                     <tr key={e.id} className={selEntries.has(e.id) ? "row-selected" : undefined}>
                       <td className="check-col">
                         <input type="checkbox" checked={selEntries.has(e.id)} onChange={() => toggleSelEntry(e.id)} aria-label="Select entry" />
