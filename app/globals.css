@@ -3251,6 +3251,11 @@ section.block.alt {
 .editable-title .inline-input {
   font-size: 1.6rem;
   font-weight: 700;
+  width: 100%;
+  box-sizing: border-box;
+}
+.editable-title {
+  display: block;
 }
 th.sortable {
   cursor: pointer;
