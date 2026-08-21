@@ -80,20 +80,75 @@ export default function ClientsPage() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [filterOpen]);
 
+  // CSV import with per-type rules.
+  //  Individual columns: First Name, Last Name, Email, Phone, Address  (First + Last required)
+  //  Business columns:   Entity Name, Primary Contact, Title, Email, Phone, Address,
+  //                      Second Contact, Relationship to Second Contact,
+  //                      Billing Contact, Billing Contact Email, Billing Contact Phone
+  //                      (Entity Name + Primary Contact required)
   async function importClients(records: Record<string, string>[]) {
-    const toInsert = records
-      .map((r) => ({
-        name: (r.Name || r.name || "").trim(),
-        client_type: (r.Type || r.client_type || "individual").toLowerCase() === "business" ? "business" : "individual",
-        primary_contact: r.Contact || r.primary_contact || null,
-        email: r.Email || r.email || null,
-        phone: r.Phone || r.phone || null,
-        created_by: userName,
-      }))
-      .filter((c) => c.name);
-    if (toInsert.length === 0) return;
-    await supabase.from("clients").insert(toInsert);
+    const get = (r: Record<string, string>, ...keys: string[]) => {
+      for (const k of keys) {
+        const found = Object.keys(r).find((h) => h.trim().toLowerCase() === k.toLowerCase());
+        if (found && (r[found] ?? "").trim()) return r[found].trim();
+      }
+      return "";
+    };
+    const toInsert: Record<string, unknown>[] = [];
+    let skipped = 0;
+    for (const r of records) {
+      const entity = get(r, "entity name", "business name");
+      const first = get(r, "first name", "firstname");
+      const last = get(r, "last name", "lastname");
+      if (entity || get(r, "primary contact")) {
+        const primary = get(r, "primary contact");
+        if (!entity || !primary) { skipped++; continue; }
+        toInsert.push({
+          name: entity,
+          client_type: "business",
+          primary_contact: primary,
+          contact_title: get(r, "title of primary contact", "title") || null,
+          email: get(r, "email") || null,
+          phone: get(r, "phone") || null,
+          address: get(r, "address") || null,
+          partner_name: get(r, "second contact") || null,
+          partner_relationship: get(r, "relationship to second contact", "second contact relationship") || null,
+          billing_contact: get(r, "billing contact") || null,
+          billing_email: get(r, "billing contact email") || null,
+          billing_phone: get(r, "billing contact phone") || null,
+          created_by: userName,
+        });
+      } else if (first || last) {
+        if (!first || !last) { skipped++; continue; }
+        toInsert.push({
+          name: `${first} ${last}`,
+          client_type: "individual",
+          email: get(r, "email") || null,
+          phone: get(r, "phone") || null,
+          address: get(r, "address") || null,
+          created_by: userName,
+        });
+      } else {
+        // legacy fallback: a single Name column
+        const name = get(r, "name");
+        if (!name) { skipped++; continue; }
+        toInsert.push({
+          name,
+          client_type: get(r, "type").toLowerCase() === "business" ? "business" : "individual",
+          email: get(r, "email") || null,
+          phone: get(r, "phone") || null,
+          created_by: userName,
+        });
+      }
+    }
+    if (toInsert.length) await supabase.from("clients").insert(toInsert);
     load();
+    if (typeof window !== "undefined") {
+      window.alert(
+        `Imported ${toInsert.length} client(s).` +
+          (skipped ? `\nSkipped ${skipped} row(s) missing required fields (individuals need First + Last name; businesses need Entity Name + Primary Contact).` : ""),
+      );
+    }
   }
   const [activeMatters, setActiveMatters] = useState<
     Record<string, { id: string; name: string }[]>
