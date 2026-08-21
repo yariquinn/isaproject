@@ -1986,6 +1986,11 @@ section.block.alt {
   align-items: center;
   justify-content: center;
 }
+.ct-avatar-sm {
+  width: 20px;
+  height: 20px;
+  font-size: 0.52rem;
+}
 .ct-role-select {
   font-family: inherit;
   font-size: 0.85rem;
@@ -4628,6 +4633,19 @@ a.activity-row:hover .act-desc {
 .matter-card-date {
   font-size: 0.78rem;
   color: var(--dash-muted);
+}
+/* Condensed matter card: status + date + practice area on one sub-row */
+.matter-card-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+.matter-card-sub .matter-card-date::after {
+  content: "·";
+  margin-left: 0.5rem;
+  color: var(--dash-border);
 }
 .matter-card-meta {
   display: flex;

@@ -41,7 +41,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
   const filterRef = useRef<HTMLDivElement>(null);
 
   const [cols, setCols] = useState<Record<ColKey, boolean>>({
-    role: true, organization: true, email: true, phone: true, address: true,
+    role: false, organization: true, email: true, phone: true, address: true,
   });
   const [colMenuOpen, setColMenuOpen] = useState(false);
   const colMenuRef = useRef<HTMLTableCellElement>(null);
@@ -324,7 +324,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
                   )}
                   <td className="strong-cell">
                     <span className="ct-name">
-                      <span className="ct-avatar" style={{ background: personColor(c.name) }}>{initialsOf(c.name)}</span>
+                      <span className="ct-avatar ct-avatar-sm" style={{ background: personColor(c.name) }}>{initialsOf(c.name)}</span>
                       <InlineText value={c.name} onSave={(v) => { if (v) patch(c.id, { name: v }); }} />
                     </span>
                   </td>

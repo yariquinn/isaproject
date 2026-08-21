@@ -95,12 +95,11 @@ export default function MattersPage() {
     { key: "practice", label: "Practice Area" },
     { key: "tasks", label: "Tasks" },
     { key: "rate", label: "Rate" },
-    { key: "priority", label: "Priority" },
     { key: "status", label: "Status" },
   ] as const;
   type ColKey = (typeof COL_DEFS)[number]["key"];
   const [cols, setCols] = useState<Record<ColKey, boolean>>({
-    client: true, practice: true, tasks: true, rate: true, priority: true, status: true,
+    client: true, practice: true, tasks: true, rate: true, status: true,
   });
   const [colMenuOpen, setColMenuOpen] = useState(false);
   const colMenuRef = useRef<HTMLTableCellElement>(null);
@@ -459,7 +458,6 @@ export default function MattersPage() {
               {cols.practice && <col style={{ width: "15%" }} />}
               {cols.tasks && <col style={{ width: "10%" }} />}
               {cols.rate && <col style={{ width: "12%" }} />}
-              {cols.priority && <col style={{ width: "11%" }} />}
               {cols.status && <col style={{ width: "11%" }} />}
               <col style={{ width: "44px" }} />
             </colgroup>
@@ -482,11 +480,6 @@ export default function MattersPage() {
                 {cols.practice && <th>Practice Area</th>}
                 {cols.tasks && <th>Tasks</th>}
                 {cols.rate && <th className="sortable" onClick={() => toggleSort("rate")}>Rate {sortArrow("rate")}</th>}
-                {cols.priority && (
-                  <th className="sortable" onClick={() => toggleSort("priority")}>
-                    Priority {sortArrow("priority")}
-                  </th>
-                )}
                 {cols.status && <th className="sortable" onClick={() => toggleSort("status")}>Status {sortArrow("status")}</th>}
                 <th className="col-menu-th" ref={colMenuRef}>
                   <button
@@ -534,7 +527,6 @@ export default function MattersPage() {
                     <Link href={`/dashboard/matters/${m.id}`} className="row-link">
                       {m.name}
                     </Link>
-                    {m.status === "closed" && <span className="archived-pill">Archived</span>}
                   </td>
                   {cols.client && (
                   <td>
@@ -608,21 +600,6 @@ export default function MattersPage() {
                     </span>
                   </td>
                   )}
-                  {cols.priority && (
-                  <td>
-                    {m.status === "closed" ? null : (
-                      <InlineSelect
-                        value={m.priority}
-                        className={`prio-${m.priority}`}
-                        options={PRIORITIES.map((p) => ({
-                          value: p.value,
-                          label: p.label,
-                        }))}
-                        onSave={(v) => patch(m.id, { priority: v })}
-                      />
-                    )}
-                  </td>
-                  )}
                   {cols.status && (
                   <td>
                     <InlineSelect
@@ -630,7 +607,7 @@ export default function MattersPage() {
                       className={`pill-${m.status}`}
                       options={[
                         { value: "open", label: "Active" },
-                        { value: "closed", label: "Closed" },
+                        { value: "closed", label: "Archived" },
                       ]}
                       onSave={(v) => changeStatus(m, v)}
                     />

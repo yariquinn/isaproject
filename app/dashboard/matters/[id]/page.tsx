@@ -1362,9 +1362,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                         <button type="button" className="mc-unlink" title="Remove from matter" aria-label="Remove from matter" onClick={() => unlinkContact(linkId)}>✕</button>
                       </div>
                       <div className="cc-name-lg">
-                        <span className="te-initials" style={{ background: personColor(contact.name), marginRight: "0.4rem" }}>
-                          {contact.name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
-                        </span>
                         {contact.name}
                         {contact.organization && <span className="cc-firm-inline">· {contact.organization}</span>}
                       </div>

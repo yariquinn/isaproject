@@ -257,13 +257,13 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     >
       <span className="matter-card-main">
         <span className="matter-card-name">{m.name}</span>
-        <span className="matter-card-date">
-          Opened {new Date((m.open_date || m.created_at) + (m.open_date ? "T00:00:00" : "")).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+        <span className="matter-card-sub">
+          <span className={`pill pill-${m.status}`}>{m.status === "closed" ? "Archived" : "Active"}</span>
+          <span className="matter-card-date">
+            Opened {new Date((m.open_date || m.created_at) + (m.open_date ? "T00:00:00" : "")).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+          </span>
+          <span className="matter-card-area">{m.practice_area}</span>
         </span>
-      </span>
-      <span className="matter-card-meta">
-        <span className="matter-card-area">{m.practice_area}</span>
-        <span className={`pill pill-${m.status}`}>{m.status === "closed" ? "Archived" : "Active"}</span>
       </span>
     </Link>
   );
