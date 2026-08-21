@@ -207,19 +207,23 @@ export default function MatterTasksList({ matterId }: { matterId: string }) {
   };
 
   const renderGroup = (label: string, items: Todo[], which: "active" | "done") => {
-    const open = !collapse[which];
+    const open = which === "active" ? true : !collapse[which];
     return (
       <div className="mt-group" key={which}>
         <div className="mt-group-head">
           <div className="mt-group-left">
-            <button
-              type="button"
-              className={`nav-caret${open ? " open" : ""}`}
-              onClick={() => setCollapse((c) => ({ ...c, [which]: !c[which] }))}
-              aria-label={open ? "Collapse" : "Expand"}
-            >
-              ›
-            </button>
+            {which === "done" ? (
+              <button
+                type="button"
+                className={`nav-caret${open ? " open" : ""}`}
+                onClick={() => setCollapse((c) => ({ ...c, [which]: !c[which] }))}
+                aria-label={open ? "Collapse" : "Expand"}
+              >
+                ›
+              </button>
+            ) : (
+              <span className="nav-caret-spacer" />
+            )}
             <span className="mt-group-title">{label}</span>
             <span className="mt-group-count">{items.length}</span>
           </div>

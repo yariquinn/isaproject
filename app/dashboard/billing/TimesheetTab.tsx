@@ -17,7 +17,7 @@ type Draft = {
   billable: boolean;
 };
 
-const ROW_COUNT = 9;
+const ROW_COUNT = 8;
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const blank = (lawyer: string): Draft => ({
   matter_id: "",
@@ -245,9 +245,6 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
       </div>
 
       <div className="ts-head">
-        <p className="muted-line">
-          Enter time across matters, then save it all at once.
-        </p>
         <div className="ts-actions">
           {savedMsg && <span className="ts-saved">{savedMsg}</span>}
           <button className="ghost sm" type="button" onClick={addRow}>

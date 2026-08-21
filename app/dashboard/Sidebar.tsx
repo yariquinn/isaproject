@@ -7,16 +7,15 @@ import ThemeToggle from "./ThemeToggle";
 import { logoutAction } from "./actions";
 
 type NavItem = { href: string; label: string; children?: NavItem[] };
-type Section = { key: string; label: string; items: NavItem[] };
+type Section = { key: string; label: string; href?: string; items: NavItem[] };
 
 const SECTIONS: Section[] = [
   {
     key: "workspace",
     label: "Workspace",
     items: [
-      { href: "/dashboard", label: "Overview" },
+      { href: "/dashboard", label: "Dashboard" },
       { href: "/dashboard/clients", label: "Clients" },
-      { href: "/dashboard/contacts", label: "Contacts" },
       { href: "/dashboard/matters", label: "Matters" },
     ],
   },
@@ -32,9 +31,9 @@ const SECTIONS: Section[] = [
   },
   {
     key: "schedule",
-    label: "Schedule",
+    label: "Calendar",
+    href: "/dashboard/calendar",
     items: [
-      { href: "/dashboard/calendar", label: "Calendar" },
       { href: "/dashboard/deadlines", label: "Deadlines" },
     ],
   },
@@ -47,9 +46,10 @@ const SECTIONS: Section[] = [
 
 // Destinations a custom pinned shortcut can point at.
 const DESTINATIONS: { href: string; label: string }[] = [
-  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/clients", label: "Clients" },
   { href: "/dashboard/contacts", label: "Contacts" },
+  { href: "/dashboard/billing?tab=timesheet", label: "Timesheet" },
   { href: "/dashboard/matters", label: "Matters" },
   { href: "/dashboard/todo", label: "Tasks" },
   { href: "/dashboard/reports", label: "Reports" },
@@ -195,9 +195,15 @@ export default function Sidebar({ userName }: { userName: string }) {
                   >
                     ›
                   </button>
-                  <span className="nav-group-label" onClick={() => toggle(s.key)}>
-                    {s.label}
-                  </span>
+                  {s.href ? (
+                    <Link href={s.href} className={`nav-group-label nav-group-link${isActive(s.href) ? " active" : ""}`} title={s.label}>
+                      {s.label}
+                    </Link>
+                  ) : (
+                    <span className="nav-group-label" onClick={() => toggle(s.key)}>
+                      {s.label}
+                    </span>
+                  )}
                   <button
                     type="button"
                     className="nav-add"

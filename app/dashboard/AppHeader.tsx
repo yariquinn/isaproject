@@ -26,7 +26,10 @@ type Alert = {
 };
 
 type SearchGroup = "clients" | "matters" | "invoices" | "contacts" | "tasks" | "events" | "time" | "expenses";
-type SearchHit = { id: string; title: string; sub: string | null; href: string; closed: boolean };
+type SearchHit = { id: string; title: string; sub: string | null; href: string; closed: boolean; flag?: string | null; who?: string | null };
+const initialsOf = (n: string | null | undefined) =>
+  (n || "").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+const todayIso = () => iso(new Date());
 const GROUP_ORDER: SearchGroup[] = ["clients", "matters", "invoices", "contacts", "tasks", "events", "time", "expenses"];
 const GROUP_LABELS: Record<SearchGroup, string> = {
   clients: "Clients", matters: "Matters", invoices: "Invoices", contacts: "Contacts",
@@ -79,13 +82,25 @@ function GlobalSearch() {
         supabase.from("matters").select("id,name,status").ilike("name", like).limit(6),
         supabase.from("invoices").select("id,number,status,matter_id").ilike("number", like).limit(6),
         supabase.from("contacts").select("id,name,organization,archived").ilike("name", like).limit(6),
-        supabase.from("todos").select("id,title,matter_id,done").ilike("title", like).limit(6),
+        supabase.from("todos").select("id,title,matter_id,done,due_date").ilike("title", like).limit(6),
         supabase.from("events").select("id,title,matter_id,event_date").ilike("title", like).limit(6),
-        supabase.from("time_entries").select("id,note,activity,matter_id").or(`note.ilike.${like},activity.ilike.${like}`).limit(6),
+        supabase.from("time_entries").select("id,note,activity,matter_id,lawyer").or(`note.ilike.${like},activity.ilike.${like}`).limit(6),
         supabase.from("expenses").select("id,description,amount,matter_id").ilike("description", like).limit(6),
       ]);
       if (cancelled) return;
       const next = emptyGroups();
+      // Resolve matter names for time entries / tasks so rows can show them.
+      const needMatterIds = Array.from(new Set([
+        ...((times.data as { matter_id: string | null }[]) ?? []).map((t) => t.matter_id),
+        ...((todos.data as { matter_id: string | null }[]) ?? []).map((t) => t.matter_id),
+      ].filter(Boolean) as string[]));
+      const matterNames: Record<string, string> = {};
+      if (needMatterIds.length) {
+        const { data: mn } = await supabase.from("matters").select("id,name").in("id", needMatterIds);
+        for (const m of (mn as { id: string; name: string }[]) ?? []) matterNames[m.id] = m.name;
+      }
+      if (cancelled) return;
+      const today = todayIso();
       for (const c of (clients.data as { id: string; name: string; email: string | null; phone: string | null; address: string | null; archived: boolean | null }[]) ?? []) {
         const state = c.address?.match(/,\s*([A-Za-z]{2})\.?\s*\d{5}/)?.[1]?.toUpperCase() ?? null;
         const sub = [c.email, c.phone, state].filter(Boolean).join(" · ") || null;
@@ -97,12 +112,18 @@ function GlobalSearch() {
         next.invoices.push({ id: i.id, title: i.number || "Invoice", sub: i.status, href: `/dashboard/invoices/${i.id}${i.matter_id ? `?from=/dashboard/matters/${i.matter_id}` : ""}`, closed: false });
       for (const c of (contacts.data as { id: string; name: string; organization: string | null; archived: boolean | null }[]) ?? [])
         next.contacts.push({ id: c.id, title: c.name, sub: c.organization, href: `/dashboard/contacts`, closed: !!c.archived });
-      for (const t of (todos.data as { id: string; title: string; matter_id: string | null; done: boolean }[]) ?? [])
-        next.tasks.push({ id: t.id, title: t.title, sub: null, href: matterHref(t.matter_id, "/dashboard/todo"), closed: t.done });
+      for (const t of (todos.data as { id: string; title: string; matter_id: string | null; done: boolean; due_date: string | null }[]) ?? []) {
+        const overdue = !t.done && !!t.due_date && t.due_date.slice(0, 10) < today;
+        const sub = t.due_date ? `Due ${fmt(t.due_date.slice(0, 10))}` : null;
+        next.tasks.push({ id: t.id, title: t.title, sub, href: matterHref(t.matter_id, "/dashboard/todo"), closed: t.done, flag: overdue ? "Overdue" : null });
+      }
       for (const e of (events.data as { id: string; title: string; matter_id: string | null; event_date: string | null }[]) ?? [])
         next.events.push({ id: e.id, title: e.title, sub: e.event_date ? fmt(e.event_date.slice(0, 10)) : null, href: matterHref(e.matter_id, "/dashboard/deadlines"), closed: false });
-      for (const t of (times.data as { id: string; note: string | null; activity: string | null; matter_id: string | null }[]) ?? [])
-        next.time.push({ id: t.id, title: t.note || t.activity || "Time entry", sub: t.activity, href: matterHref(t.matter_id, "/dashboard/billing?tab=time"), closed: false });
+      for (const t of (times.data as { id: string; note: string | null; activity: string | null; matter_id: string | null; lawyer: string | null }[]) ?? []) {
+        const mName = t.matter_id ? matterNames[t.matter_id] ?? null : null;
+        const sub = [mName, t.activity].filter(Boolean).join(" · ") || null;
+        next.time.push({ id: t.id, title: t.note || t.activity || "Time entry", sub, href: matterHref(t.matter_id, "/dashboard/billing?tab=time"), closed: false, who: initialsOf(t.lawyer) || null });
+      }
       for (const x of (expenses.data as { id: string; description: string | null; amount: number | null; matter_id: string | null }[]) ?? [])
         next.expenses.push({ id: x.id, title: x.description || "Expense", sub: x.amount != null ? `$${x.amount}` : null, href: matterHref(x.matter_id, "/dashboard/billing"), closed: false });
       // Archived / closed items always sort last within their group.
@@ -149,7 +170,14 @@ function GlobalSearch() {
                       onClick={() => { setOpen(false); setQ(""); }}
                     >
                       <span className="hdr-search-name">{h.title}</span>
-                      <span className="hdr-search-status-slot">{h.closed && <span className="hdr-search-status">{g === "tasks" ? "Done" : "Archived"}</span>}</span>
+                      <span className="hdr-search-status-slot">
+                        {h.closed ? (
+                          <span className="hdr-search-status">{g === "tasks" ? "Done" : "Archived"}</span>
+                        ) : h.flag ? (
+                          <span className="hdr-search-status overdue">{h.flag}</span>
+                        ) : null}
+                        {h.who && <span className="hdr-search-who" title="User">{h.who}</span>}
+                      </span>
                       <span className="hdr-search-sub">{h.sub}</span>
                     </Link>
                   ))}
@@ -283,6 +311,18 @@ export default function AppHeader() {
       <div className="app-header-right" ref={wrapRef}>
         {/* Global search (magnifier, expands on hover) */}
         <GlobalSearch />
+
+        {/* Timesheet shortcut */}
+        <Link href="/dashboard/billing?tab=timesheet" className="hdr-icon-btn" title="Timesheet" aria-label="Timesheet">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="17" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="7" y1="13" x2="12" y2="13" />
+            <line x1="7" y1="17" x2="15" y2="17" />
+          </svg>
+        </Link>
 
         {/* Timer (lives in the header, left of alerts) */}
         <TimeTracker />

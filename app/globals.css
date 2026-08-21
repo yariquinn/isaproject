@@ -835,7 +835,10 @@ section.block.alt {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--dash-muted);
-  padding: 0.35rem 0.55rem 0.15rem;
+  padding: 0.3rem 0.55rem;
+  margin: 0.1rem 0;
+  background: color-mix(in srgb, var(--accent) 9%, var(--dash-bg));
+  border-radius: 6px;
 }
 .hdr-search-hit {
   display: flex;
@@ -890,6 +893,42 @@ section.block.alt {
   background: color-mix(in srgb, #c0392b 12%, transparent);
   padding: 0.1rem 0.4rem;
   border-radius: 10px;
+}
+.hdr-search-status.overdue {
+  color: #c0392b;
+  background: color-mix(in srgb, #c0392b 12%, transparent);
+}
+.hdr-search-who {
+  flex: none;
+  margin-left: 0.3rem;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  padding: 0.1rem 0.35rem;
+  border-radius: 10px;
+}
+.hdr-search-status-slot {
+  width: auto;
+  min-width: 74px;
+  gap: 0.2rem;
+  align-items: center;
+}
+.hdr-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: var(--dash-muted);
+  background: transparent;
+  border: 1px solid transparent;
+}
+.hdr-icon-btn:hover {
+  color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .hdr-search-hit.closed {
   background: var(--dash-bg);
@@ -3499,6 +3538,13 @@ a.activity-row:hover .act-desc {
   cursor: pointer;
   flex: 1;
 }
+.nav-group-link {
+  text-decoration: none;
+}
+.nav-group-link:hover,
+.nav-group-link.active {
+  color: #fff;
+}
 
 /* Collapsible section header (caret + label + plus) */
 .nav-section-head {
@@ -5285,19 +5331,14 @@ a.activity-row:hover .act-desc {
   color: var(--dash-fg);
 }
 .name-with-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.name-with-title > :first-child {
-  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
 }
 .title-pill-btn {
-  white-space: normal;
-  text-align: center;
-  line-height: 1.08;
-  max-width: 6.5rem;
+  white-space: nowrap;
+  line-height: 1.1;
 }
 .title-line-select {
   font-family: inherit;
@@ -5559,7 +5600,7 @@ a.activity-row:hover .act-desc {
 }
 .ts-summary-head {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 0.6rem;
   margin-bottom: 0.3rem;
 }
