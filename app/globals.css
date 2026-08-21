@@ -4620,7 +4620,7 @@ a.activity-row:hover .act-desc {
 .task-pop {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
+  left: 50%;
   z-index: 40;
   min-width: 220px;
   max-width: 300px;
@@ -4634,14 +4634,15 @@ a.activity-row:hover .act-desc {
   box-shadow: var(--shadow-md);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-3px);
+  transform: translate(-50%, -3px);
   transition: opacity 0.12s ease, transform 0.12s ease;
   pointer-events: none;
 }
 .task-pop-wrap:hover .task-pop {
   opacity: 1;
   visibility: visible;
-  transform: none;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
 }
 .task-pop-head {
   font-size: 0.6rem;
