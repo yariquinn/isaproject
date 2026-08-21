@@ -2414,9 +2414,15 @@ section.block.alt {
 }
 .page-title.upper .count-badge {
   margin-left: 0;
-  font-size: 0.72rem;
+  font-size: 0.95rem;
+  padding: 0.15em 0.6em;
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+/* Client-record panel header counts (Matters, etc.) — a touch bigger */
+.combo-title .count-badge {
+  font-size: 0.9em;
+  padding: 0.15em 0.6em;
 }
 .sc-dd {
   display: flex;

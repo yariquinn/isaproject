@@ -198,8 +198,6 @@ export default function ContactsPanel() {
 
       {loading ? (
         <p className="muted-line">Loading…</p>
-      ) : rows.length === 0 ? (
-        <p className="muted-line">No contacts yet. Add outside counsel, co-counsel, adverse party lawyers, experts, and more.</p>
       ) : (
         <div className="table-wrap fill-table table-wrap-noscroll">
           <table className="data-table data-table-wrap-cells">
@@ -237,6 +235,13 @@ export default function ContactsPanel() {
               </tr>
             </thead>
             <tbody>
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={2 + Number(cols.role) + Number(cols.organization) + Number(cols.email) + Number(cols.phone) + Number(cols.address)} className="muted-line" style={{ padding: "1.2rem 1.1rem" }}>
+                    No contacts yet — click + to add outside counsel, co-counsel, adverse party lawyers, experts, and more.
+                  </td>
+                </tr>
+              )}
               {rows.map((c) => (
                 <tr key={c.id}>
                   <td className="strong-cell">
