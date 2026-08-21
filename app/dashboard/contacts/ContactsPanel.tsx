@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
-import { CONTACT_ROLES, contactRoleLabel, personColor, type Contact } from "@/lib/types";
+import { CONTACT_ROLES, contactRoleLabel, type Contact } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
+import { useConfirm } from "../ConfirmProvider";
 import { InlineText } from "../Inline";
 import ImportExport from "../ImportExport";
 
 const EMPTY = { name: "", role: "outside_counsel", organization: "", email: "", phone: "", address: "", notes: "" };
-const initialsOf = (n: string) =>
-  (n || "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
 
 // Optional columns, toggled by the + at the end of the header.
 const COL_DEFS = [
@@ -24,6 +23,7 @@ type ColKey = (typeof COL_DEFS)[number]["key"];
 
 export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode }) {
   const { userName } = usePortal();
+  const confirm = useConfirm();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -105,7 +105,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
   async function bulkDelete() {
     const ids = [...selected];
     if (ids.length === 0) return;
-    if (!window.confirm(`Delete ${ids.length} contact${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    if (!(await confirm({ title: `Delete ${ids.length} contact${ids.length === 1 ? "" : "s"}?`, message: "This cannot be undone." }))) return;
     setContacts((prev) => prev.filter((c) => !selected.has(c.id)));
     setSelected(new Set());
     await supabase.from("contacts").delete().in("id", ids);
@@ -332,7 +332,6 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
                   )}
                   <td className="strong-cell">
                     <span className="ct-name">
-                      <span className="ct-avatar ct-avatar-sm" style={{ background: personColor(c.name) }}>{initialsOf(c.name)}</span>
                       <InlineText value={c.name} onSave={(v) => { if (v) patch(c.id, { name: v }); }} />
                     </span>
                   </td>

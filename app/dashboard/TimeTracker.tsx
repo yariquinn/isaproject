@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ACTIVITY_TYPES, ATTORNEYS, type Matter, type Timer } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
+import { useConfirm } from "./ConfirmProvider";
 
 function fmt(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));
@@ -27,6 +28,7 @@ type LogTarget = { timer: Timer; seconds: number } | null;
 
 export default function TimeTracker() {
   const { userName } = usePortal();
+  const confirm = useConfirm();
   const [timers, setTimers] = useState<Timer[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [now, setNow] = useState(() => Date.now());
@@ -136,7 +138,7 @@ export default function TimeTracker() {
 
   async function removeTimer(target: Timer) {
     const secs = Math.floor(elapsedOf(target, Date.now()));
-    if (secs > 0 && !window.confirm(`Discard this timer? ${fmt(secs)} of tracked time will be lost and cannot be recovered.`)) {
+    if (secs > 0 && !(await confirm({ title: "Discard this timer?", message: `${fmt(secs)} of tracked time will be lost and cannot be recovered.`, confirmLabel: "Discard" }))) {
       return;
     }
     await supabase.from("timers").delete().eq("id", target.id);

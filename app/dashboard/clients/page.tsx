@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { CLIENT_TYPES, type Client } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
+import { useConfirm } from "../ConfirmProvider";
 import ImportExport from "../ImportExport";
 import ContactsPanel from "../contacts/ContactsPanel";
 
@@ -31,6 +32,7 @@ const NEW_FORM = { name: "", email: "", phone: "", address: "" };
 
 export default function ClientsPage() {
   const { userName } = usePortal();
+  const confirm = useConfirm();
   const [clients, setClients] = useState<Client[]>([]);
   const [contactsCount, setContactsCount] = useState(0);
   const [mainTab, setMainTab] = useState<"clients" | "contacts">("clients");
@@ -231,7 +233,7 @@ export default function ClientsPage() {
     await supabase.from("clients").update(changes).in("id", ids);
   }
   async function deleteClient(c: Client) {
-    if (!window.confirm(`Delete client "${c.name}"? This cannot be undone.`)) return;
+    if (!(await confirm({ title: `Delete client "${c.name}"?`, message: "This cannot be undone." }))) return;
     setClients((prev) => prev.filter((x) => x.id !== c.id));
     await supabase.from("clients").delete().eq("id", c.id);
   }

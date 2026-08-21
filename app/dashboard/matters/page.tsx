@@ -18,6 +18,7 @@ const initialsOf = (n: string | null) =>
   (n || "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
 import { InlineNumber, InlineSelect } from "../Inline";
 import { usePortal } from "../PortalProvider";
+import { useConfirm } from "../ConfirmProvider";
 import ImportExport from "../ImportExport";
 
 const EMPTY = {
@@ -33,6 +34,7 @@ const EMPTY = {
 
 export default function MattersPage() {
   const { userName } = usePortal();
+  const confirm = useConfirm();
   const [matters, setMatters] = useState<Matter[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -262,9 +264,10 @@ export default function MattersPage() {
     const ids = [...selected];
     if (ids.length === 0) return;
     if (
-      !window.confirm(
-        `Delete ${ids.length} matter${ids.length === 1 ? "" : "s"}? This also removes their time entries, events, invoices, tasks and activity. This cannot be undone.`,
-      )
+      !(await confirm({
+        title: `Delete ${ids.length} matter${ids.length === 1 ? "" : "s"}?`,
+        message: `This also removes their time entries, events, invoices, tasks and activity. This cannot be undone.`,
+      }))
     )
       return;
     for (const table of ["time_entries", "events", "invoices", "todos", "activity_log"]) {
@@ -276,7 +279,10 @@ export default function MattersPage() {
   }
 
   async function deleteMatter(m: Matter) {
-    if (!window.confirm(`Delete matter "${m.name}"? This also removes its time entries, events, invoices, tasks and activity. This cannot be undone.`)) return;
+    if (!(await confirm({
+      title: `Delete matter "${m.name}"?`,
+      message: "This also removes its time entries, events, invoices, tasks and activity. This cannot be undone.",
+    }))) return;
     for (const table of ["time_entries", "events", "invoices", "todos", "activity_log"]) {
       await supabase.from(table).delete().eq("matter_id", m.id);
     }

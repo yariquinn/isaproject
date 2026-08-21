@@ -227,7 +227,7 @@ export default function IntakeClient() {
 
       <>
           <div className="inv-filter-row">
-            {[["active", "Active"], ["all", "All"], ...LEAD_STATUSES.map((s) => [s.value, s.label])].map(([v, l]) => {
+            {[["active", "Active"], ["all", "All"], ...LEAD_STATUSES.filter((s) => s.value !== "did_not_hire").map((s) => [s.value, s.label]), ["did_not_hire", "Did Not Hire"]].map(([v, l]) => {
               const n =
                 v === "all" ? leads.length
                 : v === "active" ? counts.new + counts.contacted + counts.consult

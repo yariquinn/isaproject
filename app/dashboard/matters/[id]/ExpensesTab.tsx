@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ATTORNEYS, personColor } from "@/lib/types";
+import { useConfirm } from "../../ConfirmProvider";
 
 type Expense = {
   id: string;
@@ -48,6 +49,7 @@ function periodStart(p: Period): number {
 }
 
 export default function ExpensesTab({ matterId }: { matterId: string }) {
+  const confirm = useConfirm();
   const [rows, setRows] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [edit, setEdit] = useState<EditCell>(null);
@@ -62,7 +64,7 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
   }
   async function bulkDeleteExpenses() {
     const ids = [...sel]; if (!ids.length) return;
-    if (!window.confirm(`Delete ${ids.length} expense${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    if (!(await confirm({ title: `Delete ${ids.length} expense${ids.length === 1 ? "" : "s"}?`, message: "This cannot be undone." }))) return;
     setRows((prev) => prev.filter((x) => !sel.has(x.id)));
     await supabase.from("expenses").delete().in("id", ids);
     setSel(new Set());

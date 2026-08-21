@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ATTORNEYS, PRIORITIES, personColor, type TaskComment, type Todo } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
+import { useConfirm } from "../ConfirmProvider";
 
 type MatterLite = { id: string; name: string };
 type TaskAttachment = {
@@ -105,6 +106,7 @@ const parseTags = (s: string): string[] =>
 
 export default function TasksBoard() {
   const { userName } = usePortal();
+  const confirm = useConfirm();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [matters, setMatters] = useState<MatterLite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -271,7 +273,7 @@ export default function TasksBoard() {
   }
   async function bulkDeleteTasks() {
     const ids = [...bulkSel]; if (!ids.length) return;
-    if (!window.confirm(`Delete ${ids.length} task${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    if (!(await confirm({ title: `Delete ${ids.length} task${ids.length === 1 ? "" : "s"}?`, message: "This cannot be undone." }))) return;
     setTodos((prev) => prev.filter((t) => !bulkSel.has(t.id)));
     await supabase.from("todos").delete().in("id", ids);
     setBulkSel(new Set());
@@ -396,7 +398,7 @@ export default function TasksBoard() {
         </span>
         <span>Task</span>
         <span>Matter</span>
-        <span>Responsible</span>
+        <span>User</span>
         <span>Day</span>
         <span>Due</span>
       </div>

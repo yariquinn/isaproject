@@ -5,6 +5,7 @@ import AppHeader from "./AppHeader";
 import Fab from "./Fab";
 import { PortalProvider } from "./PortalProvider";
 import { UndoProvider } from "./UndoProvider";
+import { ConfirmProvider } from "./ConfirmProvider";
 
 export const metadata = {
   title: "Portal · Isa Abdur-Rahman, PLLC",
@@ -21,6 +22,7 @@ export default function DashboardLayout({
   return (
     <PortalProvider userName={userName}>
       <UndoProvider>
+        <ConfirmProvider>
         <div className="dash">
           <Sidebar userName={userName} />
           <div className="dash-main">
@@ -29,6 +31,7 @@ export default function DashboardLayout({
           </div>
           <Fab />
         </div>
+        </ConfirmProvider>
       </UndoProvider>
     </PortalProvider>
   );

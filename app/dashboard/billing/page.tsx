@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Client, Invoice, Matter, TimeEntry, InvoiceBucket } from "@/lib/types";
-import { invoiceBucket } from "@/lib/types";
-import Disclaimer from "../Disclaimer";
-import TimesheetTab from "./TimesheetTab";
+import { ATTORNEYS, ACTIVITY_TYPES, invoiceBucket } from "@/lib/types";
+import InvoiceEditor from "../InvoiceEditor";
 import { useUndo } from "../UndoProvider";
+import { useConfirm } from "../ConfirmProvider";
 
 const INVOICE_BUCKETS: { key: InvoiceBucket; label: string }[] = [
   { key: "created", label: "Created" },
@@ -25,8 +25,19 @@ function fmtHm(seconds: number): string {
 const usd = (n: number, dp = 2) =>
   `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp })}`;
 
+const EMPTY_TIME = {
+  matter_id: "",
+  lawyer: ATTORNEYS[0] as string,
+  activity: ACTIVITY_TYPES[0] as string,
+  note: "",
+  logged_at: new Date().toISOString().slice(0, 10),
+  hours: "",
+  billable: true,
+};
+
 export default function BillingPage() {
   const { pushUndo } = useUndo();
+  const confirm = useConfirm();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
@@ -34,8 +45,11 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"dashboard" | "invoices" | "time">("dashboard");
   const [invFilter, setInvFilter] = useState<InvoiceBucket | "all">("all");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selInvoiceId, setSelInvoiceId] = useState<string | null>(null);
   const [selEntries, setSelEntries] = useState<Set<string>>(new Set());
+  const [addTimeOpen, setAddTimeOpen] = useState(false);
+  const [timeForm, setTimeForm] = useState(EMPTY_TIME);
+  const [savingTime, setSavingTime] = useState(false);
 
   async function load() {
     const [{ data: inv }, { data: e }, { data: m }, { data: c }] =
@@ -108,38 +122,31 @@ export default function BillingPage() {
     [invoices, invFilter],
   );
 
-  const toggleSel = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
+  // Keep a valid selection whenever the visible invoice list changes.
+  useEffect(() => {
+    if (tab !== "invoices") return;
+    if (shownInvoices.length === 0) { setSelInvoiceId(null); return; }
+    if (!selInvoiceId || !shownInvoices.some((i) => i.id === selInvoiceId)) {
+      setSelInvoiceId(shownInvoices[0].id);
+    }
+  }, [tab, shownInvoices, selInvoiceId]);
+
+  async function saveTimeEntry() {
+    const hrs = parseFloat(timeForm.hours);
+    if (!timeForm.matter_id || !hrs || hrs <= 0) return;
+    setSavingTime(true);
+    await supabase.from("time_entries").insert({
+      matter_id: timeForm.matter_id,
+      lawyer: timeForm.lawyer,
+      activity: timeForm.activity,
+      note: timeForm.note || null,
+      duration_seconds: Math.round(hrs * 3600),
+      billable: timeForm.billable,
+      logged_at: new Date(timeForm.logged_at + "T12:00:00").toISOString(),
     });
-  const allShownSelected = shownInvoices.length > 0 && shownInvoices.every((i) => selected.has(i.id));
-  const toggleAllShown = () =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allShownSelected) shownInvoices.forEach((i) => next.delete(i.id));
-      else shownInvoices.forEach((i) => next.add(i.id));
-      return next;
-    });
-  async function bulkSetStatus(status: string) {
-    const ids = [...selected];
-    if (ids.length === 0) return;
-    const patch: Record<string, unknown> = { status };
-    const nowIso = new Date().toISOString();
-    if (status === "sent") patch.sent_at = nowIso;
-    if (status === "viewed") patch.viewed_at = nowIso;
-    await supabase.from("invoices").update(patch).in("id", ids);
-    setSelected(new Set());
-    load();
-  }
-  async function bulkDelete() {
-    const ids = [...selected];
-    if (ids.length === 0) return;
-    if (!window.confirm(`Delete ${ids.length} invoice${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
-    await supabase.from("invoice_items").delete().in("invoice_id", ids);
-    await supabase.from("invoices").delete().in("id", ids);
-    setSelected(new Set());
+    setSavingTime(false);
+    setAddTimeOpen(false);
+    setTimeForm(EMPTY_TIME);
     load();
   }
 
@@ -165,14 +172,14 @@ export default function BillingPage() {
   async function bulkDeleteEntries() {
     const ids = [...selEntries];
     if (ids.length === 0) return;
-    if (!window.confirm(`Delete ${ids.length} time ${ids.length === 1 ? "entry" : "entries"}? This cannot be undone.`)) return;
+    if (!(await confirm({ title: `Delete ${ids.length} time ${ids.length === 1 ? "entry" : "entries"}?`, message: "This cannot be undone." }))) return;
     await supabase.from("time_entries").delete().in("id", ids);
     setSelEntries(new Set());
     load();
   }
 
   async function deleteInvoice(id: string, number: string | null) {
-    if (!window.confirm(`Delete invoice ${number || ""}?`)) return;
+    if (!(await confirm({ title: `Delete invoice ${number || ""}?`.trim(), message: "This cannot be undone." }))) return;
     const { data: inv } = await supabase.from("invoices").select("*").eq("id", id).single();
     const { data: its } = await supabase.from("invoice_items").select("*").eq("invoice_id", id);
     await supabase.from("invoice_items").delete().eq("invoice_id", id);
@@ -187,7 +194,7 @@ export default function BillingPage() {
     load();
   }
   async function deleteEntry(id: string) {
-    if (!window.confirm("Delete this time entry?")) return;
+    if (!(await confirm({ title: "Delete this time entry?", message: "This cannot be undone." }))) return;
     const row = entries.find((e) => e.id === id);
     await supabase.from("time_entries").delete().eq("id", id);
     if (row) {
@@ -201,28 +208,10 @@ export default function BillingPage() {
 
   return (
     <div>
-      <h1 className="page-title">Billing Dashboard</h1>
-
       {tab === "dashboard" && (
-        <div className="stat-row" style={{ marginTop: "1.25rem" }}>
-          <div className="stat" style={{ cursor: "default" }}>
-            <span className="stat-num">{usd(total, 0)}</span>
-            <span className="stat-label">Invoiced</span>
-          </div>
-          <div className="stat" style={{ cursor: "default" }}>
-            <span className="stat-num">{usd(outstanding, 0)}</span>
-            <span className="stat-label">Outstanding</span>
-          </div>
-          <div className="stat" style={{ cursor: "default" }}>
-            <span className="stat-num">{invoices.length}</span>
-            <span className="stat-label">Invoices</span>
-          </div>
-        </div>
-      )}
-
-      {tab === "invoices" && (
         <>
-          <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
+          <h1 className="page-title">Billing Dashboard</h1>
+          <div className="stat-row" style={{ marginTop: "1.25rem" }}>
             <div className="stat" style={{ cursor: "default" }}>
               <span className="stat-num">{usd(total, 0)}</span>
               <span className="stat-label">Invoiced</span>
@@ -235,6 +224,14 @@ export default function BillingPage() {
               <span className="stat-num">{invoices.length}</span>
               <span className="stat-label">Invoices</span>
             </div>
+          </div>
+        </>
+      )}
+
+      {tab === "invoices" && (
+        <>
+          <div className="page-head">
+            <h1 className="page-title">Invoices</h1>
           </div>
 
           <div className="inv-filter-row">
@@ -257,82 +254,54 @@ export default function BillingPage() {
             ))}
           </div>
 
-          {selected.size > 0 && (
-            <div className="bulk-bar">
-              <span className="bulk-count">{selected.size} selected</span>
-              <button type="button" className="ghost sm" onClick={() => bulkSetStatus("sent")}>Mark sent</button>
-              <button type="button" className="ghost sm" onClick={() => bulkSetStatus("viewed")}>Mark viewed</button>
-              <button type="button" className="ghost sm" onClick={() => bulkSetStatus("paid")}>Mark paid</button>
-              <button type="button" className="ghost sm" onClick={() => bulkSetStatus("created")}>Mark created</button>
-              <button type="button" className="ghost sm bulk-danger" onClick={bulkDelete}>Delete</button>
-              <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
-            </div>
-          )}
-
           {loading ? (
             <p className="muted-line">Loading…</p>
           ) : shownInvoices.length === 0 ? (
             <p className="muted-line">{invoices.length === 0 ? "No invoices yet." : "No invoices in this status."}</p>
           ) : (
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th className="check-col">
-                      <input type="checkbox" checked={allShownSelected} onChange={toggleAllShown} aria-label="Select all" />
-                    </th>
-                    <th>Invoice</th>
-                    <th>Client</th>
-                    <th>Matter</th>
-                    <th>Amount</th>
-                    <th>Due</th>
-                    <th>Status</th>
-                    <th aria-label="Delete"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shownInvoices.map((i) => {
-                    const bucket = invoiceBucket(i);
-                    return (
-                    <tr key={i.id} className={selected.has(i.id) ? "row-selected" : undefined}>
-                      <td className="check-col">
-                        <input type="checkbox" checked={selected.has(i.id)} onChange={() => toggleSel(i.id)} aria-label={`Select ${i.number || "invoice"}`} />
-                      </td>
-                      <td className="strong-cell">
-                        <Link href={`/dashboard/invoices/${i.id}`} className="row-link">
+            <div className="inv-split">
+              <div className="inv-list">
+                {shownInvoices.map((i) => {
+                  const bucket = invoiceBucket(i);
+                  return (
+                    <button
+                      key={i.id}
+                      type="button"
+                      className={`inv-li${selInvoiceId === i.id ? " active" : ""}`}
+                      onClick={() => setSelInvoiceId(i.id)}
+                    >
+                      <div className="inv-li-main">
+                        <span className="inv-li-name">{clientName(i.client_id)}</span>
+                        <span className="inv-li-sub">
                           {i.number || "—"}
-                        </Link>
-                      </td>
-                      <td>{clientName(i.client_id)}</td>
-                      <td>
-                        {i.matter_id ? (
-                          <Link
-                            href={`/dashboard/matters/${i.matter_id}`}
-                            className="row-link"
-                          >
-                            {matterName(i.matter_id)}
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td>{i.amount != null ? usd(i.amount) : "—"}</td>
-                      <td>
-                        {i.due_date
-                          ? new Date(i.due_date).toLocaleDateString()
-                          : "—"}
-                      </td>
-                      <td>
+                          {i.issued_date || i.due_date ? " · " : ""}
+                          {i.due_date ? new Date(i.due_date).toLocaleDateString() : i.issued_date ? new Date(i.issued_date).toLocaleDateString() : ""}
+                        </span>
+                      </div>
+                      <div className="inv-li-right">
+                        <span className="inv-li-amt">{i.amount != null ? usd(i.amount) : "—"}</span>
                         <span className={`pill inv-${bucket}`}>{bucket}</span>
-                      </td>
-                      <td className="ct-actions">
-                        <button type="button" className="ct-del" title="Delete invoice" aria-label="Delete invoice" onClick={() => deleteInvoice(i.id, i.number)}>✕</button>
-                      </td>
-                    </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      </div>
+                      <span
+                        className="ct-del inv-li-del"
+                        role="button"
+                        tabIndex={0}
+                        title="Delete invoice"
+                        aria-label="Delete invoice"
+                        onClick={(ev) => { ev.stopPropagation(); deleteInvoice(i.id, i.number); }}
+                        onKeyDown={(ev) => { if (ev.key === "Enter") { ev.stopPropagation(); deleteInvoice(i.id, i.number); } }}
+                      >✕</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="inv-preview">
+                {selInvoiceId ? (
+                  <InvoiceEditor key={selInvoiceId} invoiceId={selInvoiceId} />
+                ) : (
+                  <p className="muted-line" style={{ padding: "2rem" }}>Select an invoice to preview.</p>
+                )}
+              </div>
             </div>
           )}
         </>
@@ -340,6 +309,15 @@ export default function BillingPage() {
 
       {tab === "time" && (
         <>
+          <div className="page-head">
+            <h1 className="page-title">Time Entries</h1>
+            <div className="head-controls">
+              <button className="btn icon-plus-btn" onClick={() => setAddTimeOpen(true)} type="button" title="Add time" aria-label="Add time">
+                +
+              </button>
+            </div>
+          </div>
+
           <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
             <div className="stat" style={{ cursor: "default" }}>
               <span className="stat-num">{shownEntries.length}</span>
@@ -430,6 +408,59 @@ export default function BillingPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {addTimeOpen && (
+            <div className="modal-backdrop" onClick={() => setAddTimeOpen(false)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <h3>Add Time Entry</h3>
+                <label>
+                  Matter
+                  <select value={timeForm.matter_id} onChange={(e) => setTimeForm({ ...timeForm, matter_id: e.target.value })}>
+                    <option value="">— Select matter —</option>
+                    {matters.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </label>
+                <div className="field-pair">
+                  <label>
+                    User
+                    <select value={timeForm.lawyer} onChange={(e) => setTimeForm({ ...timeForm, lawyer: e.target.value })}>
+                      {ATTORNEYS.map((a) => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    Activity
+                    <select value={timeForm.activity} onChange={(e) => setTimeForm({ ...timeForm, activity: e.target.value })}>
+                      {ACTIVITY_TYPES.map((a) => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  Description
+                  <input value={timeForm.note} onChange={(e) => setTimeForm({ ...timeForm, note: e.target.value })} placeholder="What did you work on?" />
+                </label>
+                <div className="field-pair">
+                  <label>
+                    Date
+                    <input type="date" value={timeForm.logged_at} onChange={(e) => setTimeForm({ ...timeForm, logged_at: e.target.value })} />
+                  </label>
+                  <label>
+                    Hours
+                    <input type="number" step="0.1" min="0" value={timeForm.hours} onChange={(e) => setTimeForm({ ...timeForm, hours: e.target.value })} placeholder="1.5" />
+                  </label>
+                </div>
+                <label className="checkbox-row">
+                  <input type="checkbox" checked={timeForm.billable} onChange={(e) => setTimeForm({ ...timeForm, billable: e.target.checked })} />
+                  Billable
+                </label>
+                <div className="modal-actions">
+                  <button type="button" className="ghost" onClick={() => setAddTimeOpen(false)}>Cancel</button>
+                  <button type="button" className="btn" onClick={saveTimeEntry} disabled={savingTime || !timeForm.matter_id || !parseFloat(timeForm.hours)}>
+                    {savingTime ? "Saving…" : "Add entry"}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </>
