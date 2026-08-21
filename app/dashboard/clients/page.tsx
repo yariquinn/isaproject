@@ -379,7 +379,7 @@ export default function ClientsPage() {
       ) : clients.length === 0 ? (
         <p className="muted-line">No clients yet.</p>
       ) : (
-        <div className="table-wrap printable fill-table">
+        <div className="table-wrap printable fill-table table-wrap-noscroll">
           {selected.size > 0 && (
             <div className="bulk-bar">
               <span className="bulk-count">{selected.size} selected</span>
@@ -398,6 +398,14 @@ export default function ClientsPage() {
             </div>
           )}
           <table className="data-table data-table-wrap-cells">
+            <colgroup>
+              <col style={{ width: "44px" }} />
+              <col style={{ width: "23%" }} />
+              <col style={{ width: "19%" }} />
+              <col style={{ width: "26%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "16%" }} />
+            </colgroup>
             <thead>
               <tr>
                 <th className="check-col">

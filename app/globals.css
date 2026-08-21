@@ -784,23 +784,30 @@ section.block.alt {
   background: color-mix(in srgb, var(--dash-fg) 7%, transparent);
   color: var(--accent);
 }
-/* Full bar, centered in the header, grows out from the middle on open */
+.hdr-search-btn.gone {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Full bar: glides in from the right toward the header center as it opens */
 .hdr-search-bar {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
   z-index: 45;
   width: min(460px, 46vw);
   max-width: 0;
   opacity: 0;
   pointer-events: none;
-  transition: max-width 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+  transform: translate(calc(-50% + 22vw), -50%);
+  transition: max-width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.18s ease;
 }
 .hdr-search-bar.open {
   max-width: min(460px, 46vw);
   opacity: 1;
   pointer-events: auto;
+  transform: translate(-50%, -50%);
 }
 .hdr-search-field {
   position: relative;
@@ -809,7 +816,7 @@ section.block.alt {
 }
 .hdr-search-icon {
   position: absolute;
-  left: 0.75rem;
+  left: 0.85rem;
   color: var(--dash-muted);
   pointer-events: none;
 }
@@ -817,16 +824,16 @@ section.block.alt {
   width: 100%;
   font-family: inherit;
   font-size: 0.88rem;
-  padding: 0.5rem 0.8rem 0.5rem 2.2rem;
-  border: 1px solid var(--dash-border);
+  padding: 0.5rem 0.9rem 0.5rem 2.3rem;
+  border: 1px solid color-mix(in srgb, var(--dash-border) 65%, transparent);
   border-radius: 20px;
-  background: var(--dash-surface);
+  background: var(--dash-bg);
   color: var(--dash-fg);
-  box-shadow: var(--shadow-md);
 }
 .hdr-search-input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--dash-border));
+  background: var(--dash-surface);
 }
 .hdr-search-menu {
   position: absolute;
@@ -1747,6 +1754,10 @@ section.block.alt {
   min-height: calc(100vh - 200px);
   max-height: calc(100vh - 185px);
   overflow-y: auto;
+}
+/* Fixed-layout tables fill their box exactly — never scroll horizontally */
+.table-wrap-noscroll {
+  overflow-x: hidden;
 }
 .data-table {
   width: 100%;

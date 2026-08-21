@@ -87,7 +87,7 @@ function GlobalSearch() {
     <div className="hdr-search">
       <button
         type="button"
-        className="hdr-search-btn"
+        className={`hdr-search-btn${open ? " gone" : ""}`}
         aria-label="Search clients & matters"
         title="Search"
         onMouseEnter={() => setOpen(true)}
