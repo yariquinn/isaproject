@@ -30,6 +30,34 @@ type SearchHit = { kind: "client" | "matter"; id: string; name: string; sub: str
 function GlobalSearch() {
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  // Focus the field the moment it opens so typing works right away.
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  // Close on outside click / Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (barRef.current && !barRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQ("");
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setOpen(false); setQ(""); }
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   useEffect(() => {
     const term = q.trim();
@@ -57,25 +85,36 @@ function GlobalSearch() {
 
   return (
     <div className="hdr-search">
-      <button type="button" className="hdr-search-btn" aria-label="Search clients & matters" title="Search">
+      <button
+        type="button"
+        className="hdr-search-btn"
+        aria-label="Search clients & matters"
+        title="Search"
+        onMouseEnter={() => setOpen(true)}
+        onClick={() => setOpen(true)}
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
       </button>
-      <div className="hdr-search-pop">
+
+      {/* Full search bar that animates open, centered in the header */}
+      <div className={`hdr-search-bar${open ? " open" : ""}`} ref={barRef}>
         <div className="hdr-search-field">
           <svg className="hdr-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
+            ref={inputRef}
             type="search"
             className="hdr-search-input"
             placeholder="Search clients & matters…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            tabIndex={open ? 0 : -1}
           />
         </div>
-        {q.trim() !== "" && (
+        {open && q.trim() !== "" && (
           <div className="hdr-search-menu">
             {hits.length === 0 ? (
               <p className="hdr-empty">No matches.</p>
@@ -85,7 +124,7 @@ function GlobalSearch() {
                   key={`${h.kind}-${h.id}`}
                   href={h.kind === "client" ? `/dashboard/clients/${h.id}` : `/dashboard/matters/${h.id}`}
                   className="hdr-search-hit"
-                  onClick={() => setQ("")}
+                  onClick={() => { setOpen(false); setQ(""); }}
                 >
                   <span className={`hdr-search-kind hdr-search-${h.kind}`}>{h.kind === "client" ? "Client" : "Matter"}</span>
                   <span className="hdr-search-name">{h.name}</span>
