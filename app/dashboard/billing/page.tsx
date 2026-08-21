@@ -3,9 +3,18 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Client, Invoice, Matter, TimeEntry } from "@/lib/types";
+import type { Client, Invoice, Matter, TimeEntry, InvoiceBucket } from "@/lib/types";
+import { invoiceBucket } from "@/lib/types";
 import Disclaimer from "../Disclaimer";
 import TimesheetTab from "./TimesheetTab";
+
+const INVOICE_BUCKETS: { key: InvoiceBucket; label: string }[] = [
+  { key: "created", label: "Created" },
+  { key: "sent", label: "Sent" },
+  { key: "viewed", label: "Viewed" },
+  { key: "overdue", label: "Overdue" },
+  { key: "paid", label: "Paid" },
+];
 
 function fmtHm(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -20,6 +29,7 @@ export default function BillingPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"invoices" | "time" | "timesheet">("invoices");
+  const [invFilter, setInvFilter] = useState<InvoiceBucket | "all">("all");
 
   async function load() {
     const [{ data: inv }, { data: e }, { data: m }, { data: c }] =
@@ -55,6 +65,19 @@ export default function BillingPage() {
   const totalSeconds = useMemo(
     () => entries.reduce((s, e) => s + e.duration_seconds, 0),
     [entries],
+  );
+
+  const bucketCounts = useMemo(() => {
+    const c: Record<InvoiceBucket, number> = {
+      created: 0, sent: 0, viewed: 0, overdue: 0, paid: 0,
+    };
+    for (const i of invoices) c[invoiceBucket(i)]++;
+    return c;
+  }, [invoices]);
+
+  const shownInvoices = useMemo(
+    () => (invFilter === "all" ? invoices : invoices.filter((i) => invoiceBucket(i) === invFilter)),
+    [invoices, invFilter],
   );
 
   return (
@@ -108,10 +131,30 @@ export default function BillingPage() {
             </div>
           </div>
 
+          <div className="inv-filter-row">
+            <button
+              type="button"
+              className={`inv-chip${invFilter === "all" ? " on" : ""}`}
+              onClick={() => setInvFilter("all")}
+            >
+              All <span className="inv-chip-count">{invoices.length}</span>
+            </button>
+            {INVOICE_BUCKETS.map((b) => (
+              <button
+                key={b.key}
+                type="button"
+                className={`inv-chip inv-chip-${b.key}${invFilter === b.key ? " on" : ""}`}
+                onClick={() => setInvFilter(b.key)}
+              >
+                {b.label} <span className="inv-chip-count">{bucketCounts[b.key]}</span>
+              </button>
+            ))}
+          </div>
+
           {loading ? (
             <p className="muted-line">Loading…</p>
-          ) : invoices.length === 0 ? (
-            <p className="muted-line">No invoices yet.</p>
+          ) : shownInvoices.length === 0 ? (
+            <p className="muted-line">{invoices.length === 0 ? "No invoices yet." : "No invoices in this status."}</p>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
@@ -126,9 +169,15 @@ export default function BillingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((i) => (
+                  {shownInvoices.map((i) => {
+                    const bucket = invoiceBucket(i);
+                    return (
                     <tr key={i.id}>
-                      <td className="strong-cell">{i.number || "—"}</td>
+                      <td className="strong-cell">
+                        <Link href={`/dashboard/invoices/${i.id}`} className="row-link">
+                          {i.number || "—"}
+                        </Link>
+                      </td>
                       <td>{clientName(i.client_id)}</td>
                       <td>
                         {i.matter_id ? (
@@ -149,10 +198,11 @@ export default function BillingPage() {
                           : "—"}
                       </td>
                       <td>
-                        <span className={`pill inv-${i.status}`}>{i.status}</span>
+                        <span className={`pill inv-${bucket}`}>{bucket}</span>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

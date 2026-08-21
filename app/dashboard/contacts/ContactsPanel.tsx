@@ -26,6 +26,7 @@ export default function ContactsPanel() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"open" | "archived" | "all">("open");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [csort, setCsort] = useState<{ key: "name" | "organization"; dir: 1 | -1 } | null>(null);
   const toggleCsort = (key: "name" | "organization") =>
@@ -131,6 +132,7 @@ export default function ContactsPanel() {
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = contacts.filter((c) => {
+      if (view === "archived" ? !c.archived : view === "open" ? c.archived : false) return false;
       if (roleFilter !== "all" && c.role !== roleFilter) return false;
       if (q === "") return true;
       return (
@@ -147,7 +149,7 @@ export default function ContactsPanel() {
       const bv = (csort.key === "name" ? b.name : b.organization || "").toLowerCase();
       return av.localeCompare(bv) * csort.dir;
     });
-  }, [contacts, query, roleFilter, csort]);
+  }, [contacts, query, roleFilter, csort, view]);
 
   return (
     <>
@@ -195,9 +197,18 @@ export default function ContactsPanel() {
       </div>
 
       <div className="filter-search-row">
-        <span className="muted-line" style={{ fontSize: "0.85rem" }}>
-          Outside counsel, co-counsel, adverse counsel, experts &amp; more
-        </span>
+        <div className="filter-row" style={{ margin: 0 }}>
+          {(["open", "archived", "all"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              className={`filter-chip${view === v ? " active" : ""}`}
+              onClick={() => setView(v)}
+            >
+              {v === "open" ? "Active" : v === "archived" ? "Archived" : "All"}
+            </button>
+          ))}
+        </div>
         <input
           className="activity-search head-search"
           type="search"
@@ -219,7 +230,7 @@ export default function ContactsPanel() {
               {cols.email && <col style={{ width: "20%" }} />}
               {cols.phone && <col style={{ width: "12%" }} />}
               {cols.address && <col style={{ width: "17%" }} />}
-              <col style={{ width: "44px" }} />
+              <col style={{ width: "72px" }} />
             </colgroup>
             <thead>
               <tr>
@@ -254,7 +265,7 @@ export default function ContactsPanel() {
                 </tr>
               )}
               {rows.map((c) => (
-                <tr key={c.id}>
+                <tr key={c.id} className={c.archived ? "row-closed" : undefined}>
                   <td className="strong-cell">
                     <span className="ct-name">
                       <span className="ct-avatar" style={{ background: personColor(c.name) }}>{initialsOf(c.name)}</span>
@@ -289,6 +300,15 @@ export default function ContactsPanel() {
                   </td>
                   )}
                   <td className="ct-actions">
+                    <button
+                      type="button"
+                      className="ct-archive"
+                      aria-label={c.archived ? `Unarchive ${c.name}` : `Archive ${c.name}`}
+                      title={c.archived ? "Unarchive" : "Archive"}
+                      onClick={() => patch(c.id, { archived: !c.archived })}
+                    >
+                      {c.archived ? "↩" : "🗄"}
+                    </button>
                     <button type="button" className="ct-del" aria-label={`Delete ${c.name}`} title="Delete" onClick={() => removeContact(c.id)}>✕</button>
                   </td>
                 </tr>

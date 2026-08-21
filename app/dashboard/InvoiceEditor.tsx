@@ -25,6 +25,8 @@ type Invoice = {
   terms: string | null;
   tax_rate: number | null;
   amount: number | null;
+  sent_at: string | null;
+  viewed_at: string | null;
 };
 type Item = {
   id: string;
@@ -188,8 +190,14 @@ export default function InvoiceEditor({
             <div className="inv-meta-row"><span>Date</span><input type="date" value={inv.issued_date?.slice(0, 10) ?? ""} onChange={(e) => patchInv({ issued_date: e.target.value || null })} /></div>
             <div className="inv-meta-row"><span>Due</span><input type="date" value={inv.due_date?.slice(0, 10) ?? ""} onChange={(e) => patchInv({ due_date: e.target.value || null })} /></div>
             <div className="inv-meta-row"><span>Status</span>
-              <select value={inv.status ?? "draft"} onChange={(e) => patchInv({ status: e.target.value })}>
-                {["draft", "sent", "viewed", "overdue", "paid"].map((s) => <option key={s} value={s}>{s}</option>)}
+              <select value={inv.status ?? "created"} onChange={(e) => {
+                const s = e.target.value;
+                const extra: Partial<Invoice> = { status: s };
+                if (s === "sent" && !inv.sent_at) extra.sent_at = new Date().toISOString();
+                if (s === "viewed" && !inv.viewed_at) extra.viewed_at = new Date().toISOString();
+                patchInv(extra);
+              }}>
+                {["created", "sent", "viewed", "overdue", "paid"].map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           </div>

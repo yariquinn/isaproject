@@ -38,6 +38,7 @@ export type Contact = {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  archived: boolean;
   created_by: string | null;
   created_at: string;
 };
@@ -135,7 +136,22 @@ export type Invoice = {
   due_date: string | null;
   notes: string | null;
   created_at: string;
+  sent_at?: string | null;
+  viewed_at?: string | null;
 };
+
+// Derived invoice buckets used by the Billing dashboard status tabs.
+export type InvoiceBucket = "created" | "sent" | "viewed" | "overdue" | "paid";
+export function invoiceBucket(i: Invoice): InvoiceBucket {
+  if (i.status === "paid") return "paid";
+  const overdue =
+    i.due_date != null &&
+    i.due_date.slice(0, 10) < new Date().toISOString().slice(0, 10);
+  if (overdue) return "overdue";
+  if (i.viewed_at || i.status === "viewed") return "viewed";
+  if (i.sent_at || i.status === "sent") return "sent";
+  return "created";
+}
 
 export type EventItem = {
   id: string;

@@ -1870,6 +1870,20 @@ section.block.alt {
 }
 .ct-actions {
   text-align: center;
+  white-space: nowrap;
+}
+.ct-archive {
+  border: none;
+  background: transparent;
+  color: var(--dash-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 6px;
+}
+.ct-archive:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .ct-del {
   border: none;
@@ -2402,6 +2416,9 @@ section.block.alt {
   justify-content: space-between;
   gap: 1rem;
   margin: 0.9rem 0 1.25rem;
+}
+.filter-search-row.filter-search-row-end {
+  justify-content: flex-end;
 }
 .filter-search-row .head-search {
   width: 100%;
@@ -3705,6 +3722,57 @@ a.activity-row:hover .act-desc {
   background: #fbecec;
   color: #8a2b2b;
   border-color: #e3bcbc;
+}
+.pill.inv-created {
+  background: var(--dash-bg);
+  color: var(--dash-muted);
+}
+.pill.inv-viewed {
+  background: #f3ecfb;
+  color: #6b3ca8;
+  border-color: #d8c4f2;
+}
+
+/* Invoice status filter chips */
+.inv-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.inv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.32rem 0.7rem;
+  border-radius: 16px;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-surface);
+  color: var(--dash-muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.inv-chip:hover {
+  color: var(--dash-fg);
+  border-color: color-mix(in srgb, var(--dash-fg) 25%, var(--dash-border));
+}
+.inv-chip.on {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.inv-chip-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.02rem 0.4rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--dash-fg) 8%, transparent);
+  color: inherit;
+}
+.inv-chip.on .inv-chip-count {
+  background: color-mix(in srgb, #fff 28%, transparent);
 }
 
 /* Reports / intake */
