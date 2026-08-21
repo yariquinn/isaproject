@@ -104,16 +104,22 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   }
 
   async function loadAll() {
-    const [{ data: c }, { data: all }, { data: m }, { data: inv }] = await Promise.all([
+    const [{ data: c }, { data: all }, { data: m }] = await Promise.all([
       supabase.from("clients").select("*").eq("id", params.id).single(),
       supabase.from("clients").select("*").order("name"),
       supabase.from("matters").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
-      supabase.from("invoices").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
     ]);
     setClient((c as Client) ?? null);
     if (c) pushRecent("client", (c as Client).id, (c as Client).name);
     setAllClients((all as Client[]) ?? []);
-    setMatters((m as Matter[]) ?? []);
+    const matterList = (m as Matter[]) ?? [];
+    setMatters(matterList);
+    // Invoices for this client — either directly linked, or on any of the client's matters.
+    const matterIds = matterList.map((mm) => mm.id);
+    const orClause = matterIds.length
+      ? `client_id.eq.${params.id},matter_id.in.(${matterIds.join(",")})`
+      : `client_id.eq.${params.id}`;
+    const { data: inv } = await supabase.from("invoices").select("*").or(orClause).order("created_at", { ascending: false });
     setInvoices((inv as Invoice[]) ?? []);
     await loadActivity();
     setLoading(false);
@@ -418,7 +424,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <div className="panel">
           <div className="panel-head">
             <h2 className="combo-title">Matters <span className="count-badge">{matters.length}</span></h2>
-            <button type="button" className="btn icon-plus-btn sm-plus" style={{ marginTop: "-0.5rem", marginRight: "-0.35rem", alignSelf: "flex-start" }} onClick={() => { setMForm({ name: `${client.name} — `, practice_area: PRACTICE_AREAS[0], assigned_to: ATTORNEYS[0] }); setAddMatterOpen(true); }} title="Add matter" aria-label="Add matter">+</button>
+            <button type="button" className="btn icon-plus-btn sm-plus" style={{ marginTop: "-0.5rem", marginRight: "-0.35rem", alignSelf: "flex-start" }} onClick={() => { setMForm({ name: `${client.name} · `, practice_area: PRACTICE_AREAS[0], assigned_to: ATTORNEYS[0] }); setAddMatterOpen(true); }} title="Add matter" aria-label="Add matter">+</button>
           </div>
           <div className="panel-scroll">
             {matters.length === 0 ? <p className="muted-line">No matters yet.</p> : (

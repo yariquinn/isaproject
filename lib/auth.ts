@@ -9,7 +9,7 @@ export function getAccessCode(): string {
 
 // Only these people may enter the backend. The name is CASE-SENSITIVE and must
 // match exactly (surrounding whitespace is ignored), in addition to the code.
-export const ALLOWED_NAMES = ["Yari Corsino", "Isa Abdur-Rahman"];
+export const ALLOWED_NAMES = ["Yari Corsino", "Isa Abdur-Rahman", "Paralegal"];
 
 export function isAllowedName(name: string): boolean {
   return ALLOWED_NAMES.includes(name.trim());
