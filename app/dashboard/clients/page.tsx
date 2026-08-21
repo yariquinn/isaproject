@@ -230,6 +230,11 @@ export default function ClientsPage() {
     );
     await supabase.from("clients").update(changes).in("id", ids);
   }
+  async function deleteClient(c: Client) {
+    if (!window.confirm(`Delete client "${c.name}"? This cannot be undone.`)) return;
+    setClients((prev) => prev.filter((x) => x.id !== c.id));
+    await supabase.from("clients").delete().eq("id", c.id);
+  }
 
   // Guarded editing (mirrors the client record)
   const [prompt, setPrompt] = useState<{
@@ -699,7 +704,9 @@ export default function ClientsPage() {
                     )}
                   </td>
                   )}
-                  <td className="col-menu-cell" aria-hidden="true" />
+                  <td className="col-menu-cell ct-actions">
+                    <button type="button" className="ct-del" title="Delete client" aria-label="Delete client" onClick={() => deleteClient(c)}>✕</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

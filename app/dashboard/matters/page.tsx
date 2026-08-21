@@ -275,6 +275,15 @@ export default function MattersPage() {
     setSelected(new Set());
   }
 
+  async function deleteMatter(m: Matter) {
+    if (!window.confirm(`Delete matter "${m.name}"? This also removes its time entries, events, invoices, tasks and activity. This cannot be undone.`)) return;
+    for (const table of ["time_entries", "events", "invoices", "todos", "activity_log"]) {
+      await supabase.from(table).delete().eq("matter_id", m.id);
+    }
+    await supabase.from("matters").delete().eq("id", m.id);
+    setMatters((prev) => prev.filter((x) => x.id !== m.id));
+  }
+
   // Changing status records who/when on close, clears it on reopen, and logs.
   async function changeStatus(m: Matter, status: string) {
     const changes: Partial<Matter> = { status };
@@ -460,10 +469,10 @@ export default function MattersPage() {
               <col style={{ width: "38px" }} />
               <col style={{ width: "22%" }} />
               {cols.client && <col style={{ width: "16%" }} />}
-              {cols.practice && <col style={{ width: "15%" }} />}
-              {cols.tasks && <col style={{ width: "10%" }} />}
-              {cols.rate && <col style={{ width: "12%" }} />}
-              {cols.status && <col style={{ width: "11%" }} />}
+              {cols.practice && <col style={{ width: "14%" }} />}
+              {cols.tasks && <col style={{ width: "8%" }} />}
+              {cols.rate && <col style={{ width: "11%" }} />}
+              {cols.status && <col style={{ width: "15%" }} />}
               <col style={{ width: "44px" }} />
             </colgroup>
             <thead>
@@ -618,7 +627,9 @@ export default function MattersPage() {
                     />
                   </td>
                   )}
-                  <td className="col-menu-cell" aria-hidden="true" />
+                  <td className="col-menu-cell ct-actions">
+                    <button type="button" className="ct-del" title="Delete matter" aria-label="Delete matter" onClick={() => deleteMatter(m)}>✕</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

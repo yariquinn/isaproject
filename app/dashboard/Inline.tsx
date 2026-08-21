@@ -108,7 +108,7 @@ export function InlineNumber({
   return (
     <span className="inline-view" onClick={begin} title="Click to edit">
       {value != null ? (
-        `${prefix}${value}${suffix}`
+        `${prefix}${typeof value === "number" ? value.toLocaleString("en-US") : value}${suffix}`
       ) : (
         <span className="inline-placeholder">{placeholder}</span>
       )}

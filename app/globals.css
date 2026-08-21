@@ -2472,6 +2472,8 @@ section.block.alt {
   flex-wrap: wrap;
 }
 .filter-chip {
+  display: inline-flex;
+  align-items: center;
   background: transparent;
   border: 1px solid var(--dash-border);
   color: var(--dash-muted);
