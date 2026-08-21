@@ -24,17 +24,10 @@ const SECTIONS: Section[] = [
     label: "Practice",
     items: [
       { href: "/dashboard/todo", label: "Tasks" },
+      { href: "/dashboard/deadlines", label: "Deadlines" },
       { href: "/dashboard/reports", label: "Reports" },
       { href: "/dashboard/billing", label: "Billing" },
       { href: "/dashboard/intake", label: "Intake" },
-    ],
-  },
-  {
-    key: "schedule",
-    label: "Calendar",
-    items: [
-      { href: "/dashboard/calendar", label: "Calendar" },
-      { href: "/dashboard/deadlines", label: "Deadlines" },
     ],
   },
   {
@@ -55,7 +48,6 @@ const DESTINATIONS: { href: string; label: string }[] = [
   { href: "/dashboard/reports", label: "Reports" },
   { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/intake", label: "Intake" },
-  { href: "/dashboard/calendar", label: "Calendar" },
   { href: "/dashboard/deadlines", label: "Deadlines" },
   { href: "/dashboard/documents", label: "Documents" },
   { href: "/dashboard/settings", label: "Settings" },
