@@ -118,7 +118,7 @@ export default function IntakeClient() {
   return (
     <>
       <div className="intake-toptabs">
-        <button type="button" className="btn" onClick={() => setView("form")}>+ New Intake</button>
+        <button type="button" className="btn icon-plus-btn" onClick={() => setView("form")} title="New intake" aria-label="New intake">+</button>
       </div>
 
       <div className="intake-graph-row">

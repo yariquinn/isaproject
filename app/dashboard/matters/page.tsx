@@ -333,7 +333,7 @@ export default function MattersPage() {
   return (
     <div>
       <div className="page-head">
-        <h1 className="page-title upper">Matters <span className="count-badge">{matters.length}</span></h1>
+        <h1 className="page-title upper">Matters</h1>
         <div className="head-controls">
           <div className="filter-wrap" ref={filterRef}>
             <button
@@ -389,16 +389,21 @@ export default function MattersPage() {
       </div>
       <div className="filter-search-row">
         <div className="filter-row" style={{ margin: 0 }}>
-          {(["active", "closed", "all"] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              className={`filter-chip${statusFilter === s ? " active" : ""}`}
-              onClick={() => setStatusFilter(s)}
-            >
-              {s === "active" ? "Active" : s === "closed" ? "Archived" : "All"}
-            </button>
-          ))}
+          {(["active", "closed", "all"] as const).map((s) => {
+            const n = s === "active" ? matters.filter((m) => m.status !== "closed").length
+              : s === "closed" ? matters.filter((m) => m.status === "closed").length
+              : matters.length;
+            return (
+              <button
+                key={s}
+                type="button"
+                className={`filter-chip${statusFilter === s ? " active" : ""}`}
+                onClick={() => setStatusFilter(s)}
+              >
+                {s === "active" ? "Active" : s === "closed" ? "Archived" : "All"} <span className="chip-count">{n}</span>
+              </button>
+            );
+          })}
         </div>
         <input
           className="activity-search head-search"

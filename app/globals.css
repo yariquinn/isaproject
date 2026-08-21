@@ -2443,6 +2443,26 @@ section.block.alt {
   color: #fff;
   border-color: var(--navy);
 }
+.chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  padding: 0.05em 0.45em;
+  margin-left: 0.35rem;
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 999px;
+  color: var(--dash-muted);
+  background: color-mix(in srgb, var(--dash-fg) 9%, transparent);
+  vertical-align: middle;
+}
+.filter-chip.active .chip-count,
+.inv-chip.on .chip-count {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+}
 :root[data-theme="dark"] .filter-chip.active {
   background: var(--accent);
   border-color: var(--accent);
@@ -4106,10 +4126,15 @@ a.activity-row:hover .act-desc {
   grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
   gap: 1.25rem;
   margin-bottom: 1.5rem;
-  align-items: start;
+  align-items: stretch;
 }
 .intake-graph-panel .lead-chart {
   max-height: 240px;
+}
+.intake-activity-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 @media (max-width: 900px) {
   .intake-graph-row { grid-template-columns: 1fr; }
@@ -4120,7 +4145,8 @@ a.activity-row:hover .act-desc {
   list-style: none;
   display: flex;
   flex-direction: column;
-  max-height: 300px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 .intake-activity-item {

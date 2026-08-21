@@ -468,10 +468,10 @@ export default function ClientsPage() {
   const headTabs = (
     <div className="doc-tabs head-tabs">
       <button type="button" className={mainTab === "clients" ? "active" : undefined} onClick={() => setMainTab("clients")}>
-        Clients <span className="count-badge">{clients.length}</span>
+        Clients
       </button>
       <button type="button" className={mainTab === "contacts" ? "active" : undefined} onClick={() => setMainTab("contacts")}>
-        Contacts <span className="count-badge">{contactsCount}</span>
+        Contacts
       </button>
     </div>
   );
@@ -531,16 +531,21 @@ export default function ClientsPage() {
       </div>
       <div className="filter-search-row">
         <div className="filter-row" style={{ margin: 0 }}>
-          {(["open", "archived", "all"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={`filter-chip${view === v ? " active" : ""}`}
-              onClick={() => setView(v)}
-            >
-              {v === "open" ? "Active" : v === "archived" ? "Archived" : "All"}
-            </button>
-          ))}
+          {(["open", "archived", "all"] as const).map((v) => {
+            const n = v === "open" ? clients.filter((c) => !c.archived).length
+              : v === "archived" ? clients.filter((c) => c.archived).length
+              : clients.length;
+            return (
+              <button
+                key={v}
+                type="button"
+                className={`filter-chip${view === v ? " active" : ""}`}
+                onClick={() => setView(v)}
+              >
+                {v === "open" ? "Active" : v === "archived" ? "Archived" : "All"} <span className="chip-count">{n}</span>
+              </button>
+            );
+          })}
         </div>
         <input
           className="activity-search head-search"

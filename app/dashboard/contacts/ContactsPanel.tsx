@@ -220,16 +220,21 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
 
       <div className="filter-search-row">
         <div className="filter-row" style={{ margin: 0 }}>
-          {(["open", "archived", "all"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              className={`filter-chip${view === v ? " active" : ""}`}
-              onClick={() => setView(v)}
-            >
-              {v === "open" ? "Active" : v === "archived" ? "Archived" : "All"}
-            </button>
-          ))}
+          {(["open", "archived", "all"] as const).map((v) => {
+            const n = v === "open" ? contacts.filter((c) => !c.archived).length
+              : v === "archived" ? contacts.filter((c) => c.archived).length
+              : contacts.length;
+            return (
+              <button
+                key={v}
+                type="button"
+                className={`filter-chip${view === v ? " active" : ""}`}
+                onClick={() => setView(v)}
+              >
+                {v === "open" ? "Active" : v === "archived" ? "Archived" : "All"} <span className="chip-count">{n}</span>
+              </button>
+            );
+          })}
         </div>
         <input
           className="activity-search head-search"
