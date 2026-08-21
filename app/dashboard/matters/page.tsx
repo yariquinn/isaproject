@@ -585,9 +585,7 @@ export default function MattersPage() {
                   )}
                   {cols.priority && (
                   <td>
-                    {m.status === "closed" ? (
-                      <span className="inline-placeholder">—</span>
-                    ) : (
+                    {m.status === "closed" ? null : (
                       <InlineSelect
                         value={m.priority}
                         className={`prio-${m.priority}`}

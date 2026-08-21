@@ -38,6 +38,39 @@ export default function ClientsPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
 
+  // Optional columns (persisted per browser).
+  const CCOL_DEFS = [
+    { key: "contact", label: "Contact" },
+    { key: "email", label: "Email" },
+    { key: "phone", label: "Phone" },
+    { key: "matters", label: "Active Matters" },
+  ] as const;
+  type CCol = (typeof CCOL_DEFS)[number]["key"];
+  const [ccols, setCcols] = useState<Record<CCol, boolean>>({ contact: true, email: true, phone: true, matters: true });
+  const [ccolMenuOpen, setCcolMenuOpen] = useState(false);
+  const ccolMenuRef = useRef<HTMLTableCellElement>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("clientCols");
+      if (raw) setCcols((c) => ({ ...c, ...JSON.parse(raw) }));
+    } catch { /* ignore */ }
+  }, []);
+  const toggleCcol = (key: CCol) => {
+    setCcols((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem("clientCols", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  useEffect(() => {
+    if (!ccolMenuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ccolMenuRef.current && !ccolMenuRef.current.contains(e.target as Node)) setCcolMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [ccolMenuOpen]);
+
   useEffect(() => {
     if (!filterOpen) return;
     const onDoc = (e: MouseEvent) => {
@@ -401,10 +434,11 @@ export default function ClientsPage() {
             <colgroup>
               <col style={{ width: "44px" }} />
               <col style={{ width: "23%" }} />
-              <col style={{ width: "19%" }} />
-              <col style={{ width: "26%" }} />
-              <col style={{ width: "16%" }} />
-              <col style={{ width: "16%" }} />
+              {ccols.contact && <col style={{ width: "19%" }} />}
+              {ccols.email && <col style={{ width: "26%" }} />}
+              {ccols.phone && <col style={{ width: "16%" }} />}
+              {ccols.matters && <col style={{ width: "16%" }} />}
+              <col style={{ width: "44px" }} />
             </colgroup>
             <thead>
               <tr>
@@ -424,10 +458,32 @@ export default function ClientsPage() {
                 >
                   Name {sortAsc === null ? "↕" : sortAsc ? "↑" : "↓"}
                 </th>
-                <th>Contact</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Active Matters</th>
+                {ccols.contact && <th>Contact</th>}
+                {ccols.email && <th>Email</th>}
+                {ccols.phone && <th>Phone</th>}
+                {ccols.matters && <th>Active Matters</th>}
+                <th className="col-menu-th" ref={ccolMenuRef}>
+                  <button
+                    type="button"
+                    className="col-menu-btn"
+                    onClick={() => setCcolMenuOpen((o) => !o)}
+                    title="Add or remove columns"
+                    aria-label="Add or remove columns"
+                  >
+                    +
+                  </button>
+                  {ccolMenuOpen && (
+                    <div className="col-menu">
+                      <div className="col-menu-head">Columns</div>
+                      {CCOL_DEFS.map((c) => (
+                        <label key={c.key} className="col-menu-item">
+                          <input type="checkbox" checked={ccols[c.key]} onChange={() => toggleCcol(c.key)} />
+                          <span>{c.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -449,6 +505,7 @@ export default function ClientsPage() {
                       {c.name}
                     </Link>
                   </td>
+                  {ccols.contact && (
                   <td>
                     <Guarded
                       client={c}
@@ -456,6 +513,8 @@ export default function ClientsPage() {
                       label="primary contact"
                     />
                   </td>
+                  )}
+                  {ccols.email && (
                   <td>
                     <Guarded
                       client={c}
@@ -464,6 +523,8 @@ export default function ClientsPage() {
                       type="email"
                     />
                   </td>
+                  )}
+                  {ccols.phone && (
                   <td>
                     <Guarded
                       client={c}
@@ -472,6 +533,8 @@ export default function ClientsPage() {
                       type="tel"
                     />
                   </td>
+                  )}
+                  {ccols.matters && (
                   <td>
                     {activeMatters[c.id]?.length ? (
                       <span className="matter-pop-wrap">
@@ -496,6 +559,8 @@ export default function ClientsPage() {
                       <span className="inline-placeholder">—</span>
                     )}
                   </td>
+                  )}
+                  <td className="col-menu-cell" aria-hidden="true" />
                 </tr>
               ))}
             </tbody>

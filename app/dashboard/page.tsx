@@ -675,6 +675,7 @@ export default function Overview() {
             <div className="fin-card fin-expenses">
               <span className="fin-card-label">Expenses</span>
               <span className="fin-hero">$0</span>
+              <StatDelta value={0} />
               <span className="fin-sub">Not tracked yet</span>
             </div>
 
