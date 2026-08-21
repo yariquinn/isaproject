@@ -117,11 +117,11 @@ export default function IntakeClient() {
 
   return (
     <>
-      <div className="stat-row" style={{ margin: "1.25rem 0" }}>
-        <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{leads.length}</span><span className="stat-label">Total Leads</span></div>
-        <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{counts.new + counts.contacted + counts.consult}</span><span className="stat-label">In Pipeline</span></div>
-        <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{counts.converted}</span><span className="stat-label">Converted</span></div>
-        <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{counts.did_not_hire}</span><span className="stat-label">Did Not Hire</span></div>
+      <div className="intake-toptabs">
+        <div className="doc-tabs" style={{ margin: 0 }}>
+          <button type="button" className={view === "pipeline" ? "active" : undefined} onClick={() => setView("pipeline")}>Pipeline</button>
+          <button type="button" className={view === "form" ? "active" : undefined} onClick={() => setView("form")}>New Intake</button>
+        </div>
       </div>
 
       <div className="intake-graph-row">
@@ -171,22 +171,6 @@ export default function IntakeClient() {
         </div>
       </div>
 
-      <div className="intake-tabbar">
-        <div className="doc-tabs" style={{ margin: 0 }}>
-          <button type="button" className={view === "pipeline" ? "active" : undefined} onClick={() => setView("pipeline")}>Pipeline</button>
-          <button type="button" className={view === "form" ? "active" : undefined} onClick={() => setView("form")}>New Intake</button>
-        </div>
-        <button
-          type="button"
-          className="btn icon-plus-btn"
-          onClick={() => setView("form")}
-          title="New intake"
-          aria-label="New intake"
-        >
-          +
-        </button>
-      </div>
-
       {view === "form" ? (
         <div className="panel" style={{ maxWidth: "40rem" }}>
           <h2 className="panel-title">New Intake</h2>
@@ -233,9 +217,17 @@ export default function IntakeClient() {
       ) : (
         <>
           <div className="inv-filter-row">
-            {[["active", "Active"], ["all", "All"], ...LEAD_STATUSES.map((s) => [s.value, s.label])].map(([v, l]) => (
-              <button key={v} type="button" className={`inv-chip${statusFilter === v ? " on" : ""}`} onClick={() => setStatusFilter(v)}>{l}</button>
-            ))}
+            {[["active", "Active"], ["all", "All"], ...LEAD_STATUSES.map((s) => [s.value, s.label])].map(([v, l]) => {
+              const n =
+                v === "all" ? leads.length
+                : v === "active" ? counts.new + counts.contacted + counts.consult
+                : counts[v] ?? 0;
+              return (
+                <button key={v} type="button" className={`inv-chip${statusFilter === v ? " on" : ""}`} onClick={() => setStatusFilter(v)}>
+                  {l} <span className="inv-chip-count">{n}</span>
+                </button>
+              );
+            })}
           </div>
           {shown.length === 0 ? (
             <p className="muted-line">No leads in this view.</p>

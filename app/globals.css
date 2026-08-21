@@ -4073,7 +4073,10 @@ a.activity-row:hover .act-desc {
   grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
   gap: 1.25rem;
   margin-bottom: 1.5rem;
-  align-items: stretch;
+  align-items: start;
+}
+.intake-graph-panel .lead-chart {
+  max-height: 240px;
 }
 @media (max-width: 900px) {
   .intake-graph-row { grid-template-columns: 1fr; }
@@ -4126,12 +4129,10 @@ a.activity-row:hover .act-desc {
   cursor: pointer;
   text-align: left;
 }
-.intake-tabbar {
+.intake-toptabs {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
 }
 .lead-chart-legend {
   display: flex;
@@ -7919,6 +7920,16 @@ a.activity-row:hover .act-desc {
   gap: 0.15rem;
   font-size: 0.72rem;
   color: var(--dash-muted);
+  background: none;
+  border: none;
+  padding: 0.05rem 0.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tb-lv-c:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .tb-lv-matter {
   min-width: 0;
@@ -8215,6 +8226,16 @@ a.activity-row:hover .act-desc {
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--dash-muted);
+  background: none;
+  border: none;
+  padding: 0.05rem 0.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tb-card-comments:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 /* When an avatar is also present (waiting list), keep comments before it */
 .tb-card-comments + .tb-card-who {

@@ -114,6 +114,8 @@ export default function TasksBoard() {
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(emptyDraft());
   const [selected, setSelected] = useState<Todo | null>(null);
+  const [openToComments, setOpenToComments] = useState(false);
+  const openTaskComments = (t: Todo) => { setOpenToComments(true); setSelected(t); };
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [collapsedPeople, setCollapsedPeople] = useState<Record<string, boolean>>({});
@@ -321,12 +323,17 @@ export default function TasksBoard() {
             </span>
           )}
           {commentCount(t.id) > 0 && (
-            <span className="tb-card-comments" title={`${commentCount(t.id)} comment(s)`}>
+            <button
+              type="button"
+              className="tb-card-comments"
+              title="Open comments"
+              onClick={(e) => { e.stopPropagation(); openTaskComments(t); }}
+            >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
               {commentCount(t.id)}
-            </span>
+            </button>
           )}
           {compact && (
             <span className="tb-card-who" style={{ background: personColor(t.assignee) }} title={t.assignee ?? undefined}>
@@ -384,10 +391,15 @@ export default function TasksBoard() {
                       </span>
                     )}
                     {commentCount(t.id) > 0 && (
-                      <span className="tb-lv-c">
+                      <button
+                        type="button"
+                        className="tb-lv-c"
+                        title="Open comments"
+                        onClick={(e) => { e.stopPropagation(); openTaskComments(t); }}
+                      >
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
                         {commentCount(t.id)}
-                      </span>
+                      </button>
                     )}
                     {(t.tags ?? []).map((tag) => (
                       <span key={tag} className="tb-tag">{tag}</span>
@@ -614,8 +626,9 @@ export default function TasksBoard() {
           matters={matters}
           comments={comments.filter((c) => c.todo_id === selected.id)}
           currentUser={userName}
+          focusComments={openToComments}
           onAddComment={(body) => addComment(selected.id, body)}
-          onClose={() => setSelected(null)}
+          onClose={() => { setSelected(null); setOpenToComments(false); }}
           onSave={saveSelected}
           onDelete={() => removeTask(selected.id)}
         />
@@ -784,6 +797,7 @@ function EditModal({
   matters,
   comments,
   currentUser,
+  focusComments,
   onAddComment,
   onClose,
   onSave,
@@ -793,6 +807,7 @@ function EditModal({
   matters: MatterLite[];
   comments: TaskComment[];
   currentUser: string;
+  focusComments?: boolean;
   onAddComment: (body: string) => void;
   onClose: () => void;
   onSave: (next: Partial<Todo>) => void;
@@ -802,6 +817,18 @@ function EditModal({
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
+
+  // Opened via the comment bubble → jump straight to the comment box.
+  useEffect(() => {
+    if (!focusComments) return;
+    const el = commentInputRef.current;
+    if (el) {
+      el.scrollIntoView({ block: "center" });
+      el.focus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusComments]);
 
   const loadAttachments = async () => {
     const { data } = await supabase
