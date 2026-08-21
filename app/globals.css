@@ -4149,6 +4149,10 @@ a.activity-row:hover .act-desc {
   margin: 0 0.5rem 0 0;
   border: none;
 }
+/* Billing contact when it mirrors the primary — shown as a definite value */
+.billing-same {
+  color: var(--dash-fg);
+}
 /* Individual client: name shown as plain lettering atop the contact card */
 .cc-name-lead {
   font-size: 1rem;

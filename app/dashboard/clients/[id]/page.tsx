@@ -368,11 +368,18 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             <div>
               <dt>Billing contact</dt>
               <dd>
-                <InlineText
-                  value={client.billing_contact}
-                  onSave={(v) => patch({ billing_contact: v || null })}
-                  placeholder="Same as primary — click to set"
-                />
+                {client.billing_contact ? (
+                  <InlineText
+                    value={client.billing_contact}
+                    onSave={(v) => patch({ billing_contact: v || null })}
+                    placeholder="Same as primary"
+                  />
+                ) : (
+                  <span className="billing-same">
+                    Same as primary
+                    {(client.primary_contact || client.name) ? ` · ${client.primary_contact || client.name}` : ""}
+                  </span>
+                )}
               </dd>
             </div>
             {(client.billing_contact || client.billing_email) && (
