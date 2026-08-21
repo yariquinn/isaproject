@@ -1796,6 +1796,72 @@ section.block.alt {
   border-bottom: 1px solid var(--dash-border);
   color: var(--dash-fg);
 }
+/* Column add/remove control at the end of the header row */
+.col-menu-th,
+.col-menu-cell {
+  width: 44px;
+  position: relative;
+  text-align: center;
+}
+.col-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-surface);
+  color: var(--dash-muted);
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.col-menu-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.col-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  min-width: 180px;
+  padding: 0.4rem;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  text-align: left;
+}
+.col-menu-head {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  padding: 0.2rem 0.45rem 0.4rem;
+}
+.col-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--dash-fg);
+  cursor: pointer;
+}
+.col-menu-item:hover {
+  background: color-mix(in srgb, var(--dash-fg) 5%, transparent);
+}
+.col-menu-item input {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
 /* Opt-in tables lay out to a fixed grid and wrap long tokens (e.g. client
    emails), so the table can never exceed its container → no horizontal scroll. */
 .data-table-wrap-cells {

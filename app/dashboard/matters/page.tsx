@@ -91,6 +91,43 @@ export default function MattersPage() {
   const [ncOpen, setNcOpen] = useState(false);
   const [nc, setNc] = useState({ name: "", client_type: "individual", email: "", phone: "" });
 
+  // Which optional columns are shown (persisted per browser).
+  const COL_DEFS = [
+    { key: "client", label: "Client" },
+    { key: "practice", label: "Practice Area" },
+    { key: "tasks", label: "Tasks" },
+    { key: "rate", label: "Rate" },
+    { key: "priority", label: "Priority" },
+    { key: "status", label: "Status" },
+  ] as const;
+  type ColKey = (typeof COL_DEFS)[number]["key"];
+  const [cols, setCols] = useState<Record<ColKey, boolean>>({
+    client: true, practice: true, tasks: true, rate: true, priority: true, status: true,
+  });
+  const [colMenuOpen, setColMenuOpen] = useState(false);
+  const colMenuRef = useRef<HTMLTableCellElement>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("matterCols");
+      if (raw) setCols((c) => ({ ...c, ...JSON.parse(raw) }));
+    } catch { /* ignore */ }
+  }, []);
+  const toggleCol = (key: ColKey) => {
+    setCols((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem("matterCols", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  useEffect(() => {
+    if (!colMenuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (colMenuRef.current && !colMenuRef.current.contains(e.target as Node)) setColMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [colMenuOpen]);
+
   async function createNewClient() {
     if (!nc.name.trim()) return;
     const isBiz = nc.client_type === "business";
@@ -427,14 +464,42 @@ export default function MattersPage() {
                 <th className="sortable" onClick={() => toggleSort("name")}>
                   Matter {sortArrow("name")}
                 </th>
-                <th>Client</th>
-                <th>Practice Area</th>
-                <th>Tasks</th>
-                <th>Rate</th>
-                <th className="sortable" onClick={() => toggleSort("priority")}>
-                  Priority {sortArrow("priority")}
+                {cols.client && <th>Client</th>}
+                {cols.practice && <th>Practice Area</th>}
+                {cols.tasks && <th>Tasks</th>}
+                {cols.rate && <th>Rate</th>}
+                {cols.priority && (
+                  <th className="sortable" onClick={() => toggleSort("priority")}>
+                    Priority {sortArrow("priority")}
+                  </th>
+                )}
+                {cols.status && <th>Status</th>}
+                <th className="col-menu-th" ref={colMenuRef}>
+                  <button
+                    type="button"
+                    className="col-menu-btn"
+                    onClick={() => setColMenuOpen((o) => !o)}
+                    title="Add or remove columns"
+                    aria-label="Add or remove columns"
+                  >
+                    +
+                  </button>
+                  {colMenuOpen && (
+                    <div className="col-menu">
+                      <div className="col-menu-head">Columns</div>
+                      {COL_DEFS.map((c) => (
+                        <label key={c.key} className="col-menu-item">
+                          <input
+                            type="checkbox"
+                            checked={cols[c.key]}
+                            onChange={() => toggleCol(c.key)}
+                          />
+                          <span>{c.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </th>
-                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -456,6 +521,7 @@ export default function MattersPage() {
                       {m.name}
                     </Link>
                   </td>
+                  {cols.client && (
                   <td>
                     {m.client_id ? (
                       <Link
@@ -468,6 +534,8 @@ export default function MattersPage() {
                       <span className="inline-placeholder">—</span>
                     )}
                   </td>
+                  )}
+                  {cols.practice && (
                   <td>
                     <InlineSelect
                       value={m.practice_area ?? PRACTICE_AREAS[0]}
@@ -478,6 +546,8 @@ export default function MattersPage() {
                       onSave={(v) => patch(m.id, { practice_area: v })}
                     />
                   </td>
+                  )}
+                  {cols.tasks && (
                   <td>
                     {pendingTasks[m.id] ? (
                       <span className="task-pop-wrap">
@@ -502,6 +572,8 @@ export default function MattersPage() {
                       <span className="inline-placeholder">—</span>
                     )}
                   </td>
+                  )}
+                  {cols.rate && (
                   <td>
                     <InlineNumber
                       value={m.hourly_rate}
@@ -510,6 +582,8 @@ export default function MattersPage() {
                       onSave={(v) => patch(m.id, { hourly_rate: v })}
                     />
                   </td>
+                  )}
+                  {cols.priority && (
                   <td>
                     <InlineSelect
                       value={m.priority}
@@ -521,6 +595,8 @@ export default function MattersPage() {
                       onSave={(v) => patch(m.id, { priority: v })}
                     />
                   </td>
+                  )}
+                  {cols.status && (
                   <td>
                     <InlineSelect
                       value={m.status}
@@ -532,6 +608,8 @@ export default function MattersPage() {
                       onSave={(v) => changeStatus(m, v)}
                     />
                   </td>
+                  )}
+                  <td className="col-menu-cell" aria-hidden="true" />
                 </tr>
               ))}
             </tbody>
