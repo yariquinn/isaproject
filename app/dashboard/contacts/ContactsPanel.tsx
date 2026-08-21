@@ -37,6 +37,7 @@ export default function ContactsPanel() {
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const filterRef = useRef<HTMLDivElement>(null);
 
   const [cols, setCols] = useState<Record<ColKey, boolean>>({
@@ -85,6 +86,28 @@ export default function ContactsPanel() {
   async function patch(id: string, changes: Partial<Contact>) {
     setContacts((prev) => prev.map((c) => (c.id === id ? { ...c, ...changes } : c)));
     await supabase.from("contacts").update(changes).eq("id", id);
+  }
+
+  const toggleSel = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  async function bulkPatch(changes: Partial<Contact>) {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setContacts((prev) => prev.map((c) => (selected.has(c.id) ? { ...c, ...changes } : c)));
+    setSelected(new Set());
+    await supabase.from("contacts").update(changes).in("id", ids);
+  }
+  async function bulkDelete() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (!window.confirm(`Delete ${ids.length} contact${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    setContacts((prev) => prev.filter((c) => !selected.has(c.id)));
+    setSelected(new Set());
+    await supabase.from("contacts").delete().in("id", ids);
   }
   async function addContact() {
     if (!form.name.trim()) return;
@@ -218,22 +241,48 @@ export default function ContactsPanel() {
         />
       </div>
 
+      {selected.size > 0 && (
+        <div className="bulk-bar">
+          <span className="bulk-count">{selected.size} selected</span>
+          <label>
+            Type
+            <select defaultValue="" onChange={(e) => { if (e.target.value) bulkPatch({ role: e.target.value }); e.target.value = ""; }}>
+              <option value="">Change…</option>
+              {CONTACT_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </label>
+          <button type="button" className="ghost sm" onClick={() => bulkPatch({ archived: true })}>Archive</button>
+          <button type="button" className="ghost sm" onClick={() => bulkPatch({ archived: false })}>Unarchive</button>
+          <button type="button" className="ghost sm bulk-danger" onClick={bulkDelete}>Delete</button>
+          <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
+        </div>
+      )}
+
       {loading ? (
         <p className="muted-line">Loading…</p>
       ) : (
         <div className="table-wrap fill-table table-wrap-noscroll">
           <table className="data-table data-table-wrap-cells">
             <colgroup>
+              <col style={{ width: "38px" }} />
               {cols.organization && <col style={{ width: "18%" }} />}
               <col style={{ width: "19%" }} />
               {cols.role && <col style={{ width: "18%" }} />}
               {cols.email && <col style={{ width: "20%" }} />}
               {cols.phone && <col style={{ width: "12%" }} />}
               {cols.address && <col style={{ width: "17%" }} />}
-              <col style={{ width: "72px" }} />
+              <col style={{ width: "44px" }} />
             </colgroup>
             <thead>
               <tr>
+                <th className="check-col">
+                  <input
+                    type="checkbox"
+                    checked={rows.length > 0 && rows.every((c) => selected.has(c.id))}
+                    onChange={(e) => setSelected(e.target.checked ? new Set(rows.map((c) => c.id)) : new Set())}
+                    aria-label="Select all"
+                  />
+                </th>
                 {cols.organization && <th className="sortable" onClick={() => toggleCsort("organization")}>Firm {csortArrow("organization")}</th>}
                 <th className="sortable" onClick={() => toggleCsort("name")}>Contact {csortArrow("name")}</th>
                 {cols.role && <th>Type</th>}
@@ -259,13 +308,16 @@ export default function ContactsPanel() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={2 + Number(cols.role) + Number(cols.organization) + Number(cols.email) + Number(cols.phone) + Number(cols.address)} className="muted-line" style={{ padding: "1.2rem 1.1rem" }}>
+                  <td colSpan={3 + Number(cols.role) + Number(cols.organization) + Number(cols.email) + Number(cols.phone) + Number(cols.address)} className="muted-line" style={{ padding: "1.2rem 1.1rem" }}>
                     No contacts yet — click + to add outside counsel, co-counsel, adverse party lawyers, experts, and more.
                   </td>
                 </tr>
               )}
               {rows.map((c) => (
-                <tr key={c.id} className={c.archived ? "row-closed" : undefined}>
+                <tr key={c.id} className={`${selected.has(c.id) ? "row-selected " : ""}${c.archived ? "row-closed" : ""}`.trim() || undefined}>
+                  <td className="check-col">
+                    <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggleSel(c.id)} aria-label={`Select ${c.name}`} />
+                  </td>
                   {cols.organization && (
                   <td>
                     <InlineText value={c.organization} onSave={(v) => patch(c.id, { organization: v || null })} placeholder="—" />
@@ -300,15 +352,6 @@ export default function ContactsPanel() {
                   </td>
                   )}
                   <td className="ct-actions">
-                    <button
-                      type="button"
-                      className="ct-archive"
-                      aria-label={c.archived ? `Unarchive ${c.name}` : `Archive ${c.name}`}
-                      title={c.archived ? "Unarchive" : "Archive"}
-                      onClick={() => patch(c.id, { archived: !c.archived })}
-                    >
-                      {c.archived ? "↩" : "🗄"}
-                    </button>
                     <button type="button" className="ct-del" aria-label={`Delete ${c.name}`} title="Delete" onClick={() => removeContact(c.id)}>✕</button>
                   </td>
                 </tr>

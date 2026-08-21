@@ -1253,8 +1253,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "contacts" && (
           <>
-            <div className="mc-head">
-              <span className="ev-section" style={{ margin: 0 }}>Contacts</span>
+            <div className="mc-head" style={{ justifyContent: "flex-end" }}>
               <button type="button" className="ghost sm" onClick={() => setAddContactOpen(true)}>+ Add contact</button>
             </div>
             <div className="mc-cols">

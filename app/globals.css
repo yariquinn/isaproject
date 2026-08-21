@@ -810,8 +810,9 @@ section.block.alt {
 .hdr-search-menu {
   position: absolute;
   top: calc(100% + 6px);
-  left: auto;
-  right: 0;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
   z-index: 45;
   width: 480px;
   max-width: 90vw;
@@ -860,8 +861,11 @@ section.block.alt {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.hdr-search-sub {
-  white-space: nowrap;
+.hdr-search-status-slot {
+  flex: none;
+  width: 82px;
+  display: flex;
+  justify-content: flex-end;
 }
 .hdr-search-status {
   flex: none;
@@ -878,8 +882,12 @@ section.block.alt {
   color: var(--dash-muted);
 }
 .hdr-search-sub {
-  margin-left: auto;
   flex: none;
+  width: 120px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 0.74rem;
   color: var(--dash-muted);
 }

@@ -70,7 +70,7 @@ function GlobalSearch() {
       for (const c of (clients as { id: string; name: string; primary_contact: string | null; archived: boolean | null }[]) ?? [])
         list.push({ kind: "client", id: c.id, name: c.name, sub: c.primary_contact, closed: !!c.archived });
       for (const m of (matters as { id: string; name: string; practice_area: string | null; status: string | null }[]) ?? [])
-        list.push({ kind: "matter", id: m.id, name: m.name, sub: m.practice_area, closed: m.status === "closed" });
+        list.push({ kind: "matter", id: m.id, name: m.name, sub: null, closed: m.status === "closed" });
       // Active first, archived/closed last (stable within each group).
       list.sort((a, b) => (a.closed ? 1 : 0) - (b.closed ? 1 : 0));
       setHits(list);
@@ -111,8 +111,8 @@ function GlobalSearch() {
                 >
                   <span className={`hdr-search-kind hdr-search-${h.kind}`}>{h.kind === "client" ? "Client" : "Matter"}</span>
                   <span className="hdr-search-name">{h.name}</span>
-                  {h.closed && <span className="hdr-search-status">Archived</span>}
-                  {h.sub && <span className="hdr-search-sub">{h.sub}</span>}
+                  <span className="hdr-search-status-slot">{h.closed && <span className="hdr-search-status">Archived</span>}</span>
+                  <span className="hdr-search-sub">{h.sub}</span>
                 </Link>
               ))
             )}
