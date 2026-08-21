@@ -5466,6 +5466,81 @@ a.activity-row:hover .act-desc {
   color: var(--dash-fg);
   font-size: 0.9rem;
 }
+/* Settings sub-nav layout */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  align-items: start;
+}
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  position: sticky;
+  top: 66px;
+}
+.settings-nav-item {
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--dash-muted);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.settings-nav-item:hover {
+  background: color-mix(in srgb, var(--dash-fg) 5%, transparent);
+  color: var(--dash-fg);
+}
+.settings-nav-item.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.settings-body { min-width: 0; }
+.rate-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--dash-muted);
+}
+.rate-input input {
+  width: 90px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+}
+.perms-table select {
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+}
+.integration-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--dash-border);
+}
+.integration-row:first-of-type { border-top: none; }
+@media (max-width: 720px) {
+  .settings-layout { grid-template-columns: 1fr; }
+  .settings-nav { flex-direction: row; flex-wrap: wrap; position: static; }
+}
 
 /* Bulk edit */
 .bulk-bar {

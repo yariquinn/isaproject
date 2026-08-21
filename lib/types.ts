@@ -175,6 +175,27 @@ export const ATTORNEYS = [
   "Paralegal",
 ] as const;
 
+export type UserSettings = {
+  name: string;
+  hourly_rate: number;
+  role: string;
+  can_manage_billing: boolean;
+  can_manage_users: boolean;
+  can_manage_matters: boolean;
+  can_view_reports: boolean;
+  notify_email: boolean;
+  notify_text: boolean;
+  notify_popup: boolean;
+  created_at?: string;
+};
+
+export const USER_ROLES = [
+  { value: "admin", label: "Admin" },
+  { value: "attorney", label: "Attorney" },
+  { value: "staff", label: "Staff" },
+  { value: "viewer", label: "Viewer" },
+] as const;
+
 export type TaskComment = {
   id: string;
   todo_id: string;
