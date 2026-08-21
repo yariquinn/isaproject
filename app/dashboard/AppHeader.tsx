@@ -25,7 +25,7 @@ type Alert = {
   high: boolean;
 };
 
-type SearchHit = { kind: "client" | "matter"; id: string; name: string; sub: string | null };
+type SearchHit = { kind: "client" | "matter"; id: string; name: string; sub: string | null; closed: boolean };
 
 function GlobalSearch() {
   const [q, setQ] = useState("");
@@ -68,15 +68,15 @@ function GlobalSearch() {
     let cancelled = false;
     const run = async () => {
       const [{ data: clients }, { data: matters }] = await Promise.all([
-        supabase.from("clients").select("id,name,primary_contact").ilike("name", `%${term}%`).limit(6),
-        supabase.from("matters").select("id,name,practice_area").ilike("name", `%${term}%`).limit(6),
+        supabase.from("clients").select("id,name,primary_contact,archived").ilike("name", `%${term}%`).limit(6),
+        supabase.from("matters").select("id,name,practice_area,status").ilike("name", `%${term}%`).limit(6),
       ]);
       if (cancelled) return;
       const list: SearchHit[] = [];
-      for (const c of (clients as { id: string; name: string; primary_contact: string | null }[]) ?? [])
-        list.push({ kind: "client", id: c.id, name: c.name, sub: c.primary_contact });
-      for (const m of (matters as { id: string; name: string; practice_area: string | null }[]) ?? [])
-        list.push({ kind: "matter", id: m.id, name: m.name, sub: m.practice_area });
+      for (const c of (clients as { id: string; name: string; primary_contact: string | null; archived: boolean | null }[]) ?? [])
+        list.push({ kind: "client", id: c.id, name: c.name, sub: c.primary_contact, closed: !!c.archived });
+      for (const m of (matters as { id: string; name: string; practice_area: string | null; status: string | null }[]) ?? [])
+        list.push({ kind: "matter", id: m.id, name: m.name, sub: m.practice_area, closed: m.status === "closed" });
       setHits(list);
     };
     const t = setTimeout(run, 150);
@@ -123,11 +123,12 @@ function GlobalSearch() {
                 <Link
                   key={`${h.kind}-${h.id}`}
                   href={h.kind === "client" ? `/dashboard/clients/${h.id}` : `/dashboard/matters/${h.id}`}
-                  className="hdr-search-hit"
+                  className={`hdr-search-hit${h.closed ? " closed" : ""}`}
                   onClick={() => { setOpen(false); setQ(""); }}
                 >
                   <span className={`hdr-search-kind hdr-search-${h.kind}`}>{h.kind === "client" ? "Client" : "Matter"}</span>
                   <span className="hdr-search-name">{h.name}</span>
+                  {h.closed && <span className="hdr-search-status">{h.kind === "client" ? "Archived" : "Closed"}</span>}
                   {h.sub && <span className="hdr-search-sub">{h.sub}</span>}
                 </Link>
               ))
