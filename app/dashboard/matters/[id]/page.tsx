@@ -1196,7 +1196,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         {bodyTab === "time" && (
           <TimeEntriesTab
             entries={entries}
-            rate={matter.hourly_rate}
+            rate={matter.rate_type === "flat" ? 0 : matter.hourly_rate}
             onAddEntry={addEntry}
             onChanged={loadAll}
             rateControl={
