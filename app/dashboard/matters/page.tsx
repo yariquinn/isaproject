@@ -578,12 +578,22 @@ export default function MattersPage() {
                   )}
                   {cols.rate && (
                   <td>
-                    <InlineNumber
-                      value={m.hourly_rate}
-                      prefix="$"
-                      suffix={m.rate_type === "flat" ? " flat fee" : "/hr"}
-                      onSave={(v) => patch(m.id, { hourly_rate: v })}
-                    />
+                    <span className="rate-cell">
+                      <InlineNumber
+                        value={m.hourly_rate}
+                        prefix="$"
+                        onSave={(v) => patch(m.id, { hourly_rate: v })}
+                      />
+                      <select
+                        className="rate-type-select"
+                        value={m.rate_type ?? "hourly"}
+                        onChange={(e) => patch(m.id, { rate_type: e.target.value })}
+                        aria-label="Rate type"
+                      >
+                        <option value="flat">flat fee</option>
+                        <option value="hourly">/hr</option>
+                      </select>
+                    </span>
                   </td>
                   )}
                   {cols.priority && (

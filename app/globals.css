@@ -1787,6 +1787,7 @@ section.block.alt {
   width: 44px;
   position: relative;
   text-align: center;
+  vertical-align: middle;
 }
 .col-menu-btn {
   display: inline-flex;
@@ -1794,13 +1795,16 @@ section.block.alt {
   justify-content: center;
   width: 24px;
   height: 24px;
+  padding: 0;
   border: 1px solid var(--dash-border);
   background: var(--dash-surface);
   color: var(--dash-muted);
   border-radius: 50%;
-  font-size: 1rem;
-  line-height: 1;
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 0;
   cursor: pointer;
+  vertical-align: middle;
 }
 .col-menu-btn:hover {
   border-color: var(--accent);
@@ -6295,6 +6299,26 @@ a.activity-row:hover .act-desc {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+}
+.rate-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  white-space: nowrap;
+}
+.rate-cell .rate-type-select {
+  min-width: 0;
+  padding: 0.05rem 0.15rem 0.05rem 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--dash-muted);
+  cursor: pointer;
+  appearance: none;
+}
+.rate-cell .rate-type-select:hover {
+  color: var(--accent);
 }
 .rate-type-select.inline-select {
   min-width: 0;

@@ -1467,7 +1467,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       const created = i.issued_date || i.created_at;
                       const due = i.status === "paid" ? 0 : i.amount;
                       return (
-                        <tr key={i.id} className="inv-row" onClick={() => router.push(`/dashboard/invoices/${i.id}`)}>
+                        <tr key={i.id} className="inv-row" onClick={() => router.push(`/dashboard/invoices/${i.id}?from=/dashboard/matters/${matter.id}`)}>
                           <td className="strong-cell">{i.number || "—"}</td>
                           <td>
                             {created
