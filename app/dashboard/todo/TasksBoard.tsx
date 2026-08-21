@@ -367,8 +367,12 @@ export default function TasksBoard() {
         {listTasks.length === 0 ? (
           <p className="muted-line" style={{ padding: "1rem" }}>No tasks.</p>
         ) : (
-          listTasks.map((t) => (
-            <div key={t.id} className={`tb-lv-row${t.done ? " done" : ""}`}>
+          listTasks.map((t, i) => (
+            <div key={t.id}>
+            {t.done && (i === 0 || !listTasks[i - 1].done) && (
+              <div className="tb-lv-divider">Completed</div>
+            )}
+            <div className={`tb-lv-row${t.done ? " done" : ""}`}>
               <span className="tb-lv-task" onClick={(e) => { e.stopPropagation(); setLvEdit({ id: t.id, field: "title" }); }}>
                 {lvEditing(t.id, "title") ? (
                   <input
@@ -458,6 +462,7 @@ export default function TasksBoard() {
                   </span>
                 )}
               </span>
+            </div>
             </div>
           ))
         )}

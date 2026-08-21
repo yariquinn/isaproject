@@ -7055,8 +7055,8 @@ a.activity-row:hover .act-desc {
   line-height: 1.35;
 }
 .kb-card-title.done {
-  text-decoration: line-through;
   color: var(--dash-muted);
+  opacity: 0.65;
 }
 .kb-card-meta {
   display: flex;
@@ -7963,8 +7963,18 @@ a.activity-row:hover .act-desc {
   background: color-mix(in srgb, var(--dash-fg) 3%, transparent);
 }
 .tb-lv-row.done .tb-lv-task {
-  text-decoration: line-through;
   color: var(--dash-muted);
+  opacity: 0.6;
+}
+.tb-lv-divider {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  padding: 0.7rem 1.1rem 0.3rem;
+  border-top: 1px solid var(--dash-border);
+  margin-top: 0.3rem;
 }
 .tb-lv-task {
   display: flex;
@@ -8356,7 +8366,8 @@ a.activity-row:hover .act-desc {
   opacity: 0.55;
 }
 .tb-card.done .tb-card-title {
-  text-decoration: line-through;
+  color: var(--dash-muted);
+  opacity: 0.65;
 }
 .tb-card-time {
   display: flex;
