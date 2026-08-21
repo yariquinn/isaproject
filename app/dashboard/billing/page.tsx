@@ -30,6 +30,8 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"invoices" | "time" | "timesheet">("invoices");
   const [invFilter, setInvFilter] = useState<InvoiceBucket | "all">("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selEntries, setSelEntries] = useState<Set<string>>(new Set());
 
   async function load() {
     const [{ data: inv }, { data: e }, { data: m }, { data: c }] =
@@ -79,6 +81,69 @@ export default function BillingPage() {
     () => (invFilter === "all" ? invoices : invoices.filter((i) => invoiceBucket(i) === invFilter)),
     [invoices, invFilter],
   );
+
+  const toggleSel = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const allShownSelected = shownInvoices.length > 0 && shownInvoices.every((i) => selected.has(i.id));
+  const toggleAllShown = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allShownSelected) shownInvoices.forEach((i) => next.delete(i.id));
+      else shownInvoices.forEach((i) => next.add(i.id));
+      return next;
+    });
+  async function bulkSetStatus(status: string) {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    const patch: Record<string, unknown> = { status };
+    const nowIso = new Date().toISOString();
+    if (status === "sent") patch.sent_at = nowIso;
+    if (status === "viewed") patch.viewed_at = nowIso;
+    await supabase.from("invoices").update(patch).in("id", ids);
+    setSelected(new Set());
+    load();
+  }
+  async function bulkDelete() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (!window.confirm(`Delete ${ids.length} invoice${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    await supabase.from("invoice_items").delete().in("invoice_id", ids);
+    await supabase.from("invoices").delete().in("id", ids);
+    setSelected(new Set());
+    load();
+  }
+
+  const toggleSelEntry = (id: string) =>
+    setSelEntries((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const allEntriesSelected = entries.length > 0 && entries.every((e) => selEntries.has(e.id));
+  const toggleAllEntries = () =>
+    setSelEntries((prev) => {
+      if (allEntriesSelected) return new Set();
+      return new Set(entries.map((e) => e.id));
+    });
+  async function bulkEntries(patch: Record<string, unknown>) {
+    const ids = [...selEntries];
+    if (ids.length === 0) return;
+    await supabase.from("time_entries").update(patch).in("id", ids);
+    setSelEntries(new Set());
+    load();
+  }
+  async function bulkDeleteEntries() {
+    const ids = [...selEntries];
+    if (ids.length === 0) return;
+    if (!window.confirm(`Delete ${ids.length} time ${ids.length === 1 ? "entry" : "entries"}? This cannot be undone.`)) return;
+    await supabase.from("time_entries").delete().in("id", ids);
+    setSelEntries(new Set());
+    load();
+  }
 
   return (
     <div>
@@ -151,6 +216,18 @@ export default function BillingPage() {
             ))}
           </div>
 
+          {selected.size > 0 && (
+            <div className="bulk-bar">
+              <span className="bulk-count">{selected.size} selected</span>
+              <button type="button" className="ghost sm" onClick={() => bulkSetStatus("sent")}>Mark sent</button>
+              <button type="button" className="ghost sm" onClick={() => bulkSetStatus("viewed")}>Mark viewed</button>
+              <button type="button" className="ghost sm" onClick={() => bulkSetStatus("paid")}>Mark paid</button>
+              <button type="button" className="ghost sm" onClick={() => bulkSetStatus("created")}>Mark created</button>
+              <button type="button" className="ghost sm bulk-danger" onClick={bulkDelete}>Delete</button>
+              <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
+            </div>
+          )}
+
           {loading ? (
             <p className="muted-line">Loading…</p>
           ) : shownInvoices.length === 0 ? (
@@ -160,6 +237,9 @@ export default function BillingPage() {
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th className="check-col">
+                      <input type="checkbox" checked={allShownSelected} onChange={toggleAllShown} aria-label="Select all" />
+                    </th>
                     <th>Invoice</th>
                     <th>Client</th>
                     <th>Matter</th>
@@ -172,7 +252,10 @@ export default function BillingPage() {
                   {shownInvoices.map((i) => {
                     const bucket = invoiceBucket(i);
                     return (
-                    <tr key={i.id}>
+                    <tr key={i.id} className={selected.has(i.id) ? "row-selected" : undefined}>
+                      <td className="check-col">
+                        <input type="checkbox" checked={selected.has(i.id)} onChange={() => toggleSel(i.id)} aria-label={`Select ${i.number || "invoice"}`} />
+                      </td>
                       <td className="strong-cell">
                         <Link href={`/dashboard/invoices/${i.id}`} className="row-link">
                           {i.number || "—"}
@@ -221,6 +304,16 @@ export default function BillingPage() {
             </div>
           </div>
 
+          {selEntries.size > 0 && (
+            <div className="bulk-bar">
+              <span className="bulk-count">{selEntries.size} selected</span>
+              <button type="button" className="ghost sm" onClick={() => bulkEntries({ billable: true })}>Mark billable</button>
+              <button type="button" className="ghost sm" onClick={() => bulkEntries({ billable: false })}>Mark non-billable</button>
+              <button type="button" className="ghost sm bulk-danger" onClick={bulkDeleteEntries}>Delete</button>
+              <button type="button" className="ghost sm" onClick={() => setSelEntries(new Set())}>Clear</button>
+            </div>
+          )}
+
           {loading ? (
             <p className="muted-line">Loading…</p>
           ) : entries.length === 0 ? (
@@ -230,6 +323,9 @@ export default function BillingPage() {
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th className="check-col">
+                      <input type="checkbox" checked={allEntriesSelected} onChange={toggleAllEntries} aria-label="Select all" />
+                    </th>
                     <th>Date</th>
                     <th>Matter</th>
                     <th>Activity</th>
@@ -240,7 +336,10 @@ export default function BillingPage() {
                 </thead>
                 <tbody>
                   {entries.map((e) => (
-                    <tr key={e.id}>
+                    <tr key={e.id} className={selEntries.has(e.id) ? "row-selected" : undefined}>
+                      <td className="check-col">
+                        <input type="checkbox" checked={selEntries.has(e.id)} onChange={() => toggleSelEntry(e.id)} aria-label="Select entry" />
+                      </td>
                       <td>{new Date(e.logged_at).toLocaleDateString()}</td>
                       <td className="strong-cell">
                         {e.matter_id ? (

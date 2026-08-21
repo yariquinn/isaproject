@@ -5462,6 +5462,13 @@ a.activity-row:hover .act-desc {
   font-size: 0.85rem;
   color: var(--dash-fg);
 }
+.bulk-bar .bulk-danger {
+  color: #c0392b;
+  border-color: color-mix(in srgb, #c0392b 40%, transparent);
+}
+.bulk-bar .bulk-danger:hover {
+  background: color-mix(in srgb, #c0392b 12%, transparent);
+}
 .bulk-bar label {
   display: flex;
   align-items: center;
