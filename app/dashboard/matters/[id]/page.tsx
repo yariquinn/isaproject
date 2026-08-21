@@ -10,6 +10,7 @@ import {
   PRIORITIES,
   RATE_TYPES,
   CONTACT_TITLES,
+  CONTACT_ROLES,
   contactRoleLabel,
   personColor,
   type ActivityItem,
@@ -149,6 +150,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [matterContacts, setMatterContacts] = useState<{ linkId: string; contact: Contact }[]>([]);
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
+  const [acTab, setAcTab] = useState<"existing" | "new">("existing");
+  const [acForm, setAcForm] = useState<{ name: string; role: string; organization: string; email: string; phone: string }>({ name: "", role: CONTACT_ROLES[0].value, organization: "", email: "", phone: "" });
+  const [pcModal, setPcModal] = useState(false);
+  const [pcTab, setPcTab] = useState<"search" | "new">("search");
+  const [pcQuery, setPcQuery] = useState("");
+  const [pcForm, setPcForm] = useState({ name: "", email: "", phone: "", address: "" });
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
 
   async function loadMatterContacts() {
@@ -166,6 +173,25 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     await supabase.from("matter_contacts").insert({ matter_id: params.id, contact_id: contactId });
     setAddContactOpen(false);
     setContactSearch("");
+    loadMatterContacts();
+  }
+  async function createAndLinkContact() {
+    if (!acForm.name.trim()) return;
+    const { data } = await supabase.from("contacts").insert({
+      name: acForm.name.trim(),
+      role: acForm.role,
+      organization: acForm.organization.trim() || null,
+      email: acForm.email.trim() || null,
+      phone: acForm.phone.trim() || null,
+    }).select().single();
+    const nc = data as Contact | null;
+    if (nc) {
+      setAllContacts((prev) => [...prev, nc]);
+      await supabase.from("matter_contacts").insert({ matter_id: params.id, contact_id: nc.id });
+    }
+    setAcForm({ name: "", role: CONTACT_ROLES[0].value, organization: "", email: "", phone: "" });
+    setAcTab("existing");
+    setAddContactOpen(false);
     loadMatterContacts();
   }
   async function unlinkContact(linkId: string) {
@@ -449,6 +475,26 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     await supabase.from("clients").update({ [field]: next }).eq("id", clientId);
   }
 
+  async function setClientContact(fields: Partial<Client>) {
+    const cid = matter?.client_id;
+    if (!cid) return;
+    setClients((prev) => prev.map((c) => (c.id === cid ? { ...c, ...fields } : c)));
+    await supabase.from("clients").update(fields).eq("id", cid);
+  }
+  async function applyExistingAsContact(c: Client) {
+    await setClientContact({ primary_contact: c.name, email: c.email, phone: c.phone, address: c.address });
+    setPcModal(false); setPcQuery("");
+  }
+  async function createContactClient() {
+    if (!pcForm.name.trim()) return;
+    await supabase.from("clients").insert({
+      name: pcForm.name.trim(), client_type: "individual", status: "active",
+      email: pcForm.email.trim() || null, phone: pcForm.phone.trim() || null, address: pcForm.address.trim() || null,
+    });
+    await setClientContact({ primary_contact: pcForm.name.trim(), email: pcForm.email.trim() || null, phone: pcForm.phone.trim() || null, address: pcForm.address.trim() || null });
+    setPcForm({ name: "", email: "", phone: "", address: "" }); setPcTab("search"); setPcModal(false);
+  }
+
   async function saveClientNotes(clientId: string, v: string) {
     const next = v.trim() || null;
     setClients((prev) =>
@@ -642,11 +688,17 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   <dt>{clientObj.client_type === "business" ? "Primary contact" : "Name"}</dt>
                   <dd className="cc-primary-contact cc-name-strong">
                     <span className="name-with-title">
-                      <InlineText
-                        value={clientObj.primary_contact}
-                        onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
-                        placeholder="—"
-                      />
+                      {clientObj.client_type === "business" ? (
+                        <button type="button" className="contact-picker" onClick={() => { setPcQuery(""); setPcTab("search"); setPcModal(true); }}>
+                          {clientObj.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
+                        </button>
+                      ) : (
+                        <InlineText
+                          value={clientObj.primary_contact}
+                          onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
+                          placeholder="—"
+                        />
+                      )}
                       {clientObj.client_type === "business" && (
                         <TitlePill
                           value={clientObj.contact_title}
@@ -1496,34 +1548,106 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         <div className="modal-backdrop" onClick={() => setAddContactOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Add a contact to this matter</h3>
-            <p className="modal-dur">Link an existing contact (co-counsel, adverse counsel, expert, etc.).</p>
-            <input
-              className="activity-search"
-              type="search"
-              autoFocus
-              placeholder="Search contacts…"
-              value={contactSearch}
-              onChange={(e) => setContactSearch(e.target.value)}
-              style={{ width: "100%", marginBottom: "0.6rem" }}
-            />
-            <div className="mc-picklist">
-              {allContacts
-                .filter((c) => !matterContacts.some((mc) => mc.contact.id === c.id))
-                .filter((c) => {
-                  const q = contactSearch.trim().toLowerCase();
-                  return q === "" || c.name.toLowerCase().includes(q) || (c.organization || "").toLowerCase().includes(q) || contactRoleLabel(c.role).toLowerCase().includes(q);
-                })
-                .slice(0, 20)
-                .map((c) => (
-                  <button key={c.id} type="button" className="mc-pickitem" onClick={() => linkContact(c.id)}>
-                    <span className="mc-pickname">{c.name}</span>
-                    <span className="mc-pickrole">{contactRoleLabel(c.role)}{c.organization ? ` · ${c.organization}` : ""}</span>
-                  </button>
-                ))}
+            <div className="doc-tabs" style={{ marginBottom: "0.6rem" }}>
+              <button type="button" className={acTab === "existing" ? "active" : undefined} onClick={() => setAcTab("existing")}>Existing contact</button>
+              <button type="button" className={acTab === "new" ? "active" : undefined} onClick={() => setAcTab("new")}>New contact</button>
             </div>
-            <p className="field-note" style={{ marginTop: "0.6rem" }}>
-              Manage the full contacts list on the <Link href="/dashboard/contacts">Contacts</Link> page.
-            </p>
+            {acTab === "existing" ? (
+              <>
+                <input
+                  className="activity-search"
+                  type="search"
+                  autoFocus
+                  placeholder="Search contacts…"
+                  value={contactSearch}
+                  onChange={(e) => setContactSearch(e.target.value)}
+                  style={{ width: "100%", marginBottom: "0.6rem" }}
+                />
+                <div className="mc-picklist">
+                  {allContacts
+                    .filter((c) => !matterContacts.some((mc) => mc.contact.id === c.id))
+                    .filter((c) => {
+                      const q = contactSearch.trim().toLowerCase();
+                      return q === "" || c.name.toLowerCase().includes(q) || (c.organization || "").toLowerCase().includes(q) || contactRoleLabel(c.role).toLowerCase().includes(q);
+                    })
+                    .slice(0, 20)
+                    .map((c) => (
+                      <button key={c.id} type="button" className="mc-pickitem" onClick={() => linkContact(c.id)}>
+                        <span className="mc-pickname">{c.name}</span>
+                        <span className="mc-pickrole">{contactRoleLabel(c.role)}{c.organization ? ` · ${c.organization}` : ""}</span>
+                      </button>
+                    ))}
+                </div>
+                <p className="field-note" style={{ marginTop: "0.6rem" }}>
+                  Manage the full contacts list on the <Link href="/dashboard/contacts">Contacts</Link> page.
+                </p>
+              </>
+            ) : (
+              <>
+                <label>Name
+                  <input autoFocus value={acForm.name} onChange={(e) => setAcForm({ ...acForm, name: e.target.value })} placeholder="e.g. Jane Roe" />
+                </label>
+                <div className="field-pair">
+                  <label>Type
+                    <select value={acForm.role} onChange={(e) => setAcForm({ ...acForm, role: e.target.value })}>
+                      {CONTACT_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                    </select>
+                  </label>
+                  <label>Firm
+                    <input value={acForm.organization} onChange={(e) => setAcForm({ ...acForm, organization: e.target.value })} placeholder="Firm" />
+                  </label>
+                </div>
+                <div className="field-pair">
+                  <label>Email
+                    <input value={acForm.email} onChange={(e) => setAcForm({ ...acForm, email: e.target.value })} />
+                  </label>
+                  <label>Phone
+                    <input value={acForm.phone} onChange={(e) => setAcForm({ ...acForm, phone: e.target.value })} />
+                  </label>
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="ghost" onClick={() => setAddContactOpen(false)}>Cancel</button>
+                  <button type="button" className="btn" disabled={!acForm.name.trim()} onClick={createAndLinkContact}>Create &amp; add</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {pcModal && (
+        <div className="modal-backdrop" onClick={() => setPcModal(false)}>
+          <div className="modal contact-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Set primary contact</h3>
+            <div className="doc-tabs" style={{ marginBottom: "0.5rem" }}>
+              <button type="button" className={pcTab === "search" ? "active" : undefined} onClick={() => setPcTab("search")}>Search existing</button>
+              <button type="button" className={pcTab === "new" ? "active" : undefined} onClick={() => setPcTab("new")}>Add new client</button>
+            </div>
+            {pcTab === "search" ? (
+              <>
+                <input className="activity-search" type="search" autoFocus placeholder="Search clients…" value={pcQuery} onChange={(e) => setPcQuery(e.target.value)} style={{ width: "100%" }} />
+                <div className="matter-pick">
+                  {clients.filter((c) => c.id !== matter?.client_id && (pcQuery.trim() ? c.name.toLowerCase().includes(pcQuery.trim().toLowerCase()) : true)).slice(0, 12).map((c) => (
+                    <button key={c.id} type="button" className="matter-pick-item" onClick={() => applyExistingAsContact(c)}>
+                      <span className="mp-name">{c.name}</span>
+                      <span className="mp-sub">{c.email || "no email"} · {c.phone || "no phone"}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                {(["name", "email", "phone", "address"] as const).map((f) => (
+                  <label key={f}>{f[0].toUpperCase() + f.slice(1)}
+                    <input value={pcForm[f]} onChange={(e) => setPcForm({ ...pcForm, [f]: e.target.value })} />
+                  </label>
+                ))}
+                <div className="modal-actions">
+                  <button type="button" className="ghost" onClick={() => setPcModal(false)}>Cancel</button>
+                  <button type="button" className="btn" onClick={createContactClient} disabled={!pcForm.name.trim()}>Create &amp; set as contact</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
