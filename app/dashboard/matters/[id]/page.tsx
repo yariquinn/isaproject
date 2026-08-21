@@ -26,9 +26,8 @@ import {
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
 import MatterTasksList from "./MatterTasksList";
-import InvoiceEditor from "../../InvoiceEditor";
+import ExpensesTab from "./ExpensesTab";
 import Disclaimer from "../../Disclaimer";
-import NotesFeed from "../../NotesFeed";
 import TimeEntriesTab from "./TimeEntriesTab";
 
 const MATTER_DOCS = [
@@ -141,7 +140,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [editInvoice, setEditInvoice] = useState<string | null>(null);
+  const [docQuery, setDocQuery] = useState("");
   const [events, setEvents] = useState<EventItem[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -414,14 +413,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       prev.map((c) => (c.id === clientId ? { ...c, [field]: next } : c)),
     );
     await supabase.from("clients").update({ [field]: next }).eq("id", clientId);
-  }
-
-  async function saveBillingNotes(clientId: string, v: string) {
-    const next = v.trim() || null;
-    setClients((prev) =>
-      prev.map((c) => (c.id === clientId ? { ...c, billing_notes: next } : c)),
-    );
-    await supabase.from("clients").update({ billing_notes: next }).eq("id", clientId);
   }
 
   async function saveClientNotes(clientId: string, v: string) {
@@ -1196,8 +1187,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
         {bodyTab === "time" && (
-          <>
-          <h3 className="ev-section">Time Entries</h3>
           <TimeEntriesTab
             entries={entries}
             rate={matter.rate_type === "flat" ? 0 : matter.hourly_rate}
@@ -1223,15 +1212,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               </div>
             }
           />
-          </>
         )}
 
         {bodyTab === "expenses" && (
-          <>
-            <h3 className="ev-section">Expenses</h3>
-            <p className="muted-line">No expenses recorded for this matter.</p>
-            <Disclaimer>Expense tracking is a placeholder for now.</Disclaimer>
-          </>
+          <ExpensesTab matterId={matter.id} />
         )}
 
         {bodyTab === "contacts" && (
@@ -1269,15 +1253,20 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
         {bodyTab === "tasks" && (
-          <>
-            <h3 className="ev-section">Tasks</h3>
-            <MatterTasksList matterId={matter.id} />
-          </>
+          <MatterTasksList matterId={matter.id} />
         )}
 
         {bodyTab === "documents" && (
           <>
-            <h3 className="ev-section">Documents</h3>
+            <div className="doc-searchrow">
+              <input
+                className="activity-search head-search"
+                type="search"
+                placeholder="Search documents…"
+                value={docQuery}
+                onChange={(e) => setDocQuery(e.target.value)}
+              />
+            </div>
             <div className="table-wrap" style={{ border: "none" }}>
               <table className="data-table">
                 <thead>
@@ -1287,7 +1276,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {MATTER_DOCS.map((d) => (
+                  {MATTER_DOCS.filter((d) => d.name.toLowerCase().includes(docQuery.trim().toLowerCase())).map((d) => (
                     <tr key={d.name}>
                       <td className="strong-cell">{d.name}</td>
                       <td>{d.updated}</td>
@@ -1302,7 +1291,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "events" && (
           <>
-            <h3 className="ev-section">Upcoming <span className="count-badge">{upcomingEvents.length}</span></h3>
+            <h3 className="ev-section">Upcoming</h3>
             {upcomingEvents.length === 0 ? (
               <p className="muted-line">No upcoming events.</p>
             ) : (
@@ -1387,19 +1376,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "invoices" && (
           <>
-            <h3 className="ev-section">Invoices</h3>
-            {clientObj && (
-              <div className="billing-notes" style={{ marginBottom: "1.25rem" }}>
-                <h3 className="ev-section">Billing Notes</h3>
-                <NotesFeed
-                  value={clientObj.billing_notes}
-                  onSave={(next) => saveBillingNotes(clientObj.id, next ?? "")}
-                  userName={userName}
-                  placeholder="Add a billing note…"
-                  wide
-                />
-              </div>
-            )}
             {invoices.length === 0 ? (
               <p className="muted-line">No invoices for this matter.</p>
             ) : (
@@ -1419,7 +1395,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       const created = i.issued_date || i.created_at;
                       const due = i.status === "paid" ? 0 : i.amount;
                       return (
-                        <tr key={i.id} className="inv-row" onClick={() => setEditInvoice(i.id)}>
+                        <tr key={i.id} className="inv-row" onClick={() => router.push(`/dashboard/invoices/${i.id}`)}>
                           <td className="strong-cell">{i.number || "—"}</td>
                           <td>
                             {created
@@ -1446,14 +1422,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
       </div>
-
-      {editInvoice && (
-        <div className="modal-backdrop" onClick={() => { setEditInvoice(null); loadAll(); }}>
-          <div className="modal inv-modal" onClick={(e) => e.stopPropagation()}>
-            <InvoiceEditor invoiceId={editInvoice} onClose={() => { setEditInvoice(null); loadAll(); }} />
-          </div>
-        </div>
-      )}
 
       {editOpen && (
         <div className="modal-backdrop" onClick={() => setEditOpen(false)}>

@@ -1911,6 +1911,8 @@ section.block.alt {
   background: color-mix(in srgb, #c0392b 10%, transparent);
 }
 /* ---- Invoice editor ---- */
+.doc-searchrow { display: flex; justify-content: flex-end; margin-bottom: 0.9rem; }
+.doc-searchrow .head-search { max-width: 300px; background-color: var(--dash-surface); }
 .inv-row { cursor: pointer; }
 .inv-row:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .modal.inv-modal {
@@ -5974,7 +5976,7 @@ a.activity-row:hover .act-desc {
   align-items: center;
   justify-content: flex-start;
   gap: 0.4rem;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.9rem;
 }
 .du-icon { color: #c0392b; }
 .du-label {

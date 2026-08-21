@@ -1,0 +1,210 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { ATTORNEYS, personColor } from "@/lib/types";
+
+type Expense = {
+  id: string;
+  matter_id: string | null;
+  expense_date: string | null;
+  description: string | null;
+  user_name: string | null;
+  duration_seconds: number | null;
+  quantity: number | null;
+  cost: number | null;
+  amount: number | null;
+  invoiced: boolean;
+};
+
+const money = (n: number) => `$${(n || 0).toFixed(2)}`;
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const initialsOf = (name: string) =>
+  (name || "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
+const fmtHm = (secs: number) => {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  return `${h}h ${m}m`;
+};
+
+type EditCell = { id: string; field: keyof Expense } | null;
+
+export default function ExpensesTab({ matterId }: { matterId: string }) {
+  const [rows, setRows] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [edit, setEdit] = useState<EditCell>(null);
+  const [draft, setDraft] = useState("");
+
+  const [nDate, setNDate] = useState(todayStr());
+  const [nDesc, setNDesc] = useState("");
+  const [nUser, setNUser] = useState<string>(ATTORNEYS[0]);
+  const [nDur, setNDur] = useState("");
+  const [nQty, setNQty] = useState("");
+  const [nCost, setNCost] = useState("");
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("expenses").select("*").eq("matter_id", matterId).order("expense_date", { ascending: false });
+    setRows((data as Expense[]) ?? []);
+    setLoading(false);
+  }, [matterId]);
+  useEffect(() => { load(); }, [load]);
+
+  function commitNew() {
+    const qty = parseFloat(nQty) || 0;
+    const cost = parseFloat(nCost) || 0;
+    if (qty <= 0 && cost <= 0 && !nDesc.trim()) return;
+    const hrs = parseFloat(nDur);
+    supabase.from("expenses").insert({
+      matter_id: matterId,
+      expense_date: nDate,
+      description: nDesc.trim() || null,
+      user_name: nUser,
+      duration_seconds: isNaN(hrs) ? null : Math.round(hrs * 3600),
+      quantity: qty,
+      cost: cost,
+      amount: Number((qty * cost).toFixed(2)),
+      invoiced: false,
+    }).then(() => {
+      setNDesc(""); setNDur(""); setNQty(""); setNCost(""); setNDate(todayStr());
+      load();
+    });
+  }
+
+  async function save(e: Expense, field: keyof Expense, value: unknown) {
+    setEdit(null);
+    const changes: Record<string, unknown> = { [field]: value };
+    if (field === "quantity" || field === "cost") {
+      const q = field === "quantity" ? Number(value) : Number(e.quantity) || 0;
+      const c = field === "cost" ? Number(value) : Number(e.cost) || 0;
+      changes.amount = Number((q * c).toFixed(2));
+    }
+    await supabase.from("expenses").update(changes).eq("id", e.id);
+    load();
+  }
+  async function toggleInvoiced(e: Expense) {
+    await supabase.from("expenses").update({ invoiced: !e.invoiced }).eq("id", e.id);
+    load();
+  }
+  async function remove(e: Expense) {
+    setRows((prev) => prev.filter((x) => x.id !== e.id));
+    await supabase.from("expenses").delete().eq("id", e.id);
+  }
+
+  const startEdit = (e: Expense, field: keyof Expense, initial: string) => { setDraft(initial); setEdit({ id: e.id, field }); };
+  const isEditing = (e: Expense, field: keyof Expense) => edit?.id === e.id && edit.field === field;
+
+  const total = rows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const invoiced = rows.filter((e) => e.invoiced).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const unInvoiced = total - invoiced;
+
+  const stat = (label: string, v: number, cls?: string) => (
+    <div className={`te-stat${cls ? " " + cls : ""}`}>
+      <span className="te-stat-label">{label}</span>
+      <span className="te-stat-amt">{money(v)}</span>
+      <span className="te-stat-hrs">{rows.length} item(s)</span>
+    </div>
+  );
+
+  if (loading) return <p className="muted-line">Loading…</p>;
+
+  return (
+    <>
+      <div className="te-summary">
+        {stat("Total", total)}
+        {stat("Invoiced", invoiced, "ok")}
+        {stat("Un-invoiced", unInvoiced, "warn")}
+      </div>
+
+      <div className="table-wrap" style={{ border: "none" }}>
+        <table className="data-table te-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>User</th>
+              <th>Duration</th>
+              <th>Qty</th>
+              <th>Cost</th>
+              <th>Amount</th>
+              <th>Invoiced</th>
+              <th aria-hidden="true" />
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="te-new-row" onKeyDown={(ev) => { if (ev.key === "Enter" && !ev.shiftKey) commitNew(); }}>
+              <td><input type="date" value={nDate} onChange={(e) => setNDate(e.target.value)} aria-label="New expense date" /></td>
+              <td><input value={nDesc} placeholder="Description…" onChange={(e) => setNDesc(e.target.value)} aria-label="New expense description" /></td>
+              <td>
+                <select value={nUser} onChange={(e) => setNUser(e.target.value)} aria-label="New expense user">
+                  {ATTORNEYS.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </td>
+              <td><input type="number" step="0.25" value={nDur} placeholder="hrs" onChange={(e) => setNDur(e.target.value)} aria-label="New expense duration" /></td>
+              <td><input type="number" step="1" value={nQty} placeholder="qty" onChange={(e) => setNQty(e.target.value)} aria-label="New expense qty" /></td>
+              <td><input type="number" step="0.01" value={nCost} placeholder="$" onChange={(e) => setNCost(e.target.value)} onBlur={commitNew} aria-label="New expense cost" /></td>
+              <td className="ii-amt-cell">{money((parseFloat(nQty) || 0) * (parseFloat(nCost) || 0))}</td>
+              <td colSpan={2} className="te-new-hint">press Enter to add</td>
+            </tr>
+            {rows.map((e) => (
+              <tr key={e.id}>
+                <td>
+                  {isEditing(e, "expense_date") ? (
+                    <input type="date" autoFocus value={draft} onChange={(ev) => setDraft(ev.target.value)} onBlur={() => save(e, "expense_date", draft || null)} />
+                  ) : (
+                    <span className="te-cell" onClick={() => startEdit(e, "expense_date", e.expense_date?.slice(0, 10) ?? "")}>
+                      {e.expense_date ? new Date(e.expense_date.slice(0, 10) + "T00:00:00").toLocaleDateString() : "—"}
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {isEditing(e, "description") ? (
+                    <input autoFocus value={draft} onChange={(ev) => setDraft(ev.target.value)} onBlur={() => save(e, "description", draft.trim() || null)} onKeyDown={(ev) => { if (ev.key === "Enter") ev.currentTarget.blur(); }} />
+                  ) : (
+                    <span className="te-cell" onClick={() => startEdit(e, "description", e.description ?? "")}>{e.description || "—"}</span>
+                  )}
+                </td>
+                <td>
+                  {isEditing(e, "user_name") ? (
+                    <select autoFocus value={draft} onChange={(ev) => setDraft(ev.target.value)} onBlur={() => save(e, "user_name", draft)}>
+                      {ATTORNEYS.map((a) => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  ) : (
+                    <span className="te-cell" onClick={() => startEdit(e, "user_name", e.user_name ?? ATTORNEYS[0])} title={e.user_name ?? undefined}>
+                      <span className="te-initials" style={{ background: personColor(e.user_name) }}>{initialsOf(e.user_name ?? "")}</span>
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {isEditing(e, "duration_seconds") ? (
+                    <input type="number" step="0.25" autoFocus value={draft} onChange={(ev) => setDraft(ev.target.value)} onBlur={() => { const h = parseFloat(draft); save(e, "duration_seconds", isNaN(h) ? null : Math.round(h * 3600)); }} />
+                  ) : (
+                    <span className="te-cell" onClick={() => startEdit(e, "duration_seconds", e.duration_seconds ? (e.duration_seconds / 3600).toFixed(2) : "")}>{e.duration_seconds ? fmtHm(e.duration_seconds) : "—"}</span>
+                  )}
+                </td>
+                <td>
+                  {isEditing(e, "quantity") ? (
+                    <input type="number" step="1" autoFocus value={draft} onChange={(ev) => setDraft(ev.target.value)} onBlur={() => save(e, "quantity", Number(draft) || 0)} />
+                  ) : (
+                    <span className="te-cell" onClick={() => startEdit(e, "quantity", String(e.quantity ?? ""))}>{e.quantity ?? "—"}</span>
+                  )}
+                </td>
+                <td>
+                  {isEditing(e, "cost") ? (
+                    <input type="number" step="0.01" autoFocus value={draft} onChange={(ev) => setDraft(ev.target.value)} onBlur={() => save(e, "cost", Number(draft) || 0)} />
+                  ) : (
+                    <span className="te-cell" onClick={() => startEdit(e, "cost", String(e.cost ?? ""))}>{e.cost != null ? money(e.cost) : "—"}</span>
+                  )}
+                </td>
+                <td className="ii-amt-cell">{money(Number(e.amount) || 0)}</td>
+                <td>
+                  <button type="button" className={`te-toggle${e.invoiced ? " on" : ""}`} onClick={() => toggleInvoiced(e)}>{e.invoiced ? "Invoiced" : "Un-inv"}</button>
+                </td>
+                <td className="ct-actions"><button type="button" className="ct-del" aria-label="Delete expense" onClick={() => remove(e)}>✕</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}

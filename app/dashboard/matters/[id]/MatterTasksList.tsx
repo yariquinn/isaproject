@@ -255,8 +255,8 @@ export default function MatterTasksList({ matterId }: { matterId: string }) {
 
   return (
     <div className="mt-list">
-      {renderGroup("Active tasks", active, "active")}
-      {done.length > 0 && renderGroup("Completed tasks", done, "done")}
+      {renderGroup("Active", active, "active")}
+      {done.length > 0 && renderGroup("Completed", done, "done")}
     </div>
   );
 }
