@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { PRACTICE_AREAS, ATTORNEYS, CLIENT_TYPES, type ActivityItem, type Client, type Matter } from "@/lib/types";
+import { PRACTICE_AREAS, ATTORNEYS, CLIENT_TYPES, CONTACT_TITLES, type ActivityItem, type Client, type Matter } from "@/lib/types";
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
@@ -307,14 +307,25 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
               <div>
                 <dt>Primary contact</dt>
                 <dd className="cc-name-strong">
-                  <button type="button" className="contact-picker" onClick={openContactModal}>
-                    {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
-                  </button>
+                  <span className="name-with-title">
+                    <button type="button" className="contact-picker" onClick={openContactModal}>
+                      {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
+                    </button>
+                    <select
+                      className="title-pill"
+                      value={client.contact_title ?? ""}
+                      onChange={(e) => patch({ contact_title: e.target.value || null })}
+                      aria-label="Title"
+                    >
+                      <option value="">+ Title</option>
+                      {CONTACT_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+                      {client.contact_title && !(CONTACT_TITLES as readonly string[]).includes(client.contact_title) && (
+                        <option value={client.contact_title}>{client.contact_title}</option>
+                      )}
+                    </select>
+                  </span>
                 </dd>
               </div>
-            )}
-            {client.client_type === "business" && (
-              <div><dt>Title</dt><dd><Guarded field="contact_title" label="title" /></dd></div>
             )}
             <div><dt>Email</dt><dd><Guarded field="email" label="email" type="email" /></dd></div>
             <div><dt>Phone</dt><dd><Guarded field="phone" label="phone number" type="tel" /></dd></div>

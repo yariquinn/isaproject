@@ -9,6 +9,7 @@ import {
   PRACTICE_AREAS,
   PRIORITIES,
   RATE_TYPES,
+  CONTACT_TITLES,
   contactRoleLabel,
   personColor,
   type ActivityItem,
@@ -639,25 +640,29 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 <div>
                   <dt>{clientObj.client_type === "business" ? "Primary contact" : "Name"}</dt>
                   <dd className="cc-primary-contact cc-name-strong">
-                    <InlineText
-                      value={clientObj.primary_contact}
-                      onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
-                      placeholder="—"
-                    />
-                  </dd>
-                </div>
-                {clientObj.client_type === "business" && (
-                  <div>
-                    <dt>Title</dt>
-                    <dd>
+                    <span className="name-with-title">
                       <InlineText
-                        value={clientObj.contact_title}
-                        onSave={(v) => saveClientField(clientObj.id, "contact_title", v)}
+                        value={clientObj.primary_contact}
+                        onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
                         placeholder="—"
                       />
-                    </dd>
-                  </div>
-                )}
+                      {clientObj.client_type === "business" && (
+                        <select
+                          className="title-pill"
+                          value={clientObj.contact_title ?? ""}
+                          onChange={(e) => saveClientField(clientObj.id, "contact_title", e.target.value)}
+                          aria-label="Title"
+                        >
+                          <option value="">+ Title</option>
+                          {CONTACT_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+                          {clientObj.contact_title && !(CONTACT_TITLES as readonly string[]).includes(clientObj.contact_title) && (
+                            <option value={clientObj.contact_title}>{clientObj.contact_title}</option>
+                          )}
+                        </select>
+                      )}
+                    </span>
+                  </dd>
+                </div>
                 <div>
                   <dt>Email</dt>
                   <dd>

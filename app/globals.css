@@ -5233,6 +5233,30 @@ a.activity-row:hover .act-desc {
   font-weight: 700;
   color: var(--dash-fg);
 }
+.name-with-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.title-pill {
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-border);
+  border-radius: 20px;
+  padding: 0.12rem 0.5rem;
+  cursor: pointer;
+  appearance: none;
+}
+.title-pill:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--dash-border));
+}
 .cc-notes {
   margin-top: 0.9rem;
   padding-top: 0.9rem;
