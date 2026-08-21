@@ -201,7 +201,9 @@ export default function ClientsPage() {
   const openMatterPop = (id: string, el: HTMLElement) => {
     if (popCloseTimer.current) clearTimeout(popCloseTimer.current);
     const r = el.getBoundingClientRect();
-    setMatterPop({ id, top: r.bottom + 6, left: Math.min(r.left, window.innerWidth - 260) });
+    // Centre the popover under the badge, clamped to stay on-screen.
+    const center = Math.max(130, Math.min(r.left + r.width / 2, window.innerWidth - 130));
+    setMatterPop({ id, top: r.bottom + 6, left: center });
   };
   const scheduleClosePop = () => {
     if (popCloseTimer.current) clearTimeout(popCloseTimer.current);

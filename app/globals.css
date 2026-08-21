@@ -5493,7 +5493,7 @@ a.activity-row:hover .act-desc {
   left: auto;
   opacity: 1;
   visibility: visible;
-  transform: none;
+  transform: translateX(-50%);
   pointer-events: auto;
   z-index: 60;
 }
