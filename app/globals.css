@@ -1045,12 +1045,13 @@ section.block.alt {
 }
 .app-header .tracker-icon {
   position: relative;
+  width: 34px;
   min-width: 34px;
   height: 34px;
-  padding: 0 0.45rem;
+  padding: 0;
   justify-content: center;
   gap: 0.4rem;
-  background: transparent;
+  background: color-mix(in srgb, var(--dash-fg) 7%, transparent);
   border: none;
   color: var(--dash-fg);
   border-radius: 9px;
@@ -1330,8 +1331,8 @@ section.block.alt {
 }
 .hdr-bell-badge {
   position: absolute;
-  top: 2px;
-  right: 3px;
+  top: -3px;
+  right: 0;
   min-width: 15px;
   height: 15px;
   padding: 0 3px;

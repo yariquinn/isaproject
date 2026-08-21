@@ -462,7 +462,7 @@ export default function ClientsPage() {
 
   return (
     <div>
-      <div className="doc-tabs" style={{ marginBottom: "1rem" }}>
+      <div className="doc-tabs" style={{ marginBottom: "1rem", justifyContent: "flex-end" }}>
         <button type="button" className={mainTab === "clients" ? "active" : undefined} onClick={() => setMainTab("clients")}>
           Clients <span className="count-badge">{clients.length}</span>
         </button>
