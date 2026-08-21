@@ -42,6 +42,8 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [splitOpen, setSplitOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [billingOther, setBillingOther] = useState(false);
+  const [billingSearch, setBillingSearch] = useState("");
+  const [billingSearchOpen, setBillingSearchOpen] = useState(false);
   const [addMatterOpen, setAddMatterOpen] = useState(false);
   const [mForm, setMForm] = useState({ name: "", practice_area: PRACTICE_AREAS[0] as string, assigned_to: ATTORNEYS[0] as string });
   const [mSaving, setMSaving] = useState(false);
@@ -307,23 +309,28 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
               <div>
                 <dt>Primary contact</dt>
                 <dd className="cc-name-strong">
-                  <span className="name-with-title">
-                    <button type="button" className="contact-picker" onClick={openContactModal}>
-                      {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
-                    </button>
-                    <select
-                      className="title-pill"
-                      value={client.contact_title ?? ""}
-                      onChange={(e) => patch({ contact_title: e.target.value || null })}
-                      aria-label="Title"
-                    >
-                      <option value="">+ Title</option>
-                      {CONTACT_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
-                      {client.contact_title && !(CONTACT_TITLES as readonly string[]).includes(client.contact_title) && (
-                        <option value={client.contact_title}>{client.contact_title}</option>
-                      )}
-                    </select>
-                  </span>
+                  <button type="button" className="contact-picker" onClick={openContactModal}>
+                    {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
+                  </button>
+                </dd>
+              </div>
+            )}
+            {client.client_type === "business" && (
+              <div>
+                <dt>Title</dt>
+                <dd>
+                  <select
+                    className="title-line-select"
+                    value={client.contact_title ?? ""}
+                    onChange={(e) => patch({ contact_title: e.target.value || null })}
+                    aria-label="Title"
+                  >
+                    <option value="">—</option>
+                    {CONTACT_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {client.contact_title && !(CONTACT_TITLES as readonly string[]).includes(client.contact_title) && (
+                      <option value={client.contact_title}>{client.contact_title}</option>
+                    )}
+                  </select>
                 </dd>
               </div>
             )}
@@ -512,17 +519,54 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                       <option value="__other">Other / new contact…</option>
                     </select>
                   </label>
-                  {mode === "__other" && (
-                    <label>
-                      Contact name
-                      <input
-                        autoFocus
-                        value={bc ?? ""}
-                        onChange={(e) => patch({ billing_contact: e.target.value || null })}
-                        placeholder="Billing contact name"
-                      />
-                    </label>
-                  )}
+                  {mode === "__other" && (() => {
+                    const bq = billingSearch.trim().toLowerCase();
+                    const bmatches = allClients
+                      .filter((c) => c.id !== params.id && (bq ? c.name.toLowerCase().includes(bq) : true))
+                      .slice(0, 6);
+                    return (
+                      <label>
+                        Contact name
+                        <div className="billing-search">
+                          <input
+                            autoFocus
+                            value={billingSearchOpen ? billingSearch : (bc ?? "")}
+                            onChange={(e) => { setBillingSearch(e.target.value); setBillingSearchOpen(true); patch({ billing_contact: e.target.value || null }); }}
+                            onFocus={() => { setBillingSearch(bc ?? ""); setBillingSearchOpen(true); }}
+                            onBlur={() => setTimeout(() => setBillingSearchOpen(false), 150)}
+                            placeholder="Search existing clients or type a new name…"
+                          />
+                          {billingSearchOpen && (
+                            <div className="billing-search-menu">
+                              {bmatches.map((c) => (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  className="billing-search-hit"
+                                  onMouseDown={() => {
+                                    patch({ billing_contact: c.name, billing_email: c.email, billing_phone: c.phone });
+                                    setBillingSearchOpen(false);
+                                  }}
+                                >
+                                  <span>{c.name}</span>
+                                  <span className="billing-search-sub">{c.email || c.phone || "existing client"}</span>
+                                </button>
+                              ))}
+                              {billingSearch.trim() !== "" && (
+                                <button
+                                  type="button"
+                                  className="billing-search-hit billing-search-new"
+                                  onMouseDown={() => { patch({ billing_contact: billingSearch.trim() }); setBillingSearchOpen(false); }}
+                                >
+                                  + Use “{billingSearch.trim()}” as a new contact
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })()}
                 </>
               );
             })()}
