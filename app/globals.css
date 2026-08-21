@@ -3798,6 +3798,21 @@ a.activity-row:hover .act-desc {
   min-width: 240px;
 }
 
+/* Task tags */
+.tb-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.08rem 0.42rem;
+  margin-left: 0.35rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  vertical-align: middle;
+}
+
 /* Lead pipeline / intake */
 .lead-chart {
   width: 100%;
@@ -7576,7 +7591,6 @@ a.activity-row:hover .act-desc {
   padding: 1rem 0.85rem 1.1rem;
   background: var(--dash-surface);
   border-bottom: 1px solid var(--dash-border);
-  border-left: 1px solid var(--dash-border);
 }
 .tb-daynum {
   font-size: 1.1rem;
@@ -7596,7 +7610,7 @@ a.activity-row:hover .act-desc {
   transform: translateX(-50%);
   width: 128px;
   max-width: 70%;
-  height: 3px;
+  height: 5px;
   border-radius: 3px 3px 0 0;
   background: #2f6bff;
 }

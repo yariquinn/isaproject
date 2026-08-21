@@ -86,6 +86,7 @@ type Draft = {
   end_time: string;
   duration: string; // hours, decimal
   priority: string;
+  tags: string; // comma-separated in the form
 };
 const emptyDraft = (): Draft => ({
   title: "",
@@ -97,7 +98,10 @@ const emptyDraft = (): Draft => ({
   end_time: "",
   duration: "",
   priority: "-",
+  tags: "",
 });
+const parseTags = (s: string): string[] =>
+  s.split(",").map((t) => t.trim()).filter(Boolean);
 
 export default function TasksBoard() {
   const { userName } = usePortal();
@@ -233,6 +237,7 @@ export default function TasksBoard() {
         end_time: draft.end_time || null,
         duration_minutes: dur,
         priority: draft.priority,
+        tags: parseTags(draft.tags),
       })
       .select("*")
       .single();
@@ -384,6 +389,9 @@ export default function TasksBoard() {
                         {commentCount(t.id)}
                       </span>
                     )}
+                    {(t.tags ?? []).map((tag) => (
+                      <span key={tag} className="tb-tag">{tag}</span>
+                    ))}
                   </>
                 )}
               </span>
@@ -741,6 +749,10 @@ function TaskModal({
         <label>
           Duration (hours) <span className="field-hint">— used if no start/end time</span>
           <input type="number" step="0.25" min={0} value={draft.duration} onChange={(e) => set("duration", e.target.value)} placeholder="e.g. 1.5" />
+        </label>
+        <label>
+          Tags <span className="field-hint">— comma-separated</span>
+          <input value={draft.tags} onChange={(e) => set("tags", e.target.value)} placeholder="e.g. filing, urgent, follow-up" />
         </label>
         <div className="modal-actions">
           <button type="button" className="ghost" onClick={onCancel}>Cancel</button>

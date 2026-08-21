@@ -123,6 +123,7 @@ export type Todo = {
   start_time: string | null;
   end_time: string | null;
   duration_minutes: number | null;
+  tags?: string[] | null;
 };
 
 export type Invoice = {
