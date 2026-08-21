@@ -3775,6 +3775,29 @@ a.activity-row:hover .act-desc {
   background: color-mix(in srgb, #fff 28%, transparent);
 }
 
+/* Reports */
+.report-total-row td {
+  border-top: 2px solid var(--dash-border);
+  background: color-mix(in srgb, var(--dash-fg) 3%, transparent);
+}
+.report-client-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--dash-muted);
+}
+.report-client-pick select {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+  min-width: 240px;
+}
+
 /* Reports / intake */
 .report-placeholder {
   margin-top: 0.9rem;
