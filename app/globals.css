@@ -938,6 +938,23 @@ section.block.alt {
   color: var(--dash-muted) !important;
   background: transparent;
 }
+/* Timesheet, timer and bell share one light-grey pill so they read as a set. */
+.hdr-icon-filled,
+.app-header .tracker-icon,
+.app-header .hdr-bell {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--dash-fg) 7%, transparent);
+}
+.hdr-icon-filled:hover,
+.app-header .tracker-icon:hover,
+.app-header .hdr-bell:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent) !important;
+}
 .hdr-search-hit.closed {
   background: var(--dash-bg);
 }

@@ -15,7 +15,7 @@ const SECTIONS: Section[] = [
     label: "Workspace",
     items: [
       { href: "/dashboard", label: "Dashboard" },
-      { href: "/dashboard/clients", label: "Clients" },
+      { href: "/dashboard/clients", label: "Contacts" },
       { href: "/dashboard/matters", label: "Matters" },
     ],
   },
@@ -32,8 +32,8 @@ const SECTIONS: Section[] = [
   {
     key: "schedule",
     label: "Calendar",
-    href: "/dashboard/calendar",
     items: [
+      { href: "/dashboard/calendar", label: "Calendar" },
       { href: "/dashboard/deadlines", label: "Deadlines" },
     ],
   },

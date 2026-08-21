@@ -11,14 +11,8 @@ import {
   RATE_TYPES,
   personColor,
   type Client,
-  type Invoice,
   type Matter,
 } from "@/lib/types";
-
-const money = (n: number | null | undefined) =>
-  n == null ? "—" : `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const shortDate = (s: string | null | undefined) =>
-  s ? new Date(s.slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "—";
 
 const initialsOf = (n: string | null) =>
   (n || "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
@@ -41,8 +35,6 @@ export default function MattersPage() {
   const { userName } = usePortal();
   const [matters, setMatters] = useState<Matter[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [pageTab, setPageTab] = useState<"overview" | "invoices">("overview");
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -172,18 +164,16 @@ export default function MattersPage() {
   }
 
   async function load() {
-    const [{ data: m }, { data: c }, { data: td }, { data: inv }] = await Promise.all([
+    const [{ data: m }, { data: c }, { data: td }] = await Promise.all([
       supabase
         .from("matters")
         .select("*")
         .order("created_at", { ascending: false }),
       supabase.from("clients").select("*").order("name"),
       supabase.from("todos").select("matter_id,title,assignee").eq("done", false),
-      supabase.from("invoices").select("*").order("created_at", { ascending: false }),
     ]);
     setMatters((m as Matter[]) ?? []);
     setClients((c as Client[]) ?? []);
-    setInvoices((inv as Invoice[]) ?? []);
     const counts: Record<string, number> = {};
     const lists: Record<string, { title: string; assignee: string | null }[]> = {};
     for (const t of (td as { matter_id: string | null; title: string; assignee: string | null }[]) ?? []) {
@@ -398,24 +388,6 @@ export default function MattersPage() {
           </button>
         </div>
       </div>
-      <div className="doc-tabs matters-tabs">
-        <button
-          type="button"
-          className={pageTab === "overview" ? "active" : undefined}
-          onClick={() => setPageTab("overview")}
-        >
-          Overview <span className="tab-count">{matters.length}</span>
-        </button>
-        <button
-          type="button"
-          className={pageTab === "invoices" ? "active" : undefined}
-          onClick={() => setPageTab("invoices")}
-        >
-          Invoices <span className="tab-count">{invoices.length}</span>
-        </button>
-      </div>
-
-      {pageTab === "overview" && (<>
       <div className="filter-search-row">
         <div className="filter-row" style={{ margin: 0 }}>
           {(["active", "closed", "all"] as const).map((s) => (
@@ -670,57 +642,6 @@ export default function MattersPage() {
             </tbody>
           </table>
         </div>
-      )}
-      </>)}
-
-      {pageTab === "invoices" && (
-        loading ? (
-          <p className="muted-line">Loading…</p>
-        ) : invoices.length === 0 ? (
-          <p className="muted-line">No invoices yet.</p>
-        ) : (
-          <div className="table-wrap printable fill-table">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Invoice</th>
-                  <th>Matter</th>
-                  <th>Client</th>
-                  <th>Issued</th>
-                  <th>Due</th>
-                  <th>Status</th>
-                  <th style={{ textAlign: "right" }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => {
-                  const mName = matters.find((m) => m.id === inv.matter_id)?.name ?? "—";
-                  return (
-                    <tr key={inv.id}>
-                      <td className="strong-cell">
-                        <Link href={`/dashboard/invoices/${inv.id}?from=/dashboard/matters`} className="row-link">
-                          {inv.number || "Invoice"}
-                        </Link>
-                      </td>
-                      <td>
-                        {inv.matter_id ? (
-                          <Link href={`/dashboard/matters/${inv.matter_id}`} className="row-link">{mName}</Link>
-                        ) : (
-                          <span className="inline-placeholder">—</span>
-                        )}
-                      </td>
-                      <td>{inv.client_id ? nameOf(inv.client_id) : <span className="inline-placeholder">—</span>}</td>
-                      <td>{shortDate(inv.issued_date)}</td>
-                      <td>{shortDate(inv.due_date)}</td>
-                      <td><span className={`pill-${inv.status}`}>{inv.status}</span></td>
-                      <td style={{ textAlign: "right" }}>{money(inv.amount)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )
       )}
 
       {open && (

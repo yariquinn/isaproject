@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { CLIENT_TYPES, type Client } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
 import ImportExport from "../ImportExport";
+import ContactsPanel from "../contacts/ContactsPanel";
 
 const EMPTY = {
   name: "",
@@ -31,6 +32,7 @@ const NEW_FORM = { name: "", email: "", phone: "", address: "" };
 export default function ClientsPage() {
   const { userName } = usePortal();
   const [clients, setClients] = useState<Client[]>([]);
+  const [mainTab, setMainTab] = useState<"clients" | "contacts">("clients");
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -445,6 +447,19 @@ export default function ClientsPage() {
 
   return (
     <div>
+      <div className="doc-tabs" style={{ marginBottom: "1rem" }}>
+        <button type="button" className={mainTab === "clients" ? "active" : undefined} onClick={() => setMainTab("clients")}>
+          Clients <span className="count-badge">{clients.length}</span>
+        </button>
+        <button type="button" className={mainTab === "contacts" ? "active" : undefined} onClick={() => setMainTab("contacts")}>
+          Contacts
+        </button>
+      </div>
+
+      {mainTab === "contacts" ? (
+        <ContactsPanel />
+      ) : (
+      <>
       <div className="page-head">
         <h1 className="page-title upper">Clients <span className="count-badge">{clients.length}</span></h1>
         <div className="head-controls">
@@ -1018,6 +1033,8 @@ export default function ClientsPage() {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );
