@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import type { ActivityItem, EventItem, Invoice, Matter, TimeEntry, Todo } from "@/lib/types";
 import { usePortal } from "./PortalProvider";
 import { getRecents, type RecentItem } from "@/lib/recents";
+import ResizableCols from "./ResizableCols";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -742,7 +743,7 @@ export default function Overview() {
       </div>
       )}
 
-      <div className="overview-cols equal">
+      <ResizableCols storageKey="overviewSplit">
         {prefs.events && (
         <div className="panel ov-box">
           <h2 className="panel-title">Upcoming Events</h2>
@@ -849,7 +850,7 @@ export default function Overview() {
           </div>
         </div>
         )}
-      </div>
+      </ResizableCols>
       </div>
     </div>
   );

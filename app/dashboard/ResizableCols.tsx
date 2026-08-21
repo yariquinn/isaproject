@@ -19,6 +19,7 @@ export default function ResizableCols({
   const kids = Children.toArray(children);
   const left = kids[0] ?? null;
   const right = kids[1] ?? null;
+  const single = !left || !right;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [ratio, setRatio] = useState(0.5);
   const [dragging, setDragging] = useState(false);
@@ -60,17 +61,23 @@ export default function ResizableCols({
 
   return (
     <div className="rz-cols" ref={wrapRef}>
-      <div className="rz-pane" style={{ flexBasis: `${ratio * 100}%` }}>{left}</div>
-      <div
-        className={`rz-handle${dragging ? " dragging" : ""}`}
-        onMouseDown={() => setDragging(true)}
-        role="separator"
-        aria-orientation="vertical"
-        title="Drag to resize"
-      >
-        <span className="rz-grip" />
-      </div>
-      <div className="rz-pane" style={{ flexBasis: `${(1 - ratio) * 100}%` }}>{right}</div>
+      {single ? (
+        <div className="rz-pane" style={{ flexBasis: "100%" }}>{left ?? right}</div>
+      ) : (
+        <>
+          <div className="rz-pane" style={{ flexBasis: `${ratio * 100}%` }}>{left}</div>
+          <div
+            className={`rz-handle${dragging ? " dragging" : ""}`}
+            onMouseDown={() => setDragging(true)}
+            role="separator"
+            aria-orientation="vertical"
+            title="Drag to resize"
+          >
+            <span className="rz-grip" />
+          </div>
+          <div className="rz-pane" style={{ flexBasis: `${(1 - ratio) * 100}%` }}>{right}</div>
+        </>
+      )}
     </div>
   );
 }
