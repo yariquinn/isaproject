@@ -39,6 +39,11 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [recordTab, setRecordTab] = useState<"overview" | "invoices">("overview");
+  const changeRecordTab = (t: "overview" | "invoices") => {
+    const y = window.scrollY;
+    setRecordTab(t);
+    requestAnimationFrame(() => window.scrollTo(0, y));
+  };
   const [loading, setLoading] = useState(true);
 
   const [prompt, setPrompt] = useState<{ field: GuardField; label: string } | null>(null);
@@ -433,11 +438,11 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       </ResizableCols>
 
-      <div className="doc-tabs" style={{ margin: "1.25rem 0 1rem" }}>
-        <button type="button" className={recordTab === "overview" ? "active" : undefined} onClick={() => setRecordTab("overview")}>
-          Overview
+      <div className="doc-tabs" style={{ margin: "1.25rem 0 1rem", justifyContent: "center" }}>
+        <button type="button" className={recordTab === "overview" ? "active" : undefined} onClick={() => changeRecordTab("overview")}>
+          Activity
         </button>
-        <button type="button" className={recordTab === "invoices" ? "active" : undefined} onClick={() => setRecordTab("invoices")}>
+        <button type="button" className={recordTab === "invoices" ? "active" : undefined} onClick={() => changeRecordTab("invoices")}>
           Invoices <span className="count-badge">{invoices.length}</span>
         </button>
       </div>

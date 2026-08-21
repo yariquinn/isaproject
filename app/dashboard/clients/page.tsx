@@ -32,6 +32,7 @@ const NEW_FORM = { name: "", email: "", phone: "", address: "" };
 export default function ClientsPage() {
   const { userName } = usePortal();
   const [clients, setClients] = useState<Client[]>([]);
+  const [contactsCount, setContactsCount] = useState(0);
   const [mainTab, setMainTab] = useState<"clients" | "contacts">("clients");
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -249,11 +250,13 @@ export default function ClientsPage() {
   const [newForm, setNewForm] = useState(NEW_FORM);
 
   async function load() {
-    const [{ data }, { data: ms }] = await Promise.all([
+    const [{ data }, { data: ms }, { count: cc }] = await Promise.all([
       supabase.from("clients").select("*").order("created_at", { ascending: false }),
       supabase.from("matters").select("id,name,client_id,status"),
+      supabase.from("contacts").select("id", { count: "exact", head: true }).neq("archived", true),
     ]);
     setClients((data as Client[]) ?? []);
+    setContactsCount(cc ?? 0);
     const map: Record<string, { id: string; name: string }[]> = {};
     for (const m of (ms as { id: string; name: string; client_id: string | null; status: string }[]) ?? []) {
       if (m.client_id && m.status !== "closed") {
@@ -468,7 +471,7 @@ export default function ClientsPage() {
         Clients <span className="count-badge">{clients.length}</span>
       </button>
       <button type="button" className={mainTab === "contacts" ? "active" : undefined} onClick={() => setMainTab("contacts")}>
-        Contacts
+        Contacts <span className="count-badge">{contactsCount}</span>
       </button>
     </div>
   );
@@ -480,7 +483,7 @@ export default function ClientsPage() {
       ) : (
       <>
       <div className="page-head">
-        <h1 className="page-title upper">Clients <span className="count-badge">{clients.length}</span></h1>
+        <h1 className="page-title upper">Clients</h1>
         <div className="head-controls">
           {headTabs}
           <div className="filter-wrap" ref={filterRef}>
