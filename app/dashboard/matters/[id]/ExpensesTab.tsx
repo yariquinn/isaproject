@@ -15,6 +15,7 @@ type Expense = {
   cost: number | null;
   amount: number | null;
   invoiced: boolean;
+  billable: boolean;
 };
 
 const money = (n: number) => `$${(n || 0).toFixed(2)}`;
@@ -64,6 +65,7 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
       cost: cost,
       amount: Number((qty * cost).toFixed(2)),
       invoiced: false,
+      billable: true,
     }).then(() => {
       setNDesc(""); setNDur(""); setNQty(""); setNCost(""); setNDate(todayStr());
       load();
@@ -96,12 +98,21 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
   const total = rows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const invoiced = rows.filter((e) => e.invoiced).reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const unInvoiced = total - invoiced;
+  const billableRows = rows.filter((e) => e.billable);
+  const nonbillableRows = rows.filter((e) => !e.billable);
+  const billable = billableRows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const nonBillable = total - billable;
 
-  const stat = (label: string, v: number, cls?: string) => (
+  async function toggleBillable(e: Expense) {
+    await supabase.from("expenses").update({ billable: !e.billable }).eq("id", e.id);
+    load();
+  }
+
+  const stat = (label: string, v: number, count: number, cls?: string) => (
     <div className={`te-stat${cls ? " " + cls : ""}`}>
       <span className="te-stat-label">{label}</span>
       <span className="te-stat-amt">{money(v)}</span>
-      <span className="te-stat-hrs">{rows.length} item(s)</span>
+      <span className="te-stat-hrs">{count} item(s)</span>
     </div>
   );
 
@@ -110,9 +121,11 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
   return (
     <>
       <div className="te-summary">
-        {stat("Total", total)}
-        {stat("Invoiced", invoiced, "ok")}
-        {stat("Un-invoiced", unInvoiced, "warn")}
+        {stat("Total", total, rows.length)}
+        {stat("Billable", billable, billableRows.length, "ok")}
+        {stat("Non-billable", nonBillable, nonbillableRows.length, "warn")}
+        {stat("Invoiced", invoiced, rows.filter((e) => e.invoiced).length)}
+        {stat("Un-invoiced", unInvoiced, rows.filter((e) => !e.invoiced).length)}
       </div>
 
       <div className="table-wrap" style={{ border: "none" }}>
@@ -126,6 +139,7 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
               <th>Qty</th>
               <th>Cost</th>
               <th>Amount</th>
+              <th>Billable</th>
               <th>Invoiced</th>
               <th aria-hidden="true" />
             </tr>
@@ -143,7 +157,7 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
               <td><input type="number" step="1" value={nQty} placeholder="qty" onChange={(e) => setNQty(e.target.value)} aria-label="New expense qty" /></td>
               <td><input type="number" step="0.01" value={nCost} placeholder="$" onChange={(e) => setNCost(e.target.value)} onBlur={commitNew} aria-label="New expense cost" /></td>
               <td className="ii-amt-cell">{money((parseFloat(nQty) || 0) * (parseFloat(nCost) || 0))}</td>
-              <td colSpan={2} className="te-new-hint">press Enter to add</td>
+              <td colSpan={3} className="te-new-hint">press Enter to add</td>
             </tr>
             {rows.map((e) => (
               <tr key={e.id}>
@@ -196,6 +210,9 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
                   )}
                 </td>
                 <td className="ii-amt-cell">{money(Number(e.amount) || 0)}</td>
+                <td>
+                  <button type="button" className={`te-toggle${e.billable ? " on" : ""}`} onClick={() => toggleBillable(e)}>{e.billable ? "Billable" : "Non-bill"}</button>
+                </td>
                 <td>
                   <button type="button" className={`te-toggle${e.invoiced ? " on" : ""}`} onClick={() => toggleInvoiced(e)}>{e.invoiced ? "Invoiced" : "Un-inv"}</button>
                 </td>

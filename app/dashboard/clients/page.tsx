@@ -19,6 +19,10 @@ const EMPTY = {
   phone: "",
   address: "",
   notes: "",
+  billing_same: true,
+  billing_contact: "",
+  billing_email: "",
+  billing_phone: "",
 };
 
 type GuardField = "primary_contact" | "email" | "phone";
@@ -349,6 +353,15 @@ export default function ClientsPage() {
         phone: form.phone.trim() || null,
         address: form.address.trim() || null,
         notes: form.notes.trim() || null,
+        billing_contact: isBiz
+          ? (form.billing_same ? form.primary_contact.trim() || null : form.billing_contact.trim() || null)
+          : null,
+        billing_email: isBiz
+          ? (form.billing_same ? form.email.trim() || null : form.billing_email.trim() || null)
+          : null,
+        billing_phone: isBiz
+          ? (form.billing_same ? form.phone.trim() || null : form.billing_phone.trim() || null)
+          : null,
         created_by: userName,
       })
       .select("id")
@@ -903,6 +916,47 @@ export default function ClientsPage() {
                     />
                   </label>
                 </div>
+              </div>
+            )}
+
+            {form.client_type === "business" && (
+              <div className="couple-fields">
+                <label className="billing-same-row">
+                  <input
+                    type="checkbox"
+                    checked={form.billing_same}
+                    onChange={(e) => setForm({ ...form, billing_same: e.target.checked })}
+                  />
+                  <span>Billing person is the primary contact</span>
+                </label>
+                {!form.billing_same && (
+                  <>
+                    <label>
+                      Billing person
+                      <input
+                        value={form.billing_contact}
+                        onChange={(e) => setForm({ ...form, billing_contact: e.target.value })}
+                        placeholder="e.g. Accounts Payable"
+                      />
+                    </label>
+                    <div className="field-pair">
+                      <label>
+                        Billing email
+                        <input
+                          value={form.billing_email}
+                          onChange={(e) => setForm({ ...form, billing_email: e.target.value })}
+                        />
+                      </label>
+                      <label>
+                        Billing phone
+                        <input
+                          value={form.billing_phone}
+                          onChange={(e) => setForm({ ...form, billing_phone: e.target.value })}
+                        />
+                      </label>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

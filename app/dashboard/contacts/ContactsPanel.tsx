@@ -224,9 +224,9 @@ export default function ContactsPanel() {
         <div className="table-wrap fill-table table-wrap-noscroll">
           <table className="data-table data-table-wrap-cells">
             <colgroup>
+              {cols.organization && <col style={{ width: "18%" }} />}
               <col style={{ width: "19%" }} />
               {cols.role && <col style={{ width: "18%" }} />}
-              {cols.organization && <col style={{ width: "18%" }} />}
               {cols.email && <col style={{ width: "20%" }} />}
               {cols.phone && <col style={{ width: "12%" }} />}
               {cols.address && <col style={{ width: "17%" }} />}
@@ -234,9 +234,9 @@ export default function ContactsPanel() {
             </colgroup>
             <thead>
               <tr>
-                <th className="sortable" onClick={() => toggleCsort("name")}>Name {csortArrow("name")}</th>
-                {cols.role && <th>Type</th>}
                 {cols.organization && <th className="sortable" onClick={() => toggleCsort("organization")}>Firm {csortArrow("organization")}</th>}
+                <th className="sortable" onClick={() => toggleCsort("name")}>Contact {csortArrow("name")}</th>
+                {cols.role && <th>Type</th>}
                 {cols.email && <th>Email</th>}
                 {cols.phone && <th>Phone</th>}
                 {cols.address && <th>Business Address</th>}
@@ -266,6 +266,11 @@ export default function ContactsPanel() {
               )}
               {rows.map((c) => (
                 <tr key={c.id} className={c.archived ? "row-closed" : undefined}>
+                  {cols.organization && (
+                  <td>
+                    <InlineText value={c.organization} onSave={(v) => patch(c.id, { organization: v || null })} placeholder="—" />
+                  </td>
+                  )}
                   <td className="strong-cell">
                     <span className="ct-name">
                       <span className="ct-avatar" style={{ background: personColor(c.name) }}>{initialsOf(c.name)}</span>
@@ -277,11 +282,6 @@ export default function ContactsPanel() {
                     <select className="ct-role-select" value={c.role} onChange={(e) => patch(c.id, { role: e.target.value })}>
                       {CONTACT_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                     </select>
-                  </td>
-                  )}
-                  {cols.organization && (
-                  <td>
-                    <InlineText value={c.organization} onSave={(v) => patch(c.id, { organization: v || null })} placeholder="—" />
                   </td>
                   )}
                   {cols.email && (

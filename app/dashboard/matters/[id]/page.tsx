@@ -1254,59 +1254,81 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         {bodyTab === "contacts" && (
           <>
             <div className="mc-head">
-              <span className="ev-section" style={{ margin: 0 }}>
-                Contacts <span className="count-badge">{(clientObj ? 1 + (clientObj.partner_name ? 1 : 0) : 0) + matterContacts.length}</span>
-              </span>
+              <span className="ev-section" style={{ margin: 0 }}>Contacts</span>
               <button type="button" className="ghost sm" onClick={() => setAddContactOpen(true)}>+ Add contact</button>
             </div>
-            <ul className="contact-cards">
-              {clientObj && (
-                <li className="contact-card">
-                  <div className="cc-role">Primary contact</div>
-                  <div className="cc-name-lg">{clientObj.primary_contact || clientObj.name}</div>
-                  <dl className="cc-fields">
-                    {clientObj.contact_title && (
-                      <div><dt>Title</dt><dd>{clientObj.contact_title}</dd></div>
-                    )}
-                    <div><dt>Email</dt><dd>{clientObj.email || "—"}</dd></div>
-                    <div><dt>Phone</dt><dd>{clientObj.phone || "—"}</dd></div>
-                    <div><dt>Address</dt><dd>{clientObj.address || "—"}</dd></div>
-                  </dl>
-                </li>
-              )}
-              {clientObj?.partner_name && (
-                <li className="contact-card">
-                  <div className="cc-role">{clientObj.partner_relationship || "Second contact"}</div>
-                  <div className="cc-name-lg">{clientObj.partner_name}</div>
-                  <dl className="cc-fields">
-                    <div><dt>Email</dt><dd>{clientObj.partner_email || "—"}</dd></div>
-                    <div><dt>Phone</dt><dd>{clientObj.partner_phone || "—"}</dd></div>
-                  </dl>
-                </li>
-              )}
-              {matterContacts.map(({ linkId, contact }) => (
-                <li className="contact-card" key={linkId}>
-                  <div className="cc-role">
-                    {contactRoleLabel(contact.role)}
-                    <button type="button" className="mc-unlink" title="Remove from matter" aria-label="Remove from matter" onClick={() => unlinkContact(linkId)}>✕</button>
-                  </div>
-                  <div className="cc-name-lg">
-                    <span className="te-initials" style={{ background: personColor(contact.name), marginRight: "0.4rem" }}>
-                      {contact.name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
-                    </span>
-                    {contact.name}
-                  </div>
-                  <dl className="cc-fields">
-                    {contact.organization && <div><dt>Firm</dt><dd>{contact.organization}</dd></div>}
-                    <div><dt>Email</dt><dd>{contact.email || "—"}</dd></div>
-                    <div><dt>Phone</dt><dd>{contact.phone || "—"}</dd></div>
-                  </dl>
-                </li>
-              ))}
-            </ul>
-            {!clientObj && matterContacts.length === 0 && (
-              <p className="muted-line">No contacts linked to this matter.</p>
-            )}
+            <div className="mc-cols">
+              {/* Left: the client's own people */}
+              <div className="mc-col">
+                <div className="mc-col-label">Client</div>
+                <ul className="contact-cards">
+                  {clientObj && (
+                    <li className="contact-card">
+                      <div className="cc-role">Primary contact</div>
+                      <div className="cc-name-lg">{clientObj.primary_contact || clientObj.name}</div>
+                      <dl className="cc-fields">
+                        {clientObj.contact_title && (
+                          <div><dt>Title</dt><dd>{clientObj.contact_title}</dd></div>
+                        )}
+                        <div><dt>Email</dt><dd>{clientObj.email || "—"}</dd></div>
+                        <div><dt>Phone</dt><dd>{clientObj.phone || "—"}</dd></div>
+                        <div><dt>Address</dt><dd>{clientObj.address || "—"}</dd></div>
+                      </dl>
+                    </li>
+                  )}
+                  {clientObj?.partner_name && (
+                    <li className="contact-card">
+                      <div className="cc-role">{clientObj.partner_relationship || "Second contact"}</div>
+                      <div className="cc-name-lg">{clientObj.partner_name}</div>
+                      <dl className="cc-fields">
+                        <div><dt>Email</dt><dd>{clientObj.partner_email || "—"}</dd></div>
+                        <div><dt>Phone</dt><dd>{clientObj.partner_phone || "—"}</dd></div>
+                      </dl>
+                    </li>
+                  )}
+                  {clientObj?.billing_contact && (
+                    <li className="contact-card">
+                      <div className="cc-role">Billing contact</div>
+                      <div className="cc-name-lg">{clientObj.billing_contact}</div>
+                      <dl className="cc-fields">
+                        <div><dt>Email</dt><dd>{clientObj.billing_email || "—"}</dd></div>
+                        <div><dt>Phone</dt><dd>{clientObj.billing_phone || "—"}</dd></div>
+                      </dl>
+                    </li>
+                  )}
+                  {!clientObj && <p className="muted-line">No client linked.</p>}
+                </ul>
+              </div>
+
+              {/* Right: outside parties (counsel, experts, etc.) */}
+              <div className="mc-col">
+                <div className="mc-col-label">Outside parties</div>
+                <ul className="contact-cards">
+                  {matterContacts.map(({ linkId, contact }) => (
+                    <li className="contact-card" key={linkId}>
+                      <div className="cc-role">
+                        {contactRoleLabel(contact.role)}
+                        <button type="button" className="mc-unlink" title="Remove from matter" aria-label="Remove from matter" onClick={() => unlinkContact(linkId)}>✕</button>
+                      </div>
+                      <div className="cc-name-lg">
+                        <span className="te-initials" style={{ background: personColor(contact.name), marginRight: "0.4rem" }}>
+                          {contact.name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+                        </span>
+                        {contact.name}
+                      </div>
+                      <dl className="cc-fields">
+                        {contact.organization && <div><dt>Firm</dt><dd>{contact.organization}</dd></div>}
+                        <div><dt>Email</dt><dd>{contact.email || "—"}</dd></div>
+                        <div><dt>Phone</dt><dd>{contact.phone || "—"}</dd></div>
+                      </dl>
+                    </li>
+                  ))}
+                  {matterContacts.length === 0 && (
+                    <p className="muted-line">No outside parties yet — use “+ Add contact”.</p>
+                  )}
+                </ul>
+              </div>
+            </div>
           </>
         )}
 
@@ -1327,17 +1349,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             </div>
             <div className="table-wrap" style={{ border: "none" }}>
               <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Document</th>
-                    <th>Updated</th>
-                  </tr>
-                </thead>
                 <tbody>
                   {MATTER_DOCS.filter((d) => d.name.toLowerCase().includes(docQuery.trim().toLowerCase())).map((d) => (
                     <tr key={d.name}>
                       <td className="strong-cell">{d.name}</td>
-                      <td>{d.updated}</td>
                     </tr>
                   ))}
                 </tbody>

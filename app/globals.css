@@ -3838,6 +3838,16 @@ a.activity-row:hover .act-desc {
   min-width: 240px;
 }
 
+.billing-same-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--dash-fg);
+  cursor: pointer;
+}
+.billing-same-row input { width: auto; margin: 0; }
+
 /* Task tags */
 .tb-tag {
   display: inline-flex;
@@ -4603,6 +4613,27 @@ a.activity-row:hover .act-desc {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
+}
+/* Two-column split: client people on the left, outside parties on the right */
+.mc-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+.mc-col-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+  margin-bottom: 0.6rem;
+}
+.mc-col .contact-cards {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 820px) {
+  .mc-cols { grid-template-columns: 1fr; }
 }
 .contact-card {
   border: 1px solid var(--dash-border);
@@ -6859,7 +6890,8 @@ a.activity-row:hover .act-desc {
   font-size: 1.1rem;
   border-radius: 8px;
   margin-left: auto;
-  margin-right: -0.25rem;
+  margin-right: -0.5rem;
+  margin-top: -0.5rem;
 }
 
 /* Searchable matter picker (task modals) */

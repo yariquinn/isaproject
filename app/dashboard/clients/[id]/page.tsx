@@ -199,8 +199,11 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       </div>
     );
 
-  const openMatters = matters.filter((m) => m.status !== "closed");
-  const closedMatters = matters.filter((m) => m.status === "closed");
+  // Newest matters first (by open date, falling back to created_at).
+  const byNewest = (a: Matter, b: Matter) =>
+    ((b.open_date || b.created_at) > (a.open_date || a.created_at) ? 1 : -1);
+  const openMatters = matters.filter((m) => m.status !== "closed").sort(byNewest);
+  const closedMatters = matters.filter((m) => m.status === "closed").sort(byNewest);
 
   const Guarded = ({ field, label, type = "text" }: { field: GuardField; label: string; type?: string }) =>
     activeEdit === field ? (
@@ -239,7 +242,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       </span>
       <span className="matter-card-meta">
         <span className="matter-card-area">{m.practice_area}</span>
-        <span className={`pill pill-${m.status}`}>{m.status === "closed" ? "Closed" : "Active"}</span>
+        <span className={`pill pill-${m.status}`}>{m.status === "closed" ? "Archived" : "Active"}</span>
       </span>
     </Link>
   );
