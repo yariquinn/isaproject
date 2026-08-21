@@ -155,7 +155,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [pcModal, setPcModal] = useState(false);
   const [pcTab, setPcTab] = useState<"search" | "new">("search");
   const [pcQuery, setPcQuery] = useState("");
-  const [pcForm, setPcForm] = useState({ name: "", email: "", phone: "", address: "" });
+  const [pcForm, setPcForm] = useState({ name: "", title: "", email: "", phone: "", address: "" });
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
 
   async function loadMatterContacts() {
@@ -491,8 +491,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       name: pcForm.name.trim(), client_type: "individual", status: "active",
       email: pcForm.email.trim() || null, phone: pcForm.phone.trim() || null, address: pcForm.address.trim() || null,
     });
-    await setClientContact({ primary_contact: pcForm.name.trim(), email: pcForm.email.trim() || null, phone: pcForm.phone.trim() || null, address: pcForm.address.trim() || null });
-    setPcForm({ name: "", email: "", phone: "", address: "" }); setPcTab("search"); setPcModal(false);
+    await setClientContact({ primary_contact: pcForm.name.trim(), contact_title: pcForm.title || null, email: pcForm.email.trim() || null, phone: pcForm.phone.trim() || null, address: pcForm.address.trim() || null });
+    setPcForm({ name: "", title: "", email: "", phone: "", address: "" }); setPcTab("search"); setPcModal(false);
   }
 
   async function saveClientNotes(clientId: string, v: string) {
@@ -1637,7 +1637,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               </>
             ) : (
               <>
-                {(["name", "email", "phone", "address"] as const).map((f) => (
+                <label>Name
+                  <input value={pcForm.name} onChange={(e) => setPcForm({ ...pcForm, name: e.target.value })} />
+                </label>
+                <label>Title
+                  <select value={pcForm.title} onChange={(e) => setPcForm({ ...pcForm, title: e.target.value })}>
+                    <option value="">— Title</option>
+                    {CONTACT_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </label>
+                {(["email", "phone", "address"] as const).map((f) => (
                   <label key={f}>{f[0].toUpperCase() + f.slice(1)}
                     <input value={pcForm[f]} onChange={(e) => setPcForm({ ...pcForm, [f]: e.target.value })} />
                   </label>
@@ -1696,10 +1705,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   <label>
                     Relationship
                     <select
-                      defaultValue={clientObj.partner_relationship ?? "Spouse"}
+                      defaultValue={clientObj.partner_relationship ?? ""}
                       onChange={(e) => saveClientField(clientObj.id, "partner_relationship", e.target.value)}
                     >
-                      {["Spouse", "Partner", "Parent", "Child", "Sibling", "Colleague", "Other"].map((r) => (
+                      <option value="">Relationship…</option>
+                      {["Spouse", "Partner", "Parent", "Child", "Sibling", "Colleague", "Signatory", "Other"].map((r) => (
                         <option key={r} value={r}>{r}</option>
                       ))}
                     </select>

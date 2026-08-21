@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CONTACT_TITLES } from "@/lib/types";
 
 // A compact title pill next to a contact name. Displays the title (wrapping
-// multi-word titles like "Managing / Member"); click to pick a new one.
+// multi-word titles like "Managing / Member"); one click opens the picker.
 export default function TitlePill({
   value,
   onSave,
@@ -13,11 +13,20 @@ export default function TitlePill({
   onSave: (v: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const ref = useRef<HTMLSelectElement>(null);
+  useEffect(() => {
+    if (!editing) return;
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    try { (el as HTMLSelectElement & { showPicker?: () => void }).showPicker?.(); } catch { /* older browsers */ }
+  }, [editing]);
+
   if (editing) {
     return (
       <select
+        ref={ref}
         className="title-pill"
-        autoFocus
         value={value ?? ""}
         onChange={(e) => { onSave(e.target.value); setEditing(false); }}
         onBlur={() => setEditing(false)}

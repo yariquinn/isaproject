@@ -9,6 +9,7 @@ import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
 import ResizableCols from "../../ResizableCols";
+import TitlePill from "../../TitlePill";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -21,7 +22,7 @@ function timeAgo(iso: string): string {
 }
 
 type GuardField = "email" | "phone" | "address" | "primary_contact" | "contact_title";
-const NEW_FORM = { name: "", email: "", phone: "", address: "" };
+const NEW_FORM = { name: "", title: "", email: "", phone: "", address: "" };
 
 export default function ClientDetail({ params }: { params: { id: string } }) {
   const { userName } = usePortal();
@@ -143,7 +144,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     if (created) {
       await supabase.from("activity_log").insert({ kind: "client_added", client_id: (created as Client).id, description: `${userName} added client ${(created as Client).name}` });
     }
-    await patch({ primary_contact: newForm.name.trim(), email: newForm.email.trim() || null, phone: newForm.phone.trim() || null, address: newForm.address.trim() || null });
+    await patch({ primary_contact: newForm.name.trim(), contact_title: newForm.title || null, email: newForm.email.trim() || null, phone: newForm.phone.trim() || null, address: newForm.address.trim() || null });
     await logChange(`${userName} changed the primary contact to ${newForm.name.trim()} (new client created)`);
     setContactModal(false);
   }
@@ -309,28 +310,12 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
               <div>
                 <dt>Primary contact</dt>
                 <dd className="cc-name-strong">
-                  <button type="button" className="contact-picker" onClick={openContactModal}>
-                    {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
-                  </button>
-                </dd>
-              </div>
-            )}
-            {client.client_type === "business" && (
-              <div>
-                <dt>Title</dt>
-                <dd>
-                  <select
-                    className="title-line-select"
-                    value={client.contact_title ?? ""}
-                    onChange={(e) => patch({ contact_title: e.target.value || null })}
-                    aria-label="Title"
-                  >
-                    <option value="">—</option>
-                    {CONTACT_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
-                    {client.contact_title && !(CONTACT_TITLES as readonly string[]).includes(client.contact_title) && (
-                      <option value={client.contact_title}>{client.contact_title}</option>
-                    )}
-                  </select>
+                  <span className="name-with-title">
+                    <button type="button" className="contact-picker" onClick={openContactModal}>
+                      {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
+                    </button>
+                    <TitlePill value={client.contact_title} onSave={(v) => patch({ contact_title: v || null })} />
+                  </span>
                 </dd>
               </div>
             )}
@@ -465,8 +450,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 </label>
                 <label>
                   Relationship
-                  <select value={client.partner_relationship ?? "Spouse"} onChange={(e) => patch({ partner_relationship: e.target.value })}>
-                    {["Spouse", "Partner", "Parent", "Child", "Sibling", "Colleague", "Other"].map((r) => (
+                  <select value={client.partner_relationship ?? ""} onChange={(e) => patch({ partner_relationship: e.target.value || null })}>
+                    <option value="">Relationship…</option>
+                    {["Spouse", "Partner", "Parent", "Child", "Sibling", "Colleague", "Signatory", "Other"].map((r) => (
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
@@ -675,7 +661,16 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
               </>
             ) : (
               <>
-                {(["name", "email", "phone", "address"] as const).map((f) => (
+                <label>Name
+                  <input value={newForm.name} onChange={(e) => setNewForm({ ...newForm, name: e.target.value })} />
+                </label>
+                <label>Title
+                  <select value={newForm.title} onChange={(e) => setNewForm({ ...newForm, title: e.target.value })}>
+                    <option value="">— Title</option>
+                    {CONTACT_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </label>
+                {(["email", "phone", "address"] as const).map((f) => (
                   <label key={f}>{f[0].toUpperCase() + f.slice(1)}
                     <input value={newForm[f]} onChange={(e) => setNewForm({ ...newForm, [f]: e.target.value })} />
                   </label>
