@@ -306,7 +306,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <ResizableCols storageKey="clientRecordSplit">
+      <ResizableCols storageKey="clientRecordSplit" rightHandle>
         {/* Unified contact card — mirrors the Client card on a matter for continuity */}
         <div className="panel">
           <div className="panel-head">
