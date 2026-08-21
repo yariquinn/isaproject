@@ -1872,6 +1872,9 @@ section.block.alt {
   min-height: calc(100vh - 200px);
   max-height: calc(100vh - 185px);
   overflow-y: auto;
+  /* Reserve the scrollbar gutter so switching to a longer list (e.g. All)
+     doesn't shift the columns when a vertical scrollbar appears. */
+  scrollbar-gutter: stable;
 }
 /* Fixed-layout tables fill their box exactly — never scroll horizontally */
 .table-wrap-noscroll {
