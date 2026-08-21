@@ -930,6 +930,14 @@ section.block.alt {
   color: var(--accent) !important;
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
+.hdr-icon-btn:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+.hdr-icon-btn:disabled:hover {
+  color: var(--dash-muted) !important;
+  background: transparent;
+}
 .hdr-search-hit.closed {
   background: var(--dash-bg);
 }

@@ -18,7 +18,7 @@ type Expense = {
   billable: boolean;
 };
 
-const money = (n: number) => `$${(n || 0).toFixed(2)}`;
+const money = (n: number) => `$${(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const initialsOf = (name: string) =>
   (name || "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";

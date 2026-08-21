@@ -12,7 +12,7 @@ function fmtHm(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   return `${h}h ${m}m`;
 }
-const money = (n: number) => `$${n.toFixed(2)}`;
+const money = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const initialsOf = (name: string) =>
   (name || "")
     .trim()

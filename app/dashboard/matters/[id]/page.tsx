@@ -1530,11 +1530,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                                 })
                               : "—"}
                           </td>
-                          <td>{due != null ? `$${due.toFixed(2)}` : "—"}</td>
+                          <td>{due != null ? `$${due.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
                           <td>
                             <span className={`pill inv-${i.status}`}>{i.status}</span>
                           </td>
-                          <td>{i.amount != null ? `$${i.amount.toFixed(2)}` : "—"}</td>
+                          <td>{i.amount != null ? `$${i.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
                         </tr>
                       );
                     })}

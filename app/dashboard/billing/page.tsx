@@ -7,6 +7,7 @@ import type { Client, Invoice, Matter, TimeEntry, InvoiceBucket } from "@/lib/ty
 import { invoiceBucket } from "@/lib/types";
 import Disclaimer from "../Disclaimer";
 import TimesheetTab from "./TimesheetTab";
+import { useUndo } from "../UndoProvider";
 
 const INVOICE_BUCKETS: { key: InvoiceBucket; label: string }[] = [
   { key: "created", label: "Created" },
@@ -25,6 +26,7 @@ const usd = (n: number, dp = 2) =>
   `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp })}`;
 
 export default function BillingPage() {
+  const { pushUndo } = useUndo();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
@@ -148,14 +150,30 @@ export default function BillingPage() {
   }
 
   async function deleteInvoice(id: string, number: string | null) {
-    if (!window.confirm(`Delete invoice ${number || ""}? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete invoice ${number || ""}?`)) return;
+    const { data: inv } = await supabase.from("invoices").select("*").eq("id", id).single();
+    const { data: its } = await supabase.from("invoice_items").select("*").eq("invoice_id", id);
     await supabase.from("invoice_items").delete().eq("invoice_id", id);
     await supabase.from("invoices").delete().eq("id", id);
+    if (inv) {
+      pushUndo(`Deleted invoice ${number || ""}`.trim(), async () => {
+        await supabase.from("invoices").insert(inv);
+        if (its && (its as unknown[]).length) await supabase.from("invoice_items").insert(its);
+        load();
+      });
+    }
     load();
   }
   async function deleteEntry(id: string) {
-    if (!window.confirm("Delete this time entry? This cannot be undone.")) return;
+    if (!window.confirm("Delete this time entry?")) return;
+    const row = entries.find((e) => e.id === id);
     await supabase.from("time_entries").delete().eq("id", id);
+    if (row) {
+      pushUndo("Deleted time entry", async () => {
+        await supabase.from("time_entries").insert(row);
+        load();
+      });
+    }
     load();
   }
 
