@@ -32,6 +32,7 @@ import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
 import MatterTasksList from "./MatterTasksList";
 import TitlePill from "../../TitlePill";
+import CopyButton from "../../CopyButton";
 import ExpensesTab from "./ExpensesTab";
 import Disclaimer from "../../Disclaimer";
 import TimeEntriesTab from "./TimeEntriesTab";
@@ -465,6 +466,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   async function saveClientField(
     clientId: string,
     field: "primary_contact" | "email" | "phone" | "address" | "contact_title" | "billing_contact"
+      | "billing_email" | "billing_phone"
       | "partner_name" | "partner_email" | "partner_phone" | "partner_relationship",
     v: string,
   ) {
@@ -702,12 +704,13 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 )}
                 <div>
                   <dt>Email</dt>
-                  <dd>
+                  <dd className="dd-with-copy">
                     <InlineText
                       value={clientObj.email}
                       onSave={(v) => saveClientField(clientObj.id, "email", v)}
                       placeholder="—"
                     />
+                    <CopyButton value={clientObj.email} label="Copy email" />
                   </dd>
                 </div>
                 <div>
@@ -768,17 +771,19 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     </div>
                   );
                 })()}
-                <div>
-                  <dt>Billing contact</dt>
-                  <dd>
-                    <InlineText
-                      value={clientObj.billing_contact}
-                      onSave={(v) => saveClientField(clientObj.id, "billing_contact", v)}
-                      placeholder="Same as primary"
-                    />
-                    {clientObj.billing_email ? ` · ${clientObj.billing_email}` : ""}
-                  </dd>
-                </div>
+                {clientObj.client_type === "business" && (
+                  <div>
+                    <dt>Billing contact</dt>
+                    <dd>
+                      <InlineText
+                        value={clientObj.billing_contact}
+                        onSave={(v) => saveClientField(clientObj.id, "billing_contact", v)}
+                        placeholder="Same as primary"
+                      />
+                      {clientObj.billing_email ? ` · ${clientObj.billing_email}` : ""}
+                    </dd>
+                  </div>
+                )}
               </dl>
               <div className="cc-notes">
                 <dt>Client Notes</dt>
@@ -1307,10 +1312,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       <div className="cc-role">Primary contact</div>
                       <div className="cc-name-lg">{clientObj.primary_contact || clientObj.name}</div>
                       <dl className="cc-fields">
-                        {clientObj.contact_title && (
-                          <div><dt>Title</dt><dd><InlineText value={clientObj.contact_title} onSave={(v) => saveClientField(clientObj.id, "contact_title", v)} placeholder="—" /></dd></div>
-                        )}
-                        <div><dt>Email</dt><dd><InlineText value={clientObj.email} onSave={(v) => saveClientField(clientObj.id, "email", v)} placeholder="—" /></dd></div>
+                        <div><dt>Email</dt><dd className="dd-with-copy"><InlineText value={clientObj.email} onSave={(v) => saveClientField(clientObj.id, "email", v)} placeholder="—" /><CopyButton value={clientObj.email} label="Copy email" /></dd></div>
                         <div><dt>Phone</dt><dd><InlineText value={clientObj.phone} onSave={(v) => saveClientField(clientObj.id, "phone", v)} placeholder="—" /></dd></div>
                         <div><dt>Address</dt><dd><InlineText value={clientObj.address} onSave={(v) => saveClientField(clientObj.id, "address", v)} placeholder="—" /></dd></div>
                       </dl>
@@ -1355,10 +1357,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                           {contact.name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
                         </span>
                         {contact.name}
+                        {contact.organization && <span className="cc-firm-inline">· {contact.organization}</span>}
                       </div>
                       <dl className="cc-fields">
-                        {contact.organization && <div><dt>Firm</dt><dd>{contact.organization}</dd></div>}
-                        <div><dt>Email</dt><dd>{contact.email || "—"}</dd></div>
+                        <div><dt>Email</dt><dd className="dd-with-copy">{contact.email || "—"}<CopyButton value={contact.email} label="Copy email" /></dd></div>
                         <div><dt>Phone</dt><dd>{contact.phone || "—"}</dd></div>
                       </dl>
                     </li>
@@ -1691,7 +1693,50 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 onChange={(e) => patch({ show_case_timeline: e.target.checked })}
               />
             </label>
-            {clientObj && (
+            {clientObj && clientObj.client_type === "business" && (
+              <div className="couple-fields" style={{ marginTop: "0.5rem" }}>
+                <p className="field-note">Billing contact for {clientObj.name}</p>
+                <label className="toggle-line" style={{ marginBottom: "0.4rem" }}>
+                  <span className="toggle-text">
+                    <span className="toggle-title">Same as primary contact</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="toggle-switch"
+                    checked={!clientObj.billing_contact}
+                    onChange={(e) => {
+                      if (e.target.checked) saveClientField(clientObj.id, "billing_contact", "");
+                      else saveClientField(clientObj.id, "billing_contact", clientObj.primary_contact || clientObj.name || "");
+                    }}
+                  />
+                </label>
+                {clientObj.billing_contact && (
+                  <>
+                    <div className="field-pair">
+                      <label>
+                        Name
+                        <input
+                          defaultValue={clientObj.billing_contact ?? ""}
+                          onBlur={(e) => saveClientField(clientObj.id, "billing_contact", e.target.value)}
+                          placeholder="Billing contact name"
+                        />
+                      </label>
+                      <label>
+                        Email
+                        <input defaultValue={clientObj.billing_email ?? ""} onBlur={(e) => saveClientField(clientObj.id, "billing_email", e.target.value)} />
+                      </label>
+                    </div>
+                    <div className="field-pair">
+                      <label>
+                        Phone
+                        <input defaultValue={clientObj.billing_phone ?? ""} onBlur={(e) => saveClientField(clientObj.id, "billing_phone", e.target.value)} />
+                      </label>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            {clientObj && clientObj.client_type !== "business" && (
               <div className="couple-fields" style={{ marginTop: "0.5rem" }}>
                 <p className="field-note">Second contact for {clientObj.name}</p>
                 <div className="field-pair">

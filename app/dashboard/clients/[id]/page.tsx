@@ -10,6 +10,7 @@ import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
 import ResizableCols from "../../ResizableCols";
 import TitlePill from "../../TitlePill";
+import CopyButton from "../../CopyButton";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -326,7 +327,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 </dd>
               </div>
             )}
-            <div><dt>Email</dt><dd><Guarded field="email" label="email" type="email" /></dd></div>
+            <div><dt>Email</dt><dd className="dd-with-copy"><Guarded field="email" label="email" type="email" /><CopyButton value={client.email} label="Copy email" /></dd></div>
             <div><dt>Phone</dt><dd><Guarded field="phone" label="phone number" type="tel" /></dd></div>
             <div>
               <dt>Address</dt>
