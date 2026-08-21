@@ -1088,7 +1088,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             ["expenses", "Expenses"],
             ["tasks", "Tasks"],
             ["documents", "Documents"],
-            ["contacts", "Contacts"],
+            ["contacts", "Contacts", (clientObj ? 1 + (clientObj.partner_name ? 1 : 0) : 0) + matterContacts.length],
             ["events", "Events", upcomingEvents.length],
             ["invoices", "Invoices", invoices.length],
             ...(matter.show_case_timeline

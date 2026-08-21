@@ -202,12 +202,12 @@ export default function ContactsPanel() {
         <div className="table-wrap fill-table table-wrap-noscroll">
           <table className="data-table data-table-wrap-cells">
             <colgroup>
-              <col style={{ width: "20%" }} />
-              {cols.role && <col style={{ width: "15%" }} />}
+              <col style={{ width: "19%" }} />
+              {cols.role && <col style={{ width: "18%" }} />}
               {cols.organization && <col style={{ width: "18%" }} />}
               {cols.email && <col style={{ width: "20%" }} />}
               {cols.phone && <col style={{ width: "12%" }} />}
-              {cols.address && <col style={{ width: "20%" }} />}
+              {cols.address && <col style={{ width: "17%" }} />}
               <col style={{ width: "44px" }} />
             </colgroup>
             <thead>

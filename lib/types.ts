@@ -45,7 +45,7 @@ export type Contact = {
 export const CONTACT_ROLES = [
   { value: "outside_counsel", label: "Outside Counsel" },
   { value: "co_counsel", label: "Co-Counsel" },
-  { value: "adverse_counsel", label: "Adverse Party Counsel" },
+  { value: "adverse_counsel", label: "Adverse Counsel" },
   { value: "expert", label: "Expert / Witness" },
   { value: "vendor", label: "Vendor / Service" },
   { value: "other", label: "Other" },
