@@ -397,7 +397,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <div className="panel">
           <div className="panel-head">
             <h2 className="combo-title">Matters <span className="count-badge">{matters.length}</span></h2>
-            <button type="button" className="btn icon-plus-btn sm-plus" onClick={() => { setMForm({ name: `${client.name} — `, practice_area: PRACTICE_AREAS[0], assigned_to: ATTORNEYS[0] }); setAddMatterOpen(true); }} title="Add matter" aria-label="Add matter">+</button>
+            <button type="button" className="btn icon-plus-btn sm-plus" style={{ marginTop: "-0.5rem", marginRight: "-0.35rem", alignSelf: "flex-start" }} onClick={() => { setMForm({ name: `${client.name} — `, practice_area: PRACTICE_AREAS[0], assigned_to: ATTORNEYS[0] }); setAddMatterOpen(true); }} title="Add matter" aria-label="Add matter">+</button>
           </div>
           <div className="panel-scroll">
             {matters.length === 0 ? <p className="muted-line">No matters yet.</p> : (
