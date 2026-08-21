@@ -460,24 +460,27 @@ export default function ClientsPage() {
       </span>
     );
 
+  const headTabs = (
+    <div className="doc-tabs head-tabs">
+      <button type="button" className={mainTab === "clients" ? "active" : undefined} onClick={() => setMainTab("clients")}>
+        Clients <span className="count-badge">{clients.length}</span>
+      </button>
+      <button type="button" className={mainTab === "contacts" ? "active" : undefined} onClick={() => setMainTab("contacts")}>
+        Contacts
+      </button>
+    </div>
+  );
+
   return (
     <div>
-      <div className="doc-tabs" style={{ marginBottom: "1rem", justifyContent: "flex-end" }}>
-        <button type="button" className={mainTab === "clients" ? "active" : undefined} onClick={() => setMainTab("clients")}>
-          Clients <span className="count-badge">{clients.length}</span>
-        </button>
-        <button type="button" className={mainTab === "contacts" ? "active" : undefined} onClick={() => setMainTab("contacts")}>
-          Contacts
-        </button>
-      </div>
-
       {mainTab === "contacts" ? (
-        <ContactsPanel />
+        <ContactsPanel headTabs={headTabs} />
       ) : (
       <>
       <div className="page-head">
         <h1 className="page-title upper">Clients <span className="count-badge">{clients.length}</span></h1>
         <div className="head-controls">
+          {headTabs}
           <div className="filter-wrap" ref={filterRef}>
             <button
               className={`icon-btn print-btn${typeFilter !== "all" ? " filter-on" : ""}`}

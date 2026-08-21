@@ -4142,6 +4142,11 @@ a.activity-row:hover .act-desc {
   justify-content: flex-end;
   margin-bottom: 0.75rem;
 }
+/* Clients/Contacts switcher living inside the page-head, left of the icons */
+.head-tabs {
+  margin: 0 0.5rem 0 0;
+  border: none;
+}
 .lead-chart-legend {
   display: flex;
   gap: 1.25rem;
@@ -6248,7 +6253,7 @@ a.activity-row:hover .act-desc {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--accent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 78%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 72%, #000));
   color: #fff;
   display: flex;
   align-items: center;
@@ -7223,7 +7228,7 @@ a.activity-row:hover .act-desc {
   height: 52px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 82%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 70%, #000));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 78%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 72%, #000));
   color: #fff;
   display: inline-flex;
   align-items: center;

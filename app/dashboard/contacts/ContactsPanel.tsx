@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { CONTACT_ROLES, contactRoleLabel, personColor, type Contact } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
@@ -21,7 +21,7 @@ const COL_DEFS = [
 ] as const;
 type ColKey = (typeof COL_DEFS)[number]["key"];
 
-export default function ContactsPanel() {
+export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode }) {
   const { userName } = usePortal();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,6 +183,7 @@ export default function ContactsPanel() {
           </h1>
         </div>
         <div className="head-controls">
+          {headTabs}
           <div className="filter-wrap" ref={filterRef}>
             <button
               type="button"
