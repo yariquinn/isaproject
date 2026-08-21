@@ -21,6 +21,8 @@ function fmtHm(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   return `${h}h ${m}m`;
 }
+const usd = (n: number, dp = 2) =>
+  `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp })}`;
 
 export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -145,6 +147,18 @@ export default function BillingPage() {
     load();
   }
 
+  async function deleteInvoice(id: string, number: string | null) {
+    if (!window.confirm(`Delete invoice ${number || ""}? This cannot be undone.`)) return;
+    await supabase.from("invoice_items").delete().eq("invoice_id", id);
+    await supabase.from("invoices").delete().eq("id", id);
+    load();
+  }
+  async function deleteEntry(id: string) {
+    if (!window.confirm("Delete this time entry? This cannot be undone.")) return;
+    await supabase.from("time_entries").delete().eq("id", id);
+    load();
+  }
+
   return (
     <div>
       <h1 className="page-title">Billing</h1>
@@ -183,11 +197,11 @@ export default function BillingPage() {
         <>
           <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
             <div className="stat" style={{ cursor: "default" }}>
-              <span className="stat-num">${total.toFixed(0)}</span>
+              <span className="stat-num">{usd(total, 0)}</span>
               <span className="stat-label">Invoiced</span>
             </div>
             <div className="stat" style={{ cursor: "default" }}>
-              <span className="stat-num">${outstanding.toFixed(0)}</span>
+              <span className="stat-num">{usd(outstanding, 0)}</span>
               <span className="stat-label">Outstanding</span>
             </div>
             <div className="stat" style={{ cursor: "default" }}>
@@ -246,6 +260,7 @@ export default function BillingPage() {
                     <th>Amount</th>
                     <th>Due</th>
                     <th>Status</th>
+                    <th aria-label="Delete"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -274,7 +289,7 @@ export default function BillingPage() {
                           "—"
                         )}
                       </td>
-                      <td>{i.amount != null ? `$${i.amount.toFixed(2)}` : "—"}</td>
+                      <td>{i.amount != null ? usd(i.amount) : "—"}</td>
                       <td>
                         {i.due_date
                           ? new Date(i.due_date).toLocaleDateString()
@@ -282,6 +297,9 @@ export default function BillingPage() {
                       </td>
                       <td>
                         <span className={`pill inv-${bucket}`}>{bucket}</span>
+                      </td>
+                      <td className="ct-actions">
+                        <button type="button" className="ct-del" title="Delete invoice" aria-label="Delete invoice" onClick={() => deleteInvoice(i.id, i.number)}>✕</button>
                       </td>
                     </tr>
                     );
@@ -332,6 +350,7 @@ export default function BillingPage() {
                     <th>Description</th>
                     <th>User</th>
                     <th>Duration</th>
+                    <th aria-label="Delete"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -357,6 +376,9 @@ export default function BillingPage() {
                       <td>{e.note || "—"}</td>
                       <td>{e.lawyer}</td>
                       <td>{fmtHm(e.duration_seconds)}</td>
+                      <td className="ct-actions">
+                        <button type="button" className="ct-del" title="Delete entry" aria-label="Delete entry" onClick={() => deleteEntry(e.id)}>✕</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

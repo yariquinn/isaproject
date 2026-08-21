@@ -135,6 +135,10 @@ export default function TimeTracker() {
   }
 
   async function removeTimer(target: Timer) {
+    const secs = Math.floor(elapsedOf(target, Date.now()));
+    if (secs > 0 && !window.confirm(`Discard this timer? ${fmt(secs)} of tracked time will be lost and cannot be recovered.`)) {
+      return;
+    }
     await supabase.from("timers").delete().eq("id", target.id);
     await load();
   }
