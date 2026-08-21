@@ -53,6 +53,20 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
   const [edit, setEdit] = useState<EditCell>(null);
   const [draft, setDraft] = useState("");
   const [period, setPeriod] = useState<Period>("all");
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const toggleSel = (id: string) => setSel((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  async function bulkExpenses(changes: Record<string, unknown>) {
+    const ids = [...sel]; if (!ids.length) return;
+    await supabase.from("expenses").update(changes).in("id", ids);
+    setSel(new Set()); load();
+  }
+  async function bulkDeleteExpenses() {
+    const ids = [...sel]; if (!ids.length) return;
+    if (!window.confirm(`Delete ${ids.length} expense${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    setRows((prev) => prev.filter((x) => !sel.has(x.id)));
+    await supabase.from("expenses").delete().in("id", ids);
+    setSel(new Set());
+  }
 
   const [nDate, setNDate] = useState(todayStr());
   const [nDesc, setNDesc] = useState("");
@@ -157,10 +171,27 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
         {stat("Un-invoiced", unInvoiced, visibleRows.filter((e) => !e.invoiced).length)}
       </div>
 
+      {sel.size > 0 && (
+        <div className="bulk-bar">
+          <span className="bulk-count">{sel.size} selected</span>
+          <button type="button" className="ghost sm" onClick={() => bulkExpenses({ billable: true })}>Mark billable</button>
+          <button type="button" className="ghost sm" onClick={() => bulkExpenses({ billable: false })}>Mark non-billable</button>
+          <button type="button" className="ghost sm" onClick={() => bulkExpenses({ invoiced: true })}>Mark invoiced</button>
+          <button type="button" className="ghost sm" onClick={() => bulkExpenses({ invoiced: false })}>Mark un-invoiced</button>
+          <button type="button" className="ghost sm bulk-danger" onClick={bulkDeleteExpenses}>Delete</button>
+          <button type="button" className="ghost sm" onClick={() => setSel(new Set())}>Clear</button>
+        </div>
+      )}
+
       <div className="table-wrap" style={{ border: "none" }}>
         <table className="data-table te-table">
           <thead>
             <tr>
+              <th className="check-col">
+                <input type="checkbox" aria-label="Select all"
+                  checked={visibleRows.length > 0 && visibleRows.every((e) => sel.has(e.id))}
+                  onChange={(ev) => setSel(ev.target.checked ? new Set(visibleRows.map((e) => e.id)) : new Set())} />
+              </th>
               <th>Date</th>
               <th>Description</th>
               <th>User</th>
@@ -175,6 +206,7 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
           </thead>
           <tbody>
             <tr className="te-new-row" onKeyDown={(ev) => { if (ev.key === "Enter" && !ev.shiftKey) commitNew(); }}>
+              <td className="check-col" aria-hidden="true" />
               <td><input type="date" value={nDate} onChange={(e) => setNDate(e.target.value)} aria-label="New expense date" /></td>
               <td><input value={nDesc} placeholder="Description…" onChange={(e) => setNDesc(e.target.value)} aria-label="New expense description" /></td>
               <td>
@@ -189,7 +221,10 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
               <td colSpan={3} className="te-new-hint">press Enter to add</td>
             </tr>
             {visibleRows.map((e) => (
-              <tr key={e.id}>
+              <tr key={e.id} className={sel.has(e.id) ? "row-selected" : undefined}>
+                <td className="check-col">
+                  <input type="checkbox" checked={sel.has(e.id)} onChange={() => toggleSel(e.id)} aria-label="Select expense" />
+                </td>
                 <td>
                   {isEditing(e, "expense_date") ? (
                     <input type="date" autoFocus value={draft} onChange={(ev) => setDraft(ev.target.value)} onBlur={() => save(e, "expense_date", draft || null)} />
