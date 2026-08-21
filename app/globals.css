@@ -886,10 +886,13 @@ section.block.alt {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--dash-muted);
-  background: color-mix(in srgb, var(--dash-muted) 15%, transparent);
+  color: #c0392b;
+  background: color-mix(in srgb, #c0392b 12%, transparent);
   padding: 0.1rem 0.4rem;
   border-radius: 10px;
+}
+.hdr-search-hit.closed {
+  background: var(--dash-bg);
 }
 .hdr-search-hit.closed .hdr-search-name {
   color: var(--dash-muted);
@@ -5284,7 +5287,16 @@ a.activity-row:hover .act-desc {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+}
+.name-with-title > :first-child {
+  white-space: nowrap;
+}
+.title-pill-btn {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.08;
+  max-width: 6.5rem;
 }
 .title-line-select {
   font-family: inherit;
@@ -7133,6 +7145,53 @@ a.activity-row:hover .act-desc {
   gap: 0.3rem;
   min-width: 0;
 }
+/* Revamped financials: billed/collected, A/R aging, practice area */
+.fin-grid2 {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1.1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+@media (max-width: 960px) { .fin-grid2 { grid-template-columns: 1fr; } }
+.fin-rate {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 0.1rem 0.5rem;
+  border-radius: 20px;
+}
+.fin-hero-sm { font-size: 1.25rem; font-weight: 700; color: var(--dash-muted); line-height: 1.1; }
+.fin-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 0.35rem; vertical-align: -1px; }
+.fin-swatch.collected { background: var(--accent); }
+.fin-swatch.billed { background: color-mix(in srgb, var(--dash-fg) 22%, transparent); }
+.fin-bc-heroes { display: flex; gap: 1.6rem; margin: 0.4rem 0 0.6rem; }
+.fin-bc-hero { display: flex; flex-direction: column; gap: 0.15rem; }
+.fin-bc-chart { display: flex; align-items: flex-end; gap: 0.5rem; height: 96px; margin-top: auto; padding-top: 0.4rem; }
+.fin-bc-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; height: 100%; }
+.fin-bc-bars { display: flex; align-items: flex-end; gap: 3px; height: 100%; width: 100%; justify-content: center; }
+.fin-bc-bar { width: 34%; min-height: 2px; border-radius: 3px 3px 0 0; }
+.fin-bc-bar.billed { background: color-mix(in srgb, var(--dash-fg) 20%, transparent); }
+.fin-bc-bar.collected { background: var(--accent); }
+.fin-bc-lbl { font-size: 0.66rem; color: var(--dash-muted); }
+.fin-aging-bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin: 0.7rem 0 0.8rem; background: var(--dash-bg); gap: 2px; }
+.fin-aging-seg { min-width: 4px; }
+.fin-swatch.ag-current, .ag-current { background: #3fa373; }
+.fin-swatch.ag-d30, .ag-d30 { background: #2f6bff; }
+.fin-swatch.ag-d60, .ag-d60 { background: #d9a441; }
+.fin-swatch.ag-d90, .ag-d90 { background: #e6884f; }
+.fin-swatch.ag-d90p, .ag-d90p { background: #c0392b; }
+.fin-aging-legend { display: flex; flex-direction: column; gap: 0.3rem; margin-top: auto; }
+.fin-aging-legend span { font-size: 0.78rem; color: var(--dash-fg); display: flex; align-items: center; }
+.fin-aging-legend span.muted { color: var(--dash-muted); }
+.fin-aging-legend b { margin-left: auto; font-weight: 700; }
+.fin-area-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; }
+.fin-donut { width: 120px; height: 120px; flex: none; }
+.fin-donut-num { font-size: 13px; font-weight: 700; fill: var(--dash-fg); }
+.fin-area-legend { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; flex: 1; }
+.fin-area-leg { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; }
+.fin-area-name { color: var(--dash-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-area-amt { margin-left: auto; font-weight: 600; color: var(--dash-fg); }
 .fin-revenue,
 .fin-expenses,
 .fin-invoices { grid-column: span 1; }

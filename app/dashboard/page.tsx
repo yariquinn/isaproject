@@ -475,6 +475,68 @@ export default function Overview() {
     ? monthly.map((m) => ({ label: m.label, amount: m.earn }))
     : weekEarnings;
 
+  // Revamped financials: billed vs collected, outstanding A/R + aging, by practice area.
+  const fin = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    let billed = 0, collected = 0;
+    const aging = { current: 0, d30: 0, d60: 0, d90: 0, d90p: 0 };
+    const areaMap = new Map<string, number>();
+    for (const i of invoices) {
+      const amt = i.amount ?? 0;
+      billed += amt;
+      if (i.status === "paid") {
+        collected += amt;
+        const m = matters.find((x) => x.id === i.matter_id);
+        const area = m?.practice_area || "Unassigned";
+        areaMap.set(area, (areaMap.get(area) ?? 0) + amt);
+      } else {
+        const due = i.due_date?.slice(0, 10);
+        const past = due ? Math.round((Date.parse(today) - Date.parse(due)) / 86400000) : 0;
+        if (past <= 0) aging.current += amt;
+        else if (past <= 30) aging.d30 += amt;
+        else if (past <= 60) aging.d60 += amt;
+        else if (past <= 90) aging.d90 += amt;
+        else aging.d90p += amt;
+      }
+    }
+    const outstanding = billed - collected;
+    const areas = [...areaMap.entries()].map(([area, amount]) => ({ area, amount })).sort((a, b) => b.amount - a.amount);
+    const months: { label: string; billed: number; collected: number }[] = [];
+    const now = new Date();
+    for (let k = 5; k >= 0; k--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+      const s = d.getTime();
+      const e = new Date(now.getFullYear(), now.getMonth() - k + 1, 1).getTime();
+      let b = 0, c = 0;
+      for (const i of invoices) {
+        const when = new Date(i.issued_date ?? i.created_at).getTime();
+        if (when >= s && when < e) { b += i.amount ?? 0; if (i.status === "paid") c += i.amount ?? 0; }
+      }
+      months.push({ label: d.toLocaleDateString(undefined, { month: "short" }), billed: b, collected: c });
+    }
+    return { billed, collected, outstanding, aging, areas, months };
+  }, [invoices, matters]);
+
+  const FIN_PIE = ["#a67c52", "#2f6bff", "#3fa373", "#e0699a", "#e6884f", "#7c5cbf"];
+  const bcMax = Math.max(1, ...fin.months.map((m) => Math.max(m.billed, m.collected)));
+  const collRate = fin.billed > 0 ? Math.round((fin.collected / fin.billed) * 100) : 0;
+  const agingSegs = [
+    { key: "current", label: "Current", amt: fin.aging.current },
+    { key: "d30", label: "1–30", amt: fin.aging.d30 },
+    { key: "d60", label: "31–60", amt: fin.aging.d60 },
+    { key: "d90", label: "61–90", amt: fin.aging.d90 },
+    { key: "d90p", label: "90+", amt: fin.aging.d90p },
+  ];
+  const areaTotal = fin.areas.reduce((s, a) => s + a.amount, 0);
+  const DONUT_C = 2 * Math.PI * 42;
+  let donutAcc = 0;
+  const donutSegs = fin.areas.map((a, idx) => {
+    const frac = areaTotal > 0 ? a.amount / areaTotal : 0;
+    const seg = { area: a.area, amount: a.amount, color: FIN_PIE[idx % FIN_PIE.length], dash: frac * DONUT_C, off: -donutAcc * DONUT_C };
+    donutAcc += frac;
+    return seg;
+  });
+
   // My Tasks: the current user's open tasks + upcoming firm events (closings, etc.)
   const myItems = useMemo(() => {
     const mine = todos
@@ -635,74 +697,87 @@ export default function Overview() {
         {loading ? (
           <p className="muted-line">Loading…</p>
         ) : (
-          <div className="fin-grid">
-            <div className="fin-card fin-revenue">
+          <div className="fin-grid2">
+            {/* Billed vs Collected */}
+            <div className="fin-card fin-bc">
               <div className="fin-card-head">
-                <span className="fin-card-label">Revenue</span>
-                <button
-                  type="button"
-                  className={`fin-graph-toggle${revLine ? " on" : ""}`}
-                  onClick={() => setRevLine((v) => !v)}
-                  title={revLine ? "Show amount" : "Show trend"}
-                  aria-label="Toggle revenue graph"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" />
-                  </svg>
-                </button>
+                <span className="fin-card-label">Billed vs Collected</span>
+                <span className="fin-rate">{collRate}% collected</span>
               </div>
-              {revLine ? (
-                <>
-                  <span className="fin-hero">{money(revenue)}</span>
-                  <Sparkline data={monthly.map((m) => m.rev)} />
-                </>
+              <div className="fin-bc-heroes">
+                <div className="fin-bc-hero">
+                  <span className="fin-hero">{money(fin.collected)}</span>
+                  <span className="fin-sub"><i className="fin-swatch collected" />Collected</span>
+                </div>
+                <div className="fin-bc-hero">
+                  <span className="fin-hero-sm">{money(fin.billed)}</span>
+                  <span className="fin-sub"><i className="fin-swatch billed" />Billed</span>
+                </div>
+              </div>
+              <div className="fin-bc-chart">
+                {fin.months.map((m) => (
+                  <div className="fin-bc-col" key={m.label}>
+                    <div className="fin-bc-bars">
+                      <div className="fin-bc-bar billed" style={{ height: `${(m.billed / bcMax) * 100}%` }} title={`Billed ${money(m.billed)}`} />
+                      <div className="fin-bc-bar collected" style={{ height: `${(m.collected / bcMax) * 100}%` }} title={`Collected ${money(m.collected)}`} />
+                    </div>
+                    <span className="fin-bc-lbl">{m.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Outstanding A/R + aging */}
+            <div className="fin-card fin-ar">
+              <span className="fin-card-label">Outstanding A/R</span>
+              <span className="fin-hero">{money(fin.outstanding)}</span>
+              {fin.outstanding <= 0 ? (
+                <p className="fin-sub">Nothing outstanding — all invoices collected.</p>
               ) : (
                 <>
-                  <span className="fin-hero">{money(revenue)}</span>
-                  {revenueDelta != null && (
-                    <span className={`fin-delta ${revenueDelta >= 0 ? "up" : "down"}`}>
-                      {revenueDelta >= 0 ? "+" : ""}{revenueDelta}% {compareMode === "yoy" ? "vs last yr" : "vs prev"}
-                    </span>
-                  )}
+                  <div className="fin-aging-bar">
+                    {agingSegs.map((s) => s.amt > 0 && (
+                      <div key={s.key} className={`fin-aging-seg ag-${s.key}`} style={{ flexGrow: s.amt }} title={`${s.label}: ${money(s.amt)}`} />
+                    ))}
+                  </div>
+                  <div className="fin-aging-legend">
+                    {agingSegs.map((s) => (
+                      <span key={s.key} className={s.amt > 0 ? undefined : "muted"}>
+                        <i className={`fin-swatch ag-${s.key}`} />{s.label}<b>{money(s.amt)}</b>
+                      </span>
+                    ))}
+                  </div>
                 </>
               )}
             </div>
 
-            <div className="fin-card fin-expenses">
-              <span className="fin-card-label">Expenses</span>
-              <span className="fin-hero">$0</span>
-              <StatDelta value={0} />
-              <span className="fin-sub">Not tracked yet</span>
-            </div>
-
-            <div className="fin-card fin-invoices">
-              <span className="fin-card-label">Invoices</span>
-              <InvoiceBar paid={invPaid} open={invOpen} overdue={invOverdue} />
-            </div>
-
-            <div className="fin-card fin-goals">
-              <span className="fin-card-label">Goal</span>
-              <GoalRing pct={goalPct} />
-              <span className="fin-sub">{money(revenue)} of {money(GOAL_TARGET)}</span>
-            </div>
-
-            <div className="fin-card fin-week">
-              <div className="fin-week-top">
-                <div className="fin-week-headline">
-                  <span className="fin-card-label">Earnings</span>
-                  <span className="fin-week-hero">
-                    {money(chartData.reduce((s, d) => s + d.amount, 0))}
-                  </span>
+            {/* Collected by practice area */}
+            <div className="fin-card fin-area">
+              <span className="fin-card-label">Collected by Practice Area</span>
+              {areaTotal === 0 ? (
+                <p className="fin-sub">No collected revenue yet.</p>
+              ) : (
+                <div className="fin-area-row">
+                  <svg viewBox="0 0 120 120" className="fin-donut" role="img" aria-label="Collected by practice area">
+                    <g transform="rotate(-90 60 60)">
+                      {donutSegs.map((s) => (
+                        <circle key={s.area} cx="60" cy="60" r="42" fill="none" stroke={s.color} strokeWidth="16"
+                          strokeDasharray={`${s.dash} ${DONUT_C - s.dash}`} strokeDashoffset={s.off} />
+                      ))}
+                    </g>
+                    <text x="60" y="63" textAnchor="middle" className="fin-donut-num">{money(areaTotal)}</text>
+                  </svg>
+                  <div className="fin-area-legend">
+                    {donutSegs.map((s) => (
+                      <div className="fin-area-leg" key={s.area}>
+                        <i className="fin-swatch" style={{ background: s.color }} />
+                        <span className="fin-area-name">{s.area}</span>
+                        <span className="fin-area-amt">{money(s.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="fin-week-controls">
-                  <span className="fin-legend"><span className="fin-legend-dot" />Earnings</span>
-                  <select className="inline-select" value={finRange} onChange={(e) => setFinRange(e.target.value as "7d" | "year")}>
-                    <option value="7d">This Week</option>
-                    <option value="year">This Year</option>
-                  </select>
-                </div>
-              </div>
-              <WeekBars data={chartData} />
+              )}
             </div>
           </div>
         )}

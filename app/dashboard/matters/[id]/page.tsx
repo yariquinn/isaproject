@@ -30,6 +30,7 @@ import {
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
 import MatterTasksList from "./MatterTasksList";
+import TitlePill from "../../TitlePill";
 import ExpensesTab from "./ExpensesTab";
 import Disclaimer from "../../Disclaimer";
 import TimeEntriesTab from "./TimeEntriesTab";
@@ -647,18 +648,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                         placeholder="—"
                       />
                       {clientObj.client_type === "business" && (
-                        <select
-                          className="title-pill"
-                          value={clientObj.contact_title ?? ""}
-                          onChange={(e) => saveClientField(clientObj.id, "contact_title", e.target.value)}
-                          aria-label="Title"
-                        >
-                          <option value="">+ Title</option>
-                          {CONTACT_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
-                          {clientObj.contact_title && !(CONTACT_TITLES as readonly string[]).includes(clientObj.contact_title) && (
-                            <option value={clientObj.contact_title}>{clientObj.contact_title}</option>
-                          )}
-                        </select>
+                        <TitlePill
+                          value={clientObj.contact_title}
+                          onSave={(v) => saveClientField(clientObj.id, "contact_title", v)}
+                        />
                       )}
                     </span>
                   </dd>

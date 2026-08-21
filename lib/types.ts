@@ -217,7 +217,7 @@ export const leadStatusLabel = (v: string) =>
 
 // Common business-contact titles (the title pill is editable to any of these).
 export const CONTACT_TITLES = [
-  "CEO", "CFO", "COO", "President", "Managing Member", "Director", "Partner", "General Counsel",
+  "CEO", "CFO", "COO", "President", "Managing Member", "Director", "Partner",
 ] as const;
 
 export const USER_ROLES = [
