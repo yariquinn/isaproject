@@ -117,8 +117,11 @@ export default function IntakeClient() {
 
   return (
     <>
-      <div className="intake-toptabs">
-        <button type="button" className="btn icon-plus-btn" onClick={() => setView("form")} title="New intake" aria-label="New intake">+</button>
+      <div className="page-head">
+        <h1 className="page-title upper">Client Intake</h1>
+        <div className="head-controls">
+          <button type="button" className="btn icon-plus-btn" onClick={() => setView("form")} title="New intake" aria-label="New intake">+</button>
+        </div>
       </div>
 
       <div className="intake-graph-row">

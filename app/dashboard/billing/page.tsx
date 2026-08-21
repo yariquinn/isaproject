@@ -32,7 +32,7 @@ export default function BillingPage() {
   const [matters, setMatters] = useState<Matter[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"invoices" | "time" | "timesheet">("invoices");
+  const [tab, setTab] = useState<"dashboard" | "invoices" | "time">("dashboard");
   const [invFilter, setInvFilter] = useState<InvoiceBucket | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selEntries, setSelEntries] = useState<Set<string>>(new Set());
@@ -55,7 +55,8 @@ export default function BillingPage() {
   useEffect(() => {
     load();
     const t = new URLSearchParams(window.location.search).get("tab");
-    if (t === "timesheet" || t === "time" || t === "invoices") setTab(t);
+    if (t === "time" || t === "invoices") setTab(t);
+    else setTab("dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -202,33 +203,24 @@ export default function BillingPage() {
     <div>
       <h1 className="page-title">Billing Dashboard</h1>
 
-      <div className="doc-tabs" style={{ margin: "1.1rem 0" }}>
-        <button
-          type="button"
-          className={tab === "invoices" ? "active" : undefined}
-          onClick={() => setTab("invoices")}
-        >
-          Invoices <span className="count-badge">{invoices.length}</span>
-        </button>
-        <button
-          type="button"
-          className={tab === "time" ? "active" : undefined}
-          onClick={() => setTab("time")}
-        >
-          Time Entries <span className="count-badge">{entries.length}</span>
-        </button>
-        <button
-          type="button"
-          className={tab === "timesheet" ? "active" : undefined}
-          onClick={() => setTab("timesheet")}
-        >
-          Timesheet
-        </button>
-      </div>
+      {tab === "dashboard" && (
+        <div className="stat-row" style={{ marginTop: "1.25rem" }}>
+          <div className="stat" style={{ cursor: "default" }}>
+            <span className="stat-num">{usd(total, 0)}</span>
+            <span className="stat-label">Invoiced</span>
+          </div>
+          <div className="stat" style={{ cursor: "default" }}>
+            <span className="stat-num">{usd(outstanding, 0)}</span>
+            <span className="stat-label">Outstanding</span>
+          </div>
+          <div className="stat" style={{ cursor: "default" }}>
+            <span className="stat-num">{invoices.length}</span>
+            <span className="stat-label">Invoices</span>
+          </div>
+        </div>
+      )}
 
-      {tab === "timesheet" ? (
-        <TimesheetTab onSaved={load} />
-      ) : tab === "invoices" ? (
+      {tab === "invoices" && (
         <>
           <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
             <div className="stat" style={{ cursor: "default" }}>
@@ -344,7 +336,9 @@ export default function BillingPage() {
             </div>
           )}
         </>
-      ) : (
+      )}
+
+      {tab === "time" && (
         <>
           <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
             <div className="stat" style={{ cursor: "default" }}>

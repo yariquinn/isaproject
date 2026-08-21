@@ -930,6 +930,34 @@ section.block.alt {
   color: var(--accent) !important;
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
+.hdr-icon-btn.active {
+  color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.hdr-ts-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.hdr-ts-panel {
+  position: fixed;
+  top: 54px;
+  right: 12px;
+  z-index: 60;
+  width: min(1100px, 94vw);
+  max-height: calc(100vh - 70px);
+  overflow: auto;
+  padding: 1rem 1.25rem 1.4rem;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+}
+.hdr-ts-head {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dash-fg);
+  margin-bottom: 0.6rem;
+}
 .hdr-icon-btn:disabled {
   opacity: 0.32;
   cursor: default;
