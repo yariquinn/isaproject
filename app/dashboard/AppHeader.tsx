@@ -95,6 +95,7 @@ function GlobalSearch() {
       const needMatterIds = Array.from(new Set([
         ...((times.data as { matter_id: string | null }[]) ?? []).map((t) => t.matter_id),
         ...((todos.data as { matter_id: string | null }[]) ?? []).map((t) => t.matter_id),
+        ...((events.data as { matter_id: string | null }[]) ?? []).map((t) => t.matter_id),
       ].filter(Boolean) as string[]));
       const matterNames: Record<string, string> = {};
       if (needMatterIds.length) {
@@ -116,11 +117,15 @@ function GlobalSearch() {
         next.contacts.push({ id: c.id, title: c.name, sub: c.organization, href: `/dashboard/contacts`, closed: !!c.archived });
       for (const t of (todos.data as { id: string; title: string; matter_id: string | null; done: boolean; due_date: string | null }[]) ?? []) {
         const overdue = !t.done && !!t.due_date && t.due_date.slice(0, 10) < today;
-        const sub = t.due_date ? `Due ${fmt(t.due_date.slice(0, 10))}` : null;
+        const mName = t.matter_id ? matterNames[t.matter_id] ?? null : null;
+        const sub = [mName, t.due_date ? `Due ${fmt(t.due_date.slice(0, 10))}` : null].filter(Boolean).join(" · ") || null;
         next.tasks.push({ id: t.id, title: t.title, sub, href: matterHref(t.matter_id, "/dashboard/todo"), closed: t.done, flag: overdue ? "Overdue" : null });
       }
-      for (const e of (events.data as { id: string; title: string; matter_id: string | null; event_date: string | null }[]) ?? [])
-        next.events.push({ id: e.id, title: e.title, sub: e.event_date ? fmt(e.event_date.slice(0, 10)) : null, href: matterHref(e.matter_id, "/dashboard/deadlines"), closed: false });
+      for (const e of (events.data as { id: string; title: string; matter_id: string | null; event_date: string | null }[]) ?? []) {
+        const mName = e.matter_id ? matterNames[e.matter_id] ?? null : null;
+        const sub = [mName, e.event_date ? fmt(e.event_date.slice(0, 10)) : null].filter(Boolean).join(" · ") || null;
+        next.events.push({ id: e.id, title: e.title, sub, href: matterHref(e.matter_id, "/dashboard/deadlines"), closed: false });
+      }
       for (const t of (times.data as { id: string; note: string | null; activity: string | null; matter_id: string | null; lawyer: string | null }[]) ?? []) {
         const mName = t.matter_id ? matterNames[t.matter_id] ?? null : null;
         const sub = [mName, t.activity].filter(Boolean).join(" · ") || null;
@@ -174,11 +179,9 @@ function GlobalSearch() {
                       <span className="hdr-search-name">
                         {h.title}
                         {h.closed && <span className="hdr-search-inline-pill">{g === "tasks" ? "Done" : "Archived"}</span>}
+                        {!h.closed && h.flag && <span className="hdr-search-inline-pill">{h.flag}</span>}
                       </span>
                       <span className="hdr-search-status-slot">
-                        {!h.closed && h.flag ? (
-                          <span className="hdr-search-status overdue">{h.flag}</span>
-                        ) : null}
                         {h.who && (
                           <span className="hdr-search-who" title={h.whoName ?? "User"} style={{ background: personColor(h.whoName), color: "#fff" }}>
                             {h.who}
@@ -372,7 +375,6 @@ export default function AppHeader() {
           </button>
           {tsOpen && (
             <div className="hdr-ts-panel">
-              <div className="hdr-ts-head">Timesheet</div>
               <TimesheetTab onSaved={() => {}} />
             </div>
           )}

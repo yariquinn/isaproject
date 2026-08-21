@@ -952,11 +952,21 @@ section.block.alt {
   border-radius: 14px;
   box-shadow: var(--shadow-md);
 }
-.hdr-ts-head {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--dash-fg);
-  margin-bottom: 0.6rem;
+.ts-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+.ts-foot-end {
+  justify-content: flex-end;
+}
+.ts-user-select {
+  text-align: center;
+  min-width: 0;
+}
+.ts-table input[type="number"] {
+  min-width: 0;
 }
 .hdr-icon-btn:disabled {
   opacity: 0.32;

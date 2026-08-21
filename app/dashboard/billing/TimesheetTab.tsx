@@ -244,29 +244,17 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
         </div>
       </div>
 
-      <div className="ts-head">
-        <div className="ts-actions">
-          {savedMsg && <span className="ts-saved">{savedMsg}</span>}
-          <button className="ghost sm" type="button" onClick={addRow}>
-            + Add row
-          </button>
-          <button
-            className="btn"
-            type="button"
-            onClick={saveAll}
-            disabled={saving || validRows.length === 0}
-          >
-            {saving
-              ? "Saving…"
-              : `Save${validRows.length ? " " + validRows.length : ""} ${
-                  validRows.length === 1 ? "entry" : "entries"
-                }`}
-          </button>
-        </div>
-      </div>
-
       <div className="table-wrap">
         <table className="data-table ts-table">
+          <colgroup>
+            <col style={{ width: "20%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "13%" }} />
+            <col />
+            <col style={{ width: "70px" }} />
+            <col style={{ width: "74px" }} />
+            <col style={{ width: "70px" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Matter</th>
@@ -318,12 +306,14 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
                 </td>
                 <td>
                   <select
+                    className="ts-user-select"
                     value={r.lawyer}
                     onChange={(e) => update(i, { lawyer: e.target.value })}
+                    title={r.lawyer}
                   >
                     {ATTORNEYS.map((a) => (
                       <option key={a} value={a}>
-                        {a}
+                        {a.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase()}
                       </option>
                     ))}
                   </select>
@@ -350,6 +340,22 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="ts-foot ts-foot-end">
+        {savedMsg && <span className="ts-saved">{savedMsg}</span>}
+        <button
+          className="btn"
+          type="button"
+          onClick={saveAll}
+          disabled={saving || validRows.length === 0}
+        >
+          {saving
+            ? "Saving…"
+            : `Save${validRows.length ? " " + validRows.length : ""} ${
+                validRows.length === 1 ? "entry" : "entries"
+              }`}
+        </button>
       </div>
     </>
   );
