@@ -7,9 +7,19 @@ import { usePortal } from "../PortalProvider";
 import { InlineText } from "../Inline";
 import ImportExport from "../ImportExport";
 
-const EMPTY = { name: "", role: "outside_counsel", organization: "", email: "", phone: "", notes: "" };
+const EMPTY = { name: "", role: "outside_counsel", organization: "", email: "", phone: "", address: "", notes: "" };
 const initialsOf = (n: string) =>
   (n || "").trim().split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
+
+// Optional columns, toggled by the + at the end of the header.
+const COL_DEFS = [
+  { key: "role", label: "Type" },
+  { key: "organization", label: "Firm" },
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Phone" },
+  { key: "address", label: "Business Address" },
+] as const;
+type ColKey = (typeof COL_DEFS)[number]["key"];
 
 export default function ContactsPanel() {
   const { userName } = usePortal();
@@ -22,6 +32,33 @@ export default function ContactsPanel() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+
+  const [cols, setCols] = useState<Record<ColKey, boolean>>({
+    role: true, organization: true, email: true, phone: true, address: true,
+  });
+  const [colMenuOpen, setColMenuOpen] = useState(false);
+  const colMenuRef = useRef<HTMLTableCellElement>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("contactCols");
+      if (raw) setCols((c) => ({ ...c, ...JSON.parse(raw) }));
+    } catch { /* ignore */ }
+  }, []);
+  const toggleCol = (key: ColKey) => {
+    setCols((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem("contactCols", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  useEffect(() => {
+    if (!colMenuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (colMenuRef.current && !colMenuRef.current.contains(e.target as Node)) setColMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [colMenuOpen]);
 
   async function load() {
     const { data } = await supabase.from("contacts").select("*").order("name");
@@ -54,6 +91,7 @@ export default function ContactsPanel() {
         organization: form.organization.trim() || null,
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
+        address: form.address.trim() || null,
         notes: form.notes.trim() || null,
         created_by: userName,
       })
@@ -72,10 +110,11 @@ export default function ContactsPanel() {
     const rows = records
       .map((r) => ({
         name: (r["Name"] || r["name"] || "").trim(),
-        role: (r["Role"] || r["role"] || "other").trim(),
-        organization: (r["Organization"] || r["organization"] || "").trim() || null,
+        role: (r["Type"] || r["Role"] || r["role"] || "other").trim(),
+        organization: (r["Firm"] || r["Organization"] || r["organization"] || "").trim() || null,
         email: (r["Email"] || r["email"] || "").trim() || null,
         phone: (r["Phone"] || r["phone"] || "").trim() || null,
+        address: (r["Business Address"] || r["Address"] || r["address"] || "").trim() || null,
         created_by: userName,
       }))
       .filter((r) => r.name);
@@ -93,6 +132,7 @@ export default function ContactsPanel() {
         c.name.toLowerCase().includes(q) ||
         (c.organization || "").toLowerCase().includes(q) ||
         (c.email || "").toLowerCase().includes(q) ||
+        (c.address || "").toLowerCase().includes(q) ||
         contactRoleLabel(c.role).toLowerCase().includes(q)
       );
     });
@@ -135,8 +175,8 @@ export default function ContactsPanel() {
           </div>
           <ImportExport
             filename="contacts"
-            headers={["Name", "Role", "Organization", "Email", "Phone"]}
-            rows={rows.map((c) => [c.name, contactRoleLabel(c.role), c.organization, c.email, c.phone])}
+            headers={["Name", "Type", "Firm", "Email", "Phone", "Business Address"]}
+            rows={rows.map((c) => [c.name, contactRoleLabel(c.role), c.organization, c.email, c.phone, c.address])}
             onImport={importContacts}
           />
           <button type="button" className="btn icon-plus-btn" onClick={() => setAddOpen(true)} title="Add contact" aria-label="Add contact">+</button>
@@ -164,21 +204,36 @@ export default function ContactsPanel() {
         <div className="table-wrap fill-table table-wrap-noscroll">
           <table className="data-table data-table-wrap-cells">
             <colgroup>
-              <col style={{ width: "22%" }} />
-              <col style={{ width: "18%" }} />
-              <col style={{ width: "22%" }} />
-              <col style={{ width: "22%" }} />
-              <col style={{ width: "12%" }} />
+              <col style={{ width: "20%" }} />
+              {cols.role && <col style={{ width: "15%" }} />}
+              {cols.organization && <col style={{ width: "18%" }} />}
+              {cols.email && <col style={{ width: "20%" }} />}
+              {cols.phone && <col style={{ width: "12%" }} />}
+              {cols.address && <col style={{ width: "20%" }} />}
               <col style={{ width: "44px" }} />
             </colgroup>
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Type</th>
-                <th>Organization</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th aria-hidden="true" />
+                {cols.role && <th>Type</th>}
+                {cols.organization && <th>Firm</th>}
+                {cols.email && <th>Email</th>}
+                {cols.phone && <th>Phone</th>}
+                {cols.address && <th>Business Address</th>}
+                <th className="col-menu-th" ref={colMenuRef}>
+                  <button type="button" className="col-menu-btn" onClick={() => setColMenuOpen((o) => !o)} title="Add or remove columns" aria-label="Add or remove columns">+</button>
+                  {colMenuOpen && (
+                    <div className="col-menu">
+                      <div className="col-menu-head">Columns</div>
+                      {COL_DEFS.map((c) => (
+                        <label key={c.key} className="col-menu-item">
+                          <input type="checkbox" checked={cols[c.key]} onChange={() => toggleCol(c.key)} />
+                          <span>{c.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -190,24 +245,33 @@ export default function ContactsPanel() {
                       <InlineText value={c.name} onSave={(v) => { if (v) patch(c.id, { name: v }); }} />
                     </span>
                   </td>
+                  {cols.role && (
                   <td>
-                    <select
-                      className="ct-role-select"
-                      value={c.role}
-                      onChange={(e) => patch(c.id, { role: e.target.value })}
-                    >
+                    <select className="ct-role-select" value={c.role} onChange={(e) => patch(c.id, { role: e.target.value })}>
                       {CONTACT_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                     </select>
                   </td>
+                  )}
+                  {cols.organization && (
                   <td>
                     <InlineText value={c.organization} onSave={(v) => patch(c.id, { organization: v || null })} placeholder="—" />
                   </td>
+                  )}
+                  {cols.email && (
                   <td>
                     <InlineText value={c.email} onSave={(v) => patch(c.id, { email: v || null })} placeholder="—" />
                   </td>
+                  )}
+                  {cols.phone && (
                   <td>
                     <InlineText value={c.phone} onSave={(v) => patch(c.id, { phone: v || null })} placeholder="—" />
                   </td>
+                  )}
+                  {cols.address && (
+                  <td>
+                    <InlineText value={c.address} onSave={(v) => patch(c.id, { address: v || null })} placeholder="—" />
+                  </td>
+                  )}
                   <td className="ct-actions">
                     <button type="button" className="ct-del" aria-label={`Delete ${c.name}`} title="Delete" onClick={() => removeContact(c.id)}>✕</button>
                   </td>
@@ -233,8 +297,8 @@ export default function ContactsPanel() {
               </select>
             </label>
             <label>
-              Organization / Firm
-              <input value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} placeholder="e.g. Roe &amp; Associates" />
+              Firm
+              <input value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} placeholder="Firm they work for" />
             </label>
             <div className="field-pair">
               <label>
@@ -246,6 +310,10 @@ export default function ContactsPanel() {
                 <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </label>
             </div>
+            <label>
+              Business Address
+              <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            </label>
             <label>
               Notes
               <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
