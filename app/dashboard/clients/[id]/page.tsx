@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { PRACTICE_AREAS, ATTORNEYS, CONTACT_TITLES, type ActivityItem, type Client, type Matter } from "@/lib/types";
+import { PRACTICE_AREAS, ATTORNEYS, CONTACT_TITLES, type ActivityItem, type Client, type Invoice, type Matter } from "@/lib/types";
+
+const money = (n: number | null | undefined) =>
+  n == null ? "—" : `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const shortDate = (s: string | null | undefined) =>
+  s ? new Date(s.slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "—";
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
@@ -32,6 +37,8 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [allClients, setAllClients] = useState<Client[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [recordTab, setRecordTab] = useState<"overview" | "invoices">("overview");
   const [loading, setLoading] = useState(true);
 
   const [prompt, setPrompt] = useState<{ field: GuardField; label: string } | null>(null);
@@ -92,15 +99,17 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   }
 
   async function loadAll() {
-    const [{ data: c }, { data: all }, { data: m }] = await Promise.all([
+    const [{ data: c }, { data: all }, { data: m }, { data: inv }] = await Promise.all([
       supabase.from("clients").select("*").eq("id", params.id).single(),
       supabase.from("clients").select("*").order("name"),
       supabase.from("matters").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
+      supabase.from("invoices").select("*").eq("client_id", params.id).order("created_at", { ascending: false }),
     ]);
     setClient((c as Client) ?? null);
     if (c) pushRecent("client", (c as Client).id, (c as Client).name);
     setAllClients((all as Client[]) ?? []);
     setMatters((m as Matter[]) ?? []);
+    setInvoices((inv as Invoice[]) ?? []);
     await loadActivity();
     setLoading(false);
   }
@@ -424,20 +433,69 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       </ResizableCols>
 
-      <div className="panel">
-        <h2 className="combo-title">Activity</h2>
-        <div className="panel-scroll">
-          {activity.length === 0 ? <p className="muted-line">No activity for this client yet.</p> : (
-            <ul className="activity-list">{activity.map((a) => (
-              <li key={a.id}>
-                <span className="act-tag tag-client">Client</span>
-                <span className="act-desc">{a.description}</span>
-                <span className="act-time">{timeAgo(a.created_at)}</span>
-              </li>
-            ))}</ul>
+      <div className="doc-tabs" style={{ margin: "1.25rem 0 1rem" }}>
+        <button type="button" className={recordTab === "overview" ? "active" : undefined} onClick={() => setRecordTab("overview")}>
+          Overview
+        </button>
+        <button type="button" className={recordTab === "invoices" ? "active" : undefined} onClick={() => setRecordTab("invoices")}>
+          Invoices <span className="count-badge">{invoices.length}</span>
+        </button>
+      </div>
+
+      {recordTab === "overview" ? (
+        <div className="panel">
+          <h2 className="combo-title">Activity</h2>
+          <div className="panel-scroll">
+            {activity.length === 0 ? <p className="muted-line">No activity for this client yet.</p> : (
+              <ul className="activity-list">{activity.map((a) => (
+                <li key={a.id}>
+                  <span className="act-tag tag-client">Client</span>
+                  <span className="act-desc">{a.description}</span>
+                  <span className="act-time">{timeAgo(a.created_at)}</span>
+                </li>
+              ))}</ul>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="panel">
+          <h2 className="combo-title">Invoices <span className="count-badge">{invoices.length}</span></h2>
+          {invoices.length === 0 ? (
+            <p className="muted-line">No invoices for this client yet.</p>
+          ) : (
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Invoice</th>
+                    <th>Matter</th>
+                    <th>Issued</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: "right" }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices.map((inv) => (
+                    <tr key={inv.id}>
+                      <td className="strong-cell">
+                        <Link href={`/dashboard/invoices/${inv.id}?from=/dashboard/clients/${params.id}`} className="row-link">
+                          {inv.number || "Invoice"}
+                        </Link>
+                      </td>
+                      <td>{matters.find((m) => m.id === inv.matter_id)?.name ?? "—"}</td>
+                      <td>{shortDate(inv.issued_date)}</td>
+                      <td>{shortDate(inv.due_date)}</td>
+                      <td><span className={`pill inv-${inv.status}`}>{inv.status}</span></td>
+                      <td style={{ textAlign: "right" }}>{money(inv.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      </div>
+      )}
 
       {editOpen && (
         <div className="modal-backdrop" onClick={() => setEditOpen(false)}>
