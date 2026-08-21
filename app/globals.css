@@ -950,12 +950,20 @@ section.block.alt {
   background: var(--dash-bg);
   color: var(--dash-fg) !important;
 }
-/* Every header pill renders its glyph at the same 18px box. */
+/* Every header pill renders its glyph at the same 18px box, centered. */
 .hdr-icon-filled svg,
 .app-header .tracker-icon .tracker-icon-glyph svg,
 .app-header .hdr-bell svg {
   width: 18px;
   height: 18px;
+  display: block;
+}
+.app-header .tracker-icon .tracker-icon-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
+  line-height: 0;
 }
 .hdr-icon-filled:hover,
 .app-header .tracker-icon:hover,
