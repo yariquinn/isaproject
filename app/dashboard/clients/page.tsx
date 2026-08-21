@@ -397,7 +397,7 @@ export default function ClientsPage() {
               <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
             </div>
           )}
-          <table className="data-table">
+          <table className="data-table data-table-wrap-cells">
             <thead>
               <tr>
                 <th className="check-col">
