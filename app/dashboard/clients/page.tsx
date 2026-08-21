@@ -195,6 +195,21 @@ export default function ClientsPage() {
     Record<string, { id: string; name: string }[]>
   >({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Active-matters popover: rendered fixed so the table's overflow can't clip it.
+  const [matterPop, setMatterPop] = useState<{ id: string; top: number; left: number } | null>(null);
+  const popCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openMatterPop = (id: string, el: HTMLElement) => {
+    if (popCloseTimer.current) clearTimeout(popCloseTimer.current);
+    const r = el.getBoundingClientRect();
+    setMatterPop({ id, top: r.bottom + 6, left: Math.min(r.left, window.innerWidth - 260) });
+  };
+  const scheduleClosePop = () => {
+    if (popCloseTimer.current) clearTimeout(popCloseTimer.current);
+    popCloseTimer.current = setTimeout(() => setMatterPop(null), 140);
+  };
+  const cancelClosePop = () => {
+    if (popCloseTimer.current) clearTimeout(popCloseTimer.current);
+  };
 
   function toggleRow(id: string) {
     setSelected((prev) => {
@@ -658,23 +673,13 @@ export default function ClientsPage() {
                   {ccols.matters && (
                   <td>
                     {activeMatters[c.id]?.length ? (
-                      <span className="matter-pop-wrap">
-                        <span className="matter-count-badge">
-                          {activeMatters[c.id].length} matter
-                          {activeMatters[c.id].length === 1 ? "" : "s"}
-                        </span>
-                        <span className="matter-pop">
-                          <span className="matter-pop-head">Active matters</span>
-                          {activeMatters[c.id].map((m) => (
-                            <Link
-                              key={m.id}
-                              href={`/dashboard/matters/${m.id}`}
-                              className="matter-pop-item"
-                            >
-                              {m.name}
-                            </Link>
-                          ))}
-                        </span>
+                      <span
+                        className="matter-count-badge"
+                        onMouseEnter={(e) => openMatterPop(c.id, e.currentTarget)}
+                        onMouseLeave={scheduleClosePop}
+                      >
+                        {activeMatters[c.id].length} matter
+                        {activeMatters[c.id].length === 1 ? "" : "s"}
                       </span>
                     ) : (
                       <span className="inline-placeholder">—</span>
@@ -1035,6 +1040,22 @@ export default function ClientsPage() {
         </div>
       )}
       </>
+      )}
+
+      {matterPop && activeMatters[matterPop.id]?.length && (
+        <div
+          className="matter-pop matter-pop-fixed"
+          style={{ top: matterPop.top, left: matterPop.left }}
+          onMouseEnter={cancelClosePop}
+          onMouseLeave={scheduleClosePop}
+        >
+          <span className="matter-pop-head">Active matters</span>
+          {activeMatters[matterPop.id].map((m) => (
+            <Link key={m.id} href={`/dashboard/matters/${m.id}`} className="matter-pop-item">
+              {m.name}
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   );

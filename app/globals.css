@@ -5456,6 +5456,17 @@ a.activity-row:hover .act-desc {
   transform: translate(-50%, 0);
   pointer-events: auto;
 }
+/* Fixed variant: positioned via JS so the table's overflow can't clip it. */
+.matter-pop-fixed {
+  position: fixed;
+  top: auto;
+  left: auto;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  z-index: 60;
+}
 .matter-pop-head {
   font-size: 0.6rem;
   font-weight: 700;
