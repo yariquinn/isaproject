@@ -13,6 +13,7 @@ export default function IntakeClient() {
   const [saving, setSaving] = useState(false);
   const [view, setView] = useState<"pipeline" | "form">("pipeline");
   const [statusFilter, setStatusFilter] = useState<string>("active");
+  const [detail, setDetail] = useState<Lead | null>(null);
 
   async function load() {
     const { data } = await supabase.from("inquiries").select("*").order("created_at", { ascending: false });
@@ -94,12 +95,23 @@ export default function IntakeClient() {
     });
   }, [leads]);
 
-  const maxY = Math.max(1, ...trend.map((p) => p.added));
-  const W = 560, H = 200, PAD = 28;
-  const px = (i: number) => PAD + (i / (trend.length - 1)) * (W - PAD * 2);
-  const py = (v: number) => H - PAD - (v / maxY) * (H - PAD * 2);
+  const rawMax = Math.max(1, ...trend.map((p) => p.added));
+  // Round the top of the axis up to a "nice" number so tick labels are whole.
+  const step = Math.max(1, Math.ceil(rawMax / 4));
+  const maxY = step * 4;
+  const W = 560, H = 210, PADL = 34, PADB = 30, PADT = 12, PADR = 12;
+  const px = (i: number) => PADL + (i / (trend.length - 1)) * (W - PADL - PADR);
+  const py = (v: number) => H - PADB - (v / maxY) * (H - PADB - PADT);
   const line = (key: "added" | "converted" | "lost") =>
     trend.map((p, i) => `${i === 0 ? "M" : "L"}${px(i).toFixed(1)},${py(p[key]).toFixed(1)}`).join(" ");
+  const yTicks = Array.from({ length: 5 }, (_, i) => i * step);
+  // Label the horizontal axis with month/year at each bucket, de-duplicated.
+  const xLabels = trend.map((p, i) => {
+    const d = new Date(p.t);
+    const label = d.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+    return { i, label };
+  }).filter((l, idx, arr) => idx === 0 || arr[idx - 1].label !== l.label);
+  const recentLeads = [...leads].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   if (loading) return <p className="muted-line">Loading…</p>;
 
@@ -112,20 +124,51 @@ export default function IntakeClient() {
         <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{counts.did_not_hire}</span><span className="stat-label">Did Not Hire</span></div>
       </div>
 
-      <div className="panel" style={{ marginBottom: "1.5rem" }}>
-        <h2 className="panel-title">Leads over time</h2>
-        <div className="lead-chart-legend">
-          <span><i style={{ background: "#2f6bff" }} /> Added</span>
-          <span><i style={{ background: "#3fa373" }} /> Converted</span>
-          <span><i style={{ background: "#c0392b" }} /> Did not hire</span>
+      <div className="intake-graph-row">
+        <div className="panel intake-graph-panel">
+          <h2 className="panel-title">Leads over time</h2>
+          <div className="lead-chart-legend">
+            <span><i style={{ background: "#2f6bff" }} /> Added</span>
+            <span><i style={{ background: "#3fa373" }} /> Converted</span>
+            <span><i style={{ background: "#c0392b" }} /> Did not hire</span>
+          </div>
+          <svg viewBox={`0 0 ${W} ${H}`} className="lead-chart" role="img" aria-label="Leads over time">
+            {/* horizontal gridlines + Y-axis numbers */}
+            {yTicks.map((v) => (
+              <g key={v}>
+                <line x1={PADL} y1={py(v)} x2={W - PADR} y2={py(v)} className="lead-grid" />
+                <text x={PADL - 6} y={py(v) + 3} textAnchor="end" className="lead-axis-num">{v}</text>
+              </g>
+            ))}
+            {/* X-axis month/year labels */}
+            {xLabels.map(({ i, label }) => (
+              <text key={i} x={px(i)} y={H - PADB + 16} textAnchor="middle" className="lead-axis-num">{label}</text>
+            ))}
+            <line x1={PADL} y1={H - PADB} x2={W - PADR} y2={H - PADB} className="lead-axis" />
+            <line x1={PADL} y1={PADT} x2={PADL} y2={H - PADB} className="lead-axis" />
+            <path d={line("added")} fill="none" stroke="#2f6bff" strokeWidth="2.5" />
+            <path d={line("converted")} fill="none" stroke="#3fa373" strokeWidth="2.5" />
+            <path d={line("lost")} fill="none" stroke="#c0392b" strokeWidth="2.5" />
+          </svg>
         </div>
-        <svg viewBox={`0 0 ${W} ${H}`} className="lead-chart" role="img" aria-label="Leads over time">
-          <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} className="lead-axis" />
-          <line x1={PAD} y1={PAD} x2={PAD} y2={H - PAD} className="lead-axis" />
-          <path d={line("added")} fill="none" stroke="#2f6bff" strokeWidth="2.5" />
-          <path d={line("converted")} fill="none" stroke="#3fa373" strokeWidth="2.5" />
-          <path d={line("lost")} fill="none" stroke="#c0392b" strokeWidth="2.5" />
-        </svg>
+        <div className="panel intake-activity-panel">
+          <h2 className="panel-title">Recent submissions</h2>
+          {recentLeads.length === 0 ? (
+            <p className="muted-line">No submissions yet.</p>
+          ) : (
+            <ul className="intake-activity-list">
+              {recentLeads.slice(0, 8).map((l) => (
+                <li key={l.id} className="intake-activity-item" onClick={() => setDetail(l)}>
+                  <div className="intake-activity-main">
+                    <span className="intake-activity-name">{l.name}</span>
+                    <span className="intake-activity-meta">{l.practice_area || "—"}</span>
+                  </div>
+                  <span className="intake-activity-date">{new Date(l.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       <div className="doc-tabs" style={{ marginBottom: "1rem" }}>
@@ -195,7 +238,7 @@ export default function IntakeClient() {
                   {shown.map((l) => (
                     <tr key={l.id}>
                       <td className="strong-cell">
-                        {l.name}
+                        <button type="button" className="row-link lead-name-btn" onClick={() => setDetail(l)}>{l.name}</button>
                         {l.email && <div className="lead-sub">{l.email}</div>}
                       </td>
                       <td>{l.practice_area || "—"}</td>
@@ -221,6 +264,50 @@ export default function IntakeClient() {
           )}
         </>
       )}
+
+      {detail && (() => {
+        const l = leads.find((x) => x.id === detail.id) ?? detail;
+        return (
+          <div className="modal-backdrop" onClick={() => setDetail(null)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <h3>{l.name}</h3>
+              <p className="field-note" style={{ marginTop: "-0.3rem" }}>
+                {l.client_type === "business" ? "Business" : "Individual"} · received {new Date(l.created_at).toLocaleDateString()}
+              </p>
+              <dl className="cc-fields" style={{ marginBottom: "0.8rem" }}>
+                <div><dt>Email</dt><dd>{l.email || "—"}</dd></div>
+                <div><dt>Phone</dt><dd>{l.phone || "—"}</dd></div>
+                <div><dt>Source</dt><dd>{l.source || "—"}</dd></div>
+              </dl>
+              <div className="field-pair">
+                <label>Practice area
+                  <select value={l.practice_area || PRACTICE_AREAS[0]} onChange={(e) => patch(l.id, { practice_area: e.target.value })}>
+                    {PRACTICE_AREAS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </label>
+                <label>Status
+                  <select value={l.status} onChange={(e) => patch(l.id, { status: e.target.value })}>
+                    {LEAD_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </label>
+              </div>
+              {l.message && (
+                <label style={{ marginTop: "0.6rem" }}>Matter description
+                  <textarea rows={4} readOnly value={l.message} />
+                </label>
+              )}
+              <div className="modal-actions">
+                {l.status === "converted" ? (
+                  <span className="pill inv-paid">Converted to client</span>
+                ) : (
+                  <button type="button" className="ghost" onClick={() => convertToClient(l)}>Convert to client</button>
+                )}
+                <button type="button" className="btn" onClick={() => setDetail(null)}>Done</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
