@@ -6068,8 +6068,8 @@ a.activity-row:hover .act-desc {
 .ev-section.muted { color: var(--dash-muted); }
 .du-list.dim li { opacity: 0.75; }
 .du-title.done {
-  text-decoration: line-through;
   color: var(--dash-muted);
+  opacity: 0.85;
 }
 
 /* Checked-off events stay in the Details box but collapse: the title dims and
@@ -7595,8 +7595,8 @@ a.activity-row:hover .act-desc {
   border-bottom-color: var(--dash-border);
 }
 .mt-title.done {
-  text-decoration: line-through;
   color: var(--dash-muted);
+  opacity: 0.75;
 }
 .mt-edit {
   flex: 1;

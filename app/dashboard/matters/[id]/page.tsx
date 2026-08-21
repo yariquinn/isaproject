@@ -1194,6 +1194,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
         {bodyTab === "time" && (
+          <>
+          <h3 className="ev-section">Time Entries</h3>
           <TimeEntriesTab
             entries={entries}
             rate={matter.rate_type === "flat" ? 0 : matter.hourly_rate}
@@ -1219,10 +1221,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               </div>
             }
           />
+          </>
         )}
 
         {bodyTab === "expenses" && (
           <>
+            <h3 className="ev-section">Expenses</h3>
             <p className="muted-line">No expenses recorded for this matter.</p>
             <Disclaimer>Expense tracking is a placeholder for now.</Disclaimer>
           </>
@@ -1230,6 +1234,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "contacts" && (
           <>
+            <h3 className="ev-section">Contacts</h3>
             {clientObj ? (
               <ul className="contact-cards">
                 <li className="contact-card">
@@ -1262,11 +1267,15 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
         {bodyTab === "tasks" && (
-          <MatterTasksList matterId={matter.id} />
+          <>
+            <h3 className="ev-section">Tasks</h3>
+            <MatterTasksList matterId={matter.id} />
+          </>
         )}
 
         {bodyTab === "documents" && (
           <>
+            <h3 className="ev-section">Documents</h3>
             <div className="table-wrap" style={{ border: "none" }}>
               <table className="data-table">
                 <thead>
@@ -1376,9 +1385,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "invoices" && (
           <>
+            <h3 className="ev-section">Invoices</h3>
             {clientObj && (
               <div className="billing-notes" style={{ marginBottom: "1.25rem" }}>
-                <h3 className="billing-notes-title">Billing Notes</h3>
+                <h3 className="ev-section">Billing Notes</h3>
                 <NotesFeed
                   value={clientObj.billing_notes}
                   onSave={(next) => saveBillingNotes(clientObj.id, next ?? "")}
