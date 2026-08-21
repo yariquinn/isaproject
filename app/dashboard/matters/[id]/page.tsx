@@ -26,6 +26,7 @@ import {
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
 import MatterTasksList from "./MatterTasksList";
+import InvoiceEditor from "../../InvoiceEditor";
 import Disclaimer from "../../Disclaimer";
 import NotesFeed from "../../NotesFeed";
 import TimeEntriesTab from "./TimeEntriesTab";
@@ -140,6 +141,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [editInvoice, setEditInvoice] = useState<string | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -1417,7 +1419,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       const created = i.issued_date || i.created_at;
                       const due = i.status === "paid" ? 0 : i.amount;
                       return (
-                        <tr key={i.id}>
+                        <tr key={i.id} className="inv-row" onClick={() => setEditInvoice(i.id)}>
                           <td className="strong-cell">{i.number || "—"}</td>
                           <td>
                             {created
@@ -1444,6 +1446,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
       </div>
+
+      {editInvoice && (
+        <div className="modal-backdrop" onClick={() => { setEditInvoice(null); loadAll(); }}>
+          <div className="modal inv-modal" onClick={(e) => e.stopPropagation()}>
+            <InvoiceEditor invoiceId={editInvoice} onClose={() => { setEditInvoice(null); loadAll(); }} />
+          </div>
+        </div>
+      )}
 
       {editOpen && (
         <div className="modal-backdrop" onClick={() => setEditOpen(false)}>
