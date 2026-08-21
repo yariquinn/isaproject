@@ -3798,6 +3798,53 @@ a.activity-row:hover .act-desc {
   min-width: 240px;
 }
 
+/* Payments-by-practice-area donut */
+.pie-report {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 1rem 0;
+}
+.pie-svg {
+  width: 200px;
+  height: 200px;
+  flex: none;
+}
+.pie-center-num {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--dash-fg);
+}
+.pie-center-label {
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  fill: var(--dash-muted);
+}
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 260px;
+}
+.pie-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+}
+.pie-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
+.pie-legend-name { color: var(--dash-fg); flex: 1; }
+.pie-legend-val { color: var(--dash-fg); font-weight: 600; }
+.pie-legend-pct { color: var(--dash-muted); width: 3rem; text-align: right; }
+
 /* Reports / intake */
 .report-placeholder {
   margin-top: 0.9rem;

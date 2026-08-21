@@ -24,7 +24,7 @@ type AgingRow = {
 };
 
 export default function ReportsClient() {
-  const [tab, setTab] = useState<"aging" | "statement">("aging");
+  const [tab, setTab] = useState<"aging" | "statement" | "practice">("aging");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
@@ -87,6 +87,33 @@ export default function ReportsClient() {
   const stmtPaid = stmtInvoices.filter((i) => i.status === "paid").reduce((s, i) => s + (i.amount ?? 0), 0);
   const stmtOutstanding = stmtInvoiced - stmtPaid;
 
+  // ---- Payments by practice area (paid invoices, grouped by the matter's area) ----
+  const PIE_COLORS = ["#a67c52", "#2f6bff", "#3fa373", "#e0699a", "#e6884f", "#7c5cbf", "#d9a441"];
+  const byArea = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const i of invoices) {
+      if (i.status !== "paid") continue;
+      const m = matters.find((x) => x.id === i.matter_id);
+      const area = m?.practice_area || "Unassigned";
+      map.set(area, (map.get(area) ?? 0) + (i.amount ?? 0));
+    }
+    const rows = [...map.entries()].map(([area, amount], idx) => ({ area, amount, color: PIE_COLORS[idx % PIE_COLORS.length] }));
+    rows.sort((a, b) => b.amount - a.amount);
+    return rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoices, matters]);
+  const areaTotal = byArea.reduce((s, r) => s + r.amount, 0);
+
+  // Build donut stroke-dasharray segments (circumference-based).
+  const R = 60, C = 2 * Math.PI * 60;
+  let acc = 0;
+  const segments = byArea.map((r) => {
+    const frac = areaTotal > 0 ? r.amount / areaTotal : 0;
+    const seg = { ...r, dash: frac * C, offset: -acc * C };
+    acc += frac;
+    return seg;
+  });
+
   if (loading) return <p className="muted-line">Loading…</p>;
 
   return (
@@ -97,6 +124,9 @@ export default function ReportsClient() {
         </button>
         <button type="button" className={tab === "statement" ? "active" : undefined} onClick={() => setTab("statement")}>
           Statement of Account
+        </button>
+        <button type="button" className={tab === "practice" ? "active" : undefined} onClick={() => setTab("practice")}>
+          Payments by Practice Area
         </button>
       </div>
 
@@ -151,7 +181,7 @@ export default function ReportsClient() {
             </div>
           )}
         </>
-      ) : (
+      ) : tab === "statement" ? (
         <>
           <div className="filter-search-row">
             <label className="report-client-pick">
@@ -212,6 +242,42 @@ export default function ReportsClient() {
               )}
               <button type="button" className="ghost sm" style={{ marginTop: "1rem" }} onClick={() => window.print()}>Print / PDF statement</button>
             </>
+          )}
+        </>
+      ) : (
+        <>
+          {areaTotal === 0 ? (
+            <p className="muted-line">No paid invoices yet — collected revenue will break down here by practice area.</p>
+          ) : (
+            <div className="pie-report">
+              <svg viewBox="0 0 160 160" className="pie-svg" role="img" aria-label="Payments by practice area">
+                <g transform="rotate(-90 80 80)">
+                  {segments.map((s) => (
+                    <circle
+                      key={s.area}
+                      cx="80" cy="80" r={R}
+                      fill="none"
+                      stroke={s.color}
+                      strokeWidth="28"
+                      strokeDasharray={`${s.dash} ${C - s.dash}`}
+                      strokeDashoffset={s.offset}
+                    />
+                  ))}
+                </g>
+                <text x="80" y="76" textAnchor="middle" className="pie-center-num">{money(areaTotal)}</text>
+                <text x="80" y="92" textAnchor="middle" className="pie-center-label">Collected</text>
+              </svg>
+              <div className="pie-legend">
+                {byArea.map((r) => (
+                  <div className="pie-legend-row" key={r.area}>
+                    <span className="pie-swatch" style={{ background: r.color }} />
+                    <span className="pie-legend-name">{r.area}</span>
+                    <span className="pie-legend-val">{money(r.amount)}</span>
+                    <span className="pie-legend-pct">{areaTotal > 0 ? Math.round((r.amount / areaTotal) * 100) : 0}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </>
       )}
