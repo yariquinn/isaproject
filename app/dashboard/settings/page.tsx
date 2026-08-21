@@ -173,12 +173,12 @@ export default function SettingsPage() {
           {section === "timeline" && (
             <div className="panel">
               <h2 className="panel-title">Case Timeline</h2>
-              <p className="field-note">
-                A consolidated chronological timeline of every matter — events,
-                filings, time entries, and invoices in one view. This module is
-                being built next.
+              <p className="field-note" style={{ marginBottom: "1rem" }}>
+                Practice-area playbooks — LLC Formation, Estate Planning, Real Estate,
+                and more — each carry their own timeline of checklists and tasks. Toggle
+                a timeline on within a matter to guide the case step by step.
               </p>
-              <div className="report-placeholder" style={{ marginTop: "1rem" }}>Coming soon</div>
+              <div className="report-placeholder">Coming soon</div>
             </div>
           )}
 

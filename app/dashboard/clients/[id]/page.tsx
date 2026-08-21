@@ -34,6 +34,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
 
   const [prompt, setPrompt] = useState<{ field: GuardField; label: string } | null>(null);
+  // Once the user confirms they're updating the CURRENT primary contact, we
+  // stop asking for the rest of this page visit (resets on remount/navigation).
+  const [contactConfirmed, setContactConfirmed] = useState(false);
   const [activeEdit, setActiveEdit] = useState<GuardField | null>(null);
   const [draft, setDraft] = useState("");
   const [contactModal, setContactModal] = useState(false);
@@ -217,9 +220,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       <span
         className="inline-view"
         onClick={() => {
-          // Businesses have a contact person who might change, so we ask.
-          // Individuals edit their own info directly — no prompt.
-          if (client?.client_type === "business") {
+          // Businesses have a contact person who might change, so we ask — but
+          // only until the user confirms once for this page visit.
+          if (client?.client_type === "business" && !contactConfirmed) {
             setPrompt({ field, label });
           } else {
             setDraft(client?.[field] ?? "");
@@ -300,12 +303,6 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
           </div>
           <dl className="cc-fields">
-            {client.client_type !== "business" && (
-              <div>
-                <dt>Name</dt>
-                <dd className="cc-name-strong"><Guarded field="primary_contact" label="name" /></dd>
-              </div>
-            )}
             {client.client_type === "business" && (
               <div>
                 <dt>Primary contact</dt>
@@ -314,7 +311,17 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                     <button type="button" className="contact-picker" onClick={openContactModal}>
                       {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
                     </button>
-                    <TitlePill value={client.contact_title} onSave={(v) => patch({ contact_title: v || null })} />
+                    <TitlePill
+                      value={client.contact_title}
+                      onSave={(v) => patch({ contact_title: v || null })}
+                      guard={() => {
+                        if (client.client_type === "business" && !contactConfirmed) {
+                          setPrompt({ field: "contact_title", label: "title" });
+                          return false;
+                        }
+                        return true;
+                      }}
+                    />
                   </span>
                 </dd>
               </div>
@@ -628,7 +635,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             <h3>Editing {prompt.label}</h3>
             <p className="modal-dur">Are we updating <strong>{contactName}</strong>&rsquo;s information, or is a different person the primary contact?</p>
             <div className="stack-actions">
-              <button type="button" className="btn" onClick={() => { setDraft(client[prompt.field] ?? ""); setActiveEdit(prompt.field); setPrompt(null); }}>
+              <button type="button" className="btn" onClick={() => { setContactConfirmed(true); setDraft(client[prompt.field] ?? ""); setActiveEdit(prompt.field); setPrompt(null); }}>
                 Update {contactName}&rsquo;s info
               </button>
               <button type="button" className="ghost" onClick={() => { setPrompt(null); openContactModal(); }}>

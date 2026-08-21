@@ -37,8 +37,8 @@ import Disclaimer from "../../Disclaimer";
 import TimeEntriesTab from "./TimeEntriesTab";
 
 const MATTER_DOCS = [
-  { name: "Engagement Letter.pdf", updated: "3d ago" },
-  { name: "Client Intake Form.pdf", updated: "1w ago" },
+  { name: "Engagement Letter.pdf", updated: "Aug 18, 2026", sharedWith: "Client" },
+  { name: "Client Intake Form.pdf", updated: "Aug 14, 2026", sharedWith: "Not shared" },
 ];
 
 const TIMELINE_STEPS: Record<string, string[]> = {
@@ -684,30 +684,22 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </Link>
               </div>
               <dl className="cc-fields">
-                <div>
-                  <dt>{clientObj.client_type === "business" ? "Primary contact" : "Name"}</dt>
-                  <dd className="cc-primary-contact cc-name-strong">
-                    <span className="name-with-title">
-                      {clientObj.client_type === "business" ? (
+                {clientObj.client_type === "business" && (
+                  <div>
+                    <dt>Primary contact</dt>
+                    <dd className="cc-primary-contact cc-name-strong">
+                      <span className="name-with-title">
                         <button type="button" className="contact-picker" onClick={() => { setPcQuery(""); setPcTab("search"); setPcModal(true); }}>
                           {clientObj.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
                         </button>
-                      ) : (
-                        <InlineText
-                          value={clientObj.primary_contact}
-                          onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
-                          placeholder="—"
-                        />
-                      )}
-                      {clientObj.client_type === "business" && (
                         <TitlePill
                           value={clientObj.contact_title}
                           onSave={(v) => saveClientField(clientObj.id, "contact_title", v)}
                         />
-                      )}
-                    </span>
-                  </dd>
-                </div>
+                      </span>
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt>Email</dt>
                   <dd>
@@ -1397,10 +1389,19 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             </div>
             <div className="table-wrap" style={{ border: "none" }}>
               <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Uploaded date</th>
+                    <th>Shared with</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {MATTER_DOCS.filter((d) => d.name.toLowerCase().includes(docQuery.trim().toLowerCase())).map((d) => (
                     <tr key={d.name}>
                       <td className="strong-cell">{d.name}</td>
+                      <td>{d.updated}</td>
+                      <td>{d.sharedWith}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -8,9 +8,12 @@ import { CONTACT_TITLES } from "@/lib/types";
 export default function TitlePill({
   value,
   onSave,
+  guard,
 }: {
   value: string | null;
   onSave: (v: string) => void;
+  // Return false to block opening (e.g. to show a confirm prompt first).
+  guard?: () => boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLSelectElement>(null);
@@ -41,7 +44,7 @@ export default function TitlePill({
     );
   }
   return (
-    <button type="button" className="title-pill title-pill-btn" onClick={() => setEditing(true)}>
+    <button type="button" className="title-pill title-pill-btn" onClick={() => { if (guard && !guard()) return; setEditing(true); }}>
       {value || "+ Title"}
     </button>
   );

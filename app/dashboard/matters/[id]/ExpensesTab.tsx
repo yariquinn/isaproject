@@ -30,11 +30,29 @@ const fmtHm = (secs: number) => {
 
 type EditCell = { id: string; field: keyof Expense } | null;
 
+type Period = "day" | "week" | "month" | "year" | "all";
+const PERIODS: { value: Period; label: string }[] = [
+  { value: "day", label: "Today" },
+  { value: "week", label: "This Week" },
+  { value: "month", label: "This Month" },
+  { value: "year", label: "This Year" },
+  { value: "all", label: "All time" },
+];
+function periodStart(p: Period): number {
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  if (p === "day") return d.getTime();
+  if (p === "week") { const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return d.getTime(); }
+  if (p === "month") return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  if (p === "year") return new Date(d.getFullYear(), 0, 1).getTime();
+  return 0;
+}
+
 export default function ExpensesTab({ matterId }: { matterId: string }) {
   const [rows, setRows] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [edit, setEdit] = useState<EditCell>(null);
   const [draft, setDraft] = useState("");
+  const [period, setPeriod] = useState<Period>("all");
 
   const [nDate, setNDate] = useState(todayStr());
   const [nDesc, setNDesc] = useState("");
@@ -95,11 +113,17 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
   const startEdit = (e: Expense, field: keyof Expense, initial: string) => { setDraft(initial); setEdit({ id: e.id, field }); };
   const isEditing = (e: Expense, field: keyof Expense) => edit?.id === e.id && edit.field === field;
 
-  const total = rows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  const invoiced = rows.filter((e) => e.invoiced).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const inPeriod = (d: string | null) => {
+    if (period === "all") return true;
+    if (!d) return false;
+    return new Date(d.slice(0, 10) + "T00:00:00").getTime() >= periodStart(period);
+  };
+  const visibleRows = rows.filter((e) => inPeriod(e.expense_date));
+  const total = visibleRows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const invoiced = visibleRows.filter((e) => e.invoiced).reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const unInvoiced = total - invoiced;
-  const billableRows = rows.filter((e) => e.billable);
-  const nonbillableRows = rows.filter((e) => !e.billable);
+  const billableRows = visibleRows.filter((e) => e.billable);
+  const nonbillableRows = visibleRows.filter((e) => !e.billable);
   const billable = billableRows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const nonBillable = total - billable;
 
@@ -120,12 +144,17 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
 
   return (
     <>
+      <div className="ts-summary-head">
+        <select className="inline-select" value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
+          {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+        </select>
+      </div>
       <div className="te-summary">
-        {stat("Total", total, rows.length)}
+        {stat("Total", total, visibleRows.length)}
         {stat("Billable", billable, billableRows.length, "ok")}
         {stat("Non-billable", nonBillable, nonbillableRows.length, "warn")}
-        {stat("Invoiced", invoiced, rows.filter((e) => e.invoiced).length)}
-        {stat("Un-invoiced", unInvoiced, rows.filter((e) => !e.invoiced).length)}
+        {stat("Invoiced", invoiced, visibleRows.filter((e) => e.invoiced).length)}
+        {stat("Un-invoiced", unInvoiced, visibleRows.filter((e) => !e.invoiced).length)}
       </div>
 
       <div className="table-wrap" style={{ border: "none" }}>
@@ -159,7 +188,7 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
               <td className="ii-amt-cell">{money((parseFloat(nQty) || 0) * (parseFloat(nCost) || 0))}</td>
               <td colSpan={3} className="te-new-hint">press Enter to add</td>
             </tr>
-            {rows.map((e) => (
+            {visibleRows.map((e) => (
               <tr key={e.id}>
                 <td>
                   {isEditing(e, "expense_date") ? (
