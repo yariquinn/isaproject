@@ -825,15 +825,17 @@ section.block.alt {
   font-family: inherit;
   font-size: 0.88rem;
   padding: 0.5rem 0.9rem 0.5rem 2.3rem;
-  border: 1px solid color-mix(in srgb, var(--dash-border) 65%, transparent);
+  border: none;
   border-radius: 20px;
-  background: var(--dash-bg);
+  background: color-mix(in srgb, var(--dash-fg) 6%, var(--dash-surface));
   color: var(--dash-fg);
 }
+.dash .hdr-search-input:focus,
 .hdr-search-input:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--dash-border));
-  background: var(--dash-surface);
+  border: none;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--dash-fg) 9%, var(--dash-surface));
 }
 .hdr-search-menu {
   position: absolute;

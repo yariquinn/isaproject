@@ -56,6 +56,18 @@ function periodStart(key: string): number {
   return new Date(now.getFullYear(), 0, 1).getTime();
 }
 
+// Start of the calendar period immediately before the current one. Deltas
+// compare "this period so far" against the same span into the prior period
+// (today vs yesterday, this week vs last week, this month vs last month,
+// this year vs last year).
+function periodPrevStart(key: string): number {
+  const now = new Date();
+  if (key === "day") return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime();
+  if (key === "week") return now.getTime() - 14 * 24 * 3600 * 1000;
+  if (key === "month") return new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+  return new Date(now.getFullYear() - 1, 0, 1).getTime();
+}
+
 const GOAL_TARGET = 50000; // revenue goal (placeholder — easy to make configurable later)
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
@@ -357,14 +369,16 @@ export default function Overview() {
       weekEarnings.push({ label: d.toLocaleDateString(undefined, { weekday: "short" }), amount: amt });
     }
 
-    // Revenue change vs the previous equal-length window.
+    // Compare "this period so far" against the same span into the prior
+    // calendar period (this month-to-date vs last month through the same day, etc.).
     const span = Date.now() - start;
-    const prevStart = start - span;
+    const prevStart = periodPrevStart(period);
+    const prevEnd = prevStart + span;
     let prevRev = 0;
     for (const i of invoices) {
       if (i.status !== "paid") continue;
       const when = new Date(i.issued_date ?? i.created_at).getTime();
-      if (when >= prevStart && when < start) prevRev += i.amount ?? 0;
+      if (when >= prevStart && when < prevEnd) prevRev += i.amount ?? 0;
     }
     const revenueDelta = prevRev > 0 ? Math.round(((rev - prevRev) / prevRev) * 100) : null;
     const goalPct = Math.min(100, Math.round((rev / GOAL_TARGET) * 100));
@@ -376,7 +390,7 @@ export default function Overview() {
     const inPrev = (iso: string | null | undefined) => {
       if (!iso) return false;
       const t = new Date(iso).getTime();
-      return t >= prevStart && t < start;
+      return t >= prevStart && t < prevEnd;
     };
     const inCur = (iso: string | null | undefined) => {
       if (!iso) return false;
