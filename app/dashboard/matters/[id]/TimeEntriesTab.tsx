@@ -196,9 +196,8 @@ export default function TimeEntriesTab({
   return (
     <>
       <div className="te-summary-head">
-        <span className="te-summary-title">Summary</span>
+        {rateControl}
         <div className="te-summary-head-right">
-          {rateControl}
           <select
             className="inline-select te-period"
             value={loggedPeriod}
