@@ -241,7 +241,9 @@ export default function MatterTasksList({ matterId }: { matterId: string }) {
                   onChange={(e) => setNewTitle(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") add();
+                    if (e.key === "Escape") setNewTitle("");
                   }}
+                  onBlur={() => { if (newTitle.trim()) add(); }}
                 />
               </div>
             )}
