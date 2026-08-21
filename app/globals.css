@@ -854,12 +854,15 @@ section.block.alt {
   height: 50px;
   flex: none;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr minmax(0, 420px) 1fr;
   align-items: center;
   gap: 1rem;
   padding: 0 2.25rem;
   background: var(--dash-surface);
   border-bottom: 1px solid var(--dash-border);
+}
+.app-header-spacer {
+  min-width: 0;
 }
 .app-crumbs {
   display: flex;
@@ -897,7 +900,7 @@ section.block.alt {
   margin-bottom: 0.1rem;
 }
 .app-header-right {
-  margin-left: auto;
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 0.55rem;

@@ -188,7 +188,7 @@ export default function TimeTracker() {
       {activeTimer ? (
         <div className={`tracker-live${runningTimer ? " running" : ""}`}>
           <span className="tracker-icon-glyph">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 1.5" /><path d="M9 2h6" /></svg>
           </span>
           <span className="tracker-live-matter" title={matterName(activeTimer.matter_id)}>
             {matterName(activeTimer.matter_id)}

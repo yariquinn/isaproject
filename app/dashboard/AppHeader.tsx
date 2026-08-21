@@ -220,6 +220,7 @@ export default function AppHeader() {
 
   return (
     <header className="app-header">
+      <div className="app-header-spacer" aria-hidden="true" />
       <GlobalSearch />
       <div className="app-header-right" ref={wrapRef}>
         {/* Timer (lives in the header, left of alerts) */}
