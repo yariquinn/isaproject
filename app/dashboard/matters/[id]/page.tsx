@@ -9,8 +9,11 @@ import {
   PRACTICE_AREAS,
   PRIORITIES,
   RATE_TYPES,
+  contactRoleLabel,
+  personColor,
   type ActivityItem,
   type Client,
+  type Contact,
   type EventItem,
   type Invoice,
   type Matter,
@@ -141,6 +144,32 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [docQuery, setDocQuery] = useState("");
+  const [matterContacts, setMatterContacts] = useState<{ linkId: string; contact: Contact }[]>([]);
+  const [addContactOpen, setAddContactOpen] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
+  const [allContacts, setAllContacts] = useState<Contact[]>([]);
+
+  async function loadMatterContacts() {
+    const { data } = await supabase
+      .from("matter_contacts")
+      .select("id, contacts(*)")
+      .eq("matter_id", params.id);
+    const rowsRaw = (data as unknown as { id: string; contacts: Contact | Contact[] | null }[]) ?? [];
+    const list = rowsRaw
+      .map((r) => ({ linkId: r.id, contact: (Array.isArray(r.contacts) ? r.contacts[0] : r.contacts) as Contact | undefined }))
+      .filter((r): r is { linkId: string; contact: Contact } => !!r.contact);
+    setMatterContacts(list);
+  }
+  async function linkContact(contactId: string) {
+    await supabase.from("matter_contacts").insert({ matter_id: params.id, contact_id: contactId });
+    setAddContactOpen(false);
+    setContactSearch("");
+    loadMatterContacts();
+  }
+  async function unlinkContact(linkId: string) {
+    setMatterContacts((prev) => prev.filter((x) => x.linkId !== linkId));
+    await supabase.from("matter_contacts").delete().eq("id", linkId);
+  }
   const [events, setEvents] = useState<EventItem[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -252,6 +281,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     loadAll();
+    loadMatterContacts();
+    supabase.from("contacts").select("*").order("name").then(({ data }) => setAllContacts((data as Contact[]) ?? []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
@@ -1220,9 +1251,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "contacts" && (
           <>
-            <h3 className="ev-section">Contacts</h3>
-            {clientObj ? (
-              <ul className="contact-cards">
+            <div className="mc-head">
+              <span className="ev-section" style={{ margin: 0 }}>
+                Contacts <span className="count-badge">{(clientObj ? 1 + (clientObj.partner_name ? 1 : 0) : 0) + matterContacts.length}</span>
+              </span>
+              <button type="button" className="ghost sm" onClick={() => setAddContactOpen(true)}>+ Add contact</button>
+            </div>
+            <ul className="contact-cards">
+              {clientObj && (
                 <li className="contact-card">
                   <div className="cc-role">Primary contact</div>
                   <div className="cc-name-lg">{clientObj.primary_contact || clientObj.name}</div>
@@ -1235,18 +1271,38 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     <div><dt>Address</dt><dd>{clientObj.address || "—"}</dd></div>
                   </dl>
                 </li>
-                {clientObj.partner_name && (
-                  <li className="contact-card">
-                    <div className="cc-role">Second contact</div>
-                    <div className="cc-name-lg">{clientObj.partner_name}</div>
-                    <dl className="cc-fields">
-                      <div><dt>Email</dt><dd>{clientObj.partner_email || "—"}</dd></div>
-                      <div><dt>Phone</dt><dd>{clientObj.partner_phone || "—"}</dd></div>
-                    </dl>
-                  </li>
-                )}
-              </ul>
-            ) : (
+              )}
+              {clientObj?.partner_name && (
+                <li className="contact-card">
+                  <div className="cc-role">{clientObj.partner_relationship || "Second contact"}</div>
+                  <div className="cc-name-lg">{clientObj.partner_name}</div>
+                  <dl className="cc-fields">
+                    <div><dt>Email</dt><dd>{clientObj.partner_email || "—"}</dd></div>
+                    <div><dt>Phone</dt><dd>{clientObj.partner_phone || "—"}</dd></div>
+                  </dl>
+                </li>
+              )}
+              {matterContacts.map(({ linkId, contact }) => (
+                <li className="contact-card" key={linkId}>
+                  <div className="cc-role">
+                    {contactRoleLabel(contact.role)}
+                    <button type="button" className="mc-unlink" title="Remove from matter" aria-label="Remove from matter" onClick={() => unlinkContact(linkId)}>✕</button>
+                  </div>
+                  <div className="cc-name-lg">
+                    <span className="te-initials" style={{ background: personColor(contact.name), marginRight: "0.4rem" }}>
+                      {contact.name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+                    </span>
+                    {contact.name}
+                  </div>
+                  <dl className="cc-fields">
+                    {contact.organization && <div><dt>Firm</dt><dd>{contact.organization}</dd></div>}
+                    <div><dt>Email</dt><dd>{contact.email || "—"}</dd></div>
+                    <div><dt>Phone</dt><dd>{contact.phone || "—"}</dd></div>
+                  </dl>
+                </li>
+              ))}
+            </ul>
+            {!clientObj && matterContacts.length === 0 && (
               <p className="muted-line">No contacts linked to this matter.</p>
             )}
           </>
@@ -1422,6 +1478,42 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
       </div>
+
+      {addContactOpen && (
+        <div className="modal-backdrop" onClick={() => setAddContactOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Add a contact to this matter</h3>
+            <p className="modal-dur">Link an existing contact (co-counsel, adverse counsel, expert, etc.).</p>
+            <input
+              className="activity-search"
+              type="search"
+              autoFocus
+              placeholder="Search contacts…"
+              value={contactSearch}
+              onChange={(e) => setContactSearch(e.target.value)}
+              style={{ width: "100%", marginBottom: "0.6rem" }}
+            />
+            <div className="mc-picklist">
+              {allContacts
+                .filter((c) => !matterContacts.some((mc) => mc.contact.id === c.id))
+                .filter((c) => {
+                  const q = contactSearch.trim().toLowerCase();
+                  return q === "" || c.name.toLowerCase().includes(q) || (c.organization || "").toLowerCase().includes(q) || contactRoleLabel(c.role).toLowerCase().includes(q);
+                })
+                .slice(0, 20)
+                .map((c) => (
+                  <button key={c.id} type="button" className="mc-pickitem" onClick={() => linkContact(c.id)}>
+                    <span className="mc-pickname">{c.name}</span>
+                    <span className="mc-pickrole">{contactRoleLabel(c.role)}{c.organization ? ` · ${c.organization}` : ""}</span>
+                  </button>
+                ))}
+            </div>
+            <p className="field-note" style={{ marginTop: "0.6rem" }}>
+              Manage the full contacts list on the <Link href="/dashboard/contacts">Contacts</Link> page.
+            </p>
+          </div>
+        </div>
+      )}
 
       {editOpen && (
         <div className="modal-backdrop" onClick={() => setEditOpen(false)}>

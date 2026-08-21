@@ -1911,6 +1911,14 @@ section.block.alt {
   background: color-mix(in srgb, #c0392b 10%, transparent);
 }
 /* ---- Invoice editor ---- */
+.mc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
+.mc-unlink { border: none; background: transparent; color: var(--dash-muted); cursor: pointer; font-size: 0.72rem; margin-left: 0.4rem; padding: 0 0.2rem; }
+.mc-unlink:hover { color: #c0392b; }
+.mc-picklist { display: flex; flex-direction: column; gap: 0.15rem; max-height: 300px; overflow-y: auto; }
+.mc-pickitem { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; text-align: left; padding: 0.5rem 0.6rem; border: 1px solid var(--dash-border); border-radius: 8px; background: var(--dash-surface); cursor: pointer; }
+.mc-pickitem:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--dash-surface)); }
+.mc-pickname { font-weight: 600; font-size: 0.9rem; color: var(--dash-fg); }
+.mc-pickrole { font-size: 0.78rem; color: var(--dash-muted); }
 .doc-searchrow { display: flex; justify-content: flex-end; margin-bottom: 0.9rem; }
 .doc-searchrow .head-search { max-width: 300px; background-color: var(--dash-surface); }
 .inv-row { cursor: pointer; }
