@@ -154,14 +154,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [acTab, setAcTab] = useState<"existing" | "new">("existing");
   const [acForm, setAcForm] = useState<{ name: string; role: string; organization: string; email: string; phone: string }>({ name: "", role: CONTACT_ROLES[0].value, organization: "", email: "", phone: "" });
   const [pcModal, setPcModal] = useState(false);
-  // Confirm-once guard before editing a business's primary contact from the matter card.
-  const [contactConfirmed, setContactConfirmed] = useState(false);
-  const confirmContactEdit = () => {
-    if (contactConfirmed) return true;
-    const ok = window.confirm("Editing the client's primary contact updates it everywhere this client appears. Continue?");
-    if (ok) setContactConfirmed(true);
-    return ok;
-  };
+  // No confirmation prompt — editing the primary contact just works.
+  const confirmContactEdit = () => true;
   const [pcTab, setPcTab] = useState<"search" | "new">("search");
   const [pcQuery, setPcQuery] = useState("");
   const [pcForm, setPcForm] = useState({ name: "", title: "", email: "", phone: "", address: "" });
