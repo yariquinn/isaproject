@@ -75,7 +75,7 @@ function GlobalSearch() {
     const like = `%${term}%`;
     const run = async () => {
       const [clients, matters, invoices, contacts, todos, events, times, expenses] = await Promise.all([
-        supabase.from("clients").select("id,name,primary_contact,archived").ilike("name", like).limit(6),
+        supabase.from("clients").select("id,name,email,phone,address,archived").ilike("name", like).limit(6),
         supabase.from("matters").select("id,name,status").ilike("name", like).limit(6),
         supabase.from("invoices").select("id,number,status,matter_id").ilike("number", like).limit(6),
         supabase.from("contacts").select("id,name,organization,archived").ilike("name", like).limit(6),
@@ -86,8 +86,11 @@ function GlobalSearch() {
       ]);
       if (cancelled) return;
       const next = emptyGroups();
-      for (const c of (clients.data as { id: string; name: string; primary_contact: string | null; archived: boolean | null }[]) ?? [])
-        next.clients.push({ id: c.id, title: c.name, sub: c.primary_contact, href: `/dashboard/clients/${c.id}`, closed: !!c.archived });
+      for (const c of (clients.data as { id: string; name: string; email: string | null; phone: string | null; address: string | null; archived: boolean | null }[]) ?? []) {
+        const state = c.address?.match(/,\s*([A-Za-z]{2})\.?\s*\d{5}/)?.[1]?.toUpperCase() ?? null;
+        const sub = [c.email, c.phone, state].filter(Boolean).join(" · ") || null;
+        next.clients.push({ id: c.id, title: c.name, sub, href: `/dashboard/clients/${c.id}`, closed: !!c.archived });
+      }
       for (const m of (matters.data as { id: string; name: string; status: string | null }[]) ?? [])
         next.matters.push({ id: m.id, title: m.name, sub: null, href: `/dashboard/matters/${m.id}`, closed: m.status === "closed" });
       for (const i of (invoices.data as { id: string; number: string | null; status: string | null; matter_id: string | null }[]) ?? [])

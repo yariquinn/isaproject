@@ -895,8 +895,8 @@ section.block.alt {
   color: var(--dash-muted);
 }
 .hdr-search-sub {
-  flex: none;
-  width: 96px;
+  flex: 0 1 auto;
+  max-width: 320px;
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
