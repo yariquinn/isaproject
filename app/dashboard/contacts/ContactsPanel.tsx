@@ -146,7 +146,7 @@ export default function ContactsPanel() {
             Contacts <span className="count-badge">{contacts.length}</span>
           </h1>
         </div>
-        <div className="head-actions">
+        <div className="head-controls">
           <div className="filter-wrap" ref={filterRef}>
             <button
               type="button"

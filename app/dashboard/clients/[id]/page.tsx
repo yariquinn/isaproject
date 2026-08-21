@@ -270,7 +270,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <div className="head-actions">
           <button type="button" className="ghost sm" onClick={() => { setBillingOther(false); setEditOpen(true); }}>Edit</button>
           <button type="button" className="ghost sm" onClick={() => patch({ archived: !client.archived })}>
-            {client.archived ? "Reopen" : "Close"}
+            {client.archived ? "Unarchive" : "Archive"}
           </button>
         </div>
       </div>

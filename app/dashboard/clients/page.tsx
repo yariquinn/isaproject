@@ -488,7 +488,10 @@ export default function ClientsPage() {
             </thead>
             <tbody>
               {rows.map((c) => (
-                <tr key={c.id} className={selected.has(c.id) ? "row-selected" : undefined}>
+                <tr
+                  key={c.id}
+                  className={`${selected.has(c.id) ? "row-selected " : ""}${c.archived ? "row-closed" : ""}`.trim() || undefined}
+                >
                   <td className="check-col">
                     <input
                       type="checkbox"

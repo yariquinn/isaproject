@@ -374,7 +374,7 @@ export default function MattersPage() {
               m.client_id ? nameOf(m.client_id) : "",
               m.practice_area ?? "",
               pendingTasks[m.id] ?? 0,
-              m.hourly_rate != null ? `$${m.hourly_rate}${m.rate_type === "flat" ? " flat" : "/hr"}` : "",
+              m.hourly_rate != null ? `$${m.hourly_rate}${m.rate_type === "flat" ? " flat fee" : "/hr"}` : "",
               m.priority,
               m.status,
             ])}
@@ -578,7 +578,7 @@ export default function MattersPage() {
                     <InlineNumber
                       value={m.hourly_rate}
                       prefix="$"
-                      suffix={m.rate_type === "flat" ? " flat" : "/hr"}
+                      suffix={m.rate_type === "flat" ? " flat fee" : "/hr"}
                       onSave={(v) => patch(m.id, { hourly_rate: v })}
                     />
                   </td>

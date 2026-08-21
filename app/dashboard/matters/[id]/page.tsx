@@ -1212,7 +1212,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   className="rate-type-select"
                   options={RATE_TYPES.map((r) => ({
                     value: r.value,
-                    label: r.value === "flat" ? "flat" : "/hr",
+                    label: r.value === "flat" ? "flat fee" : "/hr",
                   }))}
                   onSave={(v) => patch({ rate_type: v })}
                 />

@@ -113,7 +113,7 @@ export default function TasksBoard() {
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [collapsedPeople, setCollapsedPeople] = useState<Record<string, boolean>>({});
-  const [view, setView] = useState<"calendar" | "list">("calendar");
+  const [view, setView] = useState<"calendar" | "list">("list");
   const [lvEdit, setLvEdit] = useState<{ id: string; field: "title" | "assignee" | "scheduled_date" | "due_date" } | null>(null);
   const dragId = useRef<string | null>(null);
   const lvEditing = (id: string, field: string) => lvEdit?.id === id && lvEdit.field === field;
@@ -315,9 +315,6 @@ export default function TasksBoard() {
               {daysLeft === 0 ? "today" : `${daysLeft}d left`}
             </span>
           )}
-          {t.priority && t.priority !== "-" && (
-            <span className={`tb-prio prio-${t.priority}`} />
-          )}
           {commentCount(t.id) > 0 && (
             <span className="tb-card-comments" title={`${commentCount(t.id)} comment(s)`}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -452,10 +449,14 @@ export default function TasksBoard() {
         <button className="btn icon-plus-btn tb-addnew" type="button" onClick={() => openAdd({ scheduled_date: todayIso })} title="Add task" aria-label="Add task">
           +
         </button>
-        <button type="button" className="tb-today" onClick={() => setWeekStart(startOfDay(new Date()))}>
-          Today
-        </button>
-        <span className="tb-week-label">{weekLabel}</span>
+        {view === "calendar" && (
+          <>
+            <button type="button" className="tb-today" onClick={() => setWeekStart(startOfDay(new Date()))}>
+              Today
+            </button>
+            <span className="tb-week-label">{weekLabel}</span>
+          </>
+        )}
         <div className="tb-viewseg">
           <button type="button" className={view === "calendar" ? "active" : undefined} onClick={() => changeView("calendar")}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

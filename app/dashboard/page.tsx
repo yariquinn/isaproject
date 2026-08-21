@@ -599,12 +599,7 @@ export default function Overview() {
           <span className="stat-label">Opened</span>
           <StatDelta value={openedDelta} />
         </Link>
-        <Link href="/dashboard/matters?status=closed" className="stat">
-          <span className="stat-num">{closedCount}</span>
-          <span className="stat-label">Closed</span>
-          <StatDelta value={closedDelta} />
-        </Link>
-        <Link href="/dashboard/billing" className="stat">
+        <Link href="/dashboard/billing?tab=timesheet" className="stat">
           <span className="stat-num">{hours.toFixed(1)}</span>
           <span className="stat-label">Hours Logged</span>
           <StatDelta value={hoursDelta} />
