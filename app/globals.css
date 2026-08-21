@@ -810,9 +810,11 @@ section.block.alt {
 .hdr-search-menu {
   position: absolute;
   top: calc(100% + 6px);
-  left: 0;
+  left: auto;
   right: 0;
   z-index: 45;
+  width: 480px;
+  max-width: 90vw;
   max-height: 360px;
   overflow-y: auto;
   padding: 0.35rem;
@@ -852,9 +854,14 @@ section.block.alt {
 .hdr-search-name {
   font-size: 0.85rem;
   color: var(--dash-fg);
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.hdr-search-sub {
+  white-space: nowrap;
 }
 .hdr-search-status {
   flex: none;

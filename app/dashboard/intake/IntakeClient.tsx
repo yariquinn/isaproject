@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { PRACTICE_AREAS, LEAD_STATUSES, type Lead } from "@/lib/types";
 
-const EMPTY = { name: "", email: "", phone: "", practice_area: PRACTICE_AREAS[0] as string, source: "Website", message: "" };
+const EMPTY = { name: "", client_type: "individual", email: "", phone: "", practice_area: PRACTICE_AREAS[0] as string, source: "Website", message: "" };
 
 export default function IntakeClient() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -31,6 +31,7 @@ export default function IntakeClient() {
     setSaving(true);
     await supabase.from("inquiries").insert({
       name: form.name.trim(),
+      client_type: form.client_type,
       email: form.email.trim() || null,
       phone: form.phone.trim() || null,
       practice_area: form.practice_area,
@@ -48,7 +49,7 @@ export default function IntakeClient() {
     if (l.converted_client_id) return;
     const { data } = await supabase.from("clients").insert({
       name: l.name,
-      client_type: "individual",
+      client_type: l.client_type || "individual",
       email: l.email,
       phone: l.phone,
       status: "active",
@@ -136,8 +137,20 @@ export default function IntakeClient() {
         <div className="panel" style={{ maxWidth: "40rem" }}>
           <h2 className="panel-title">New Intake</h2>
           <div className="intake-form">
-            <label>Prospective client name
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name or entity" />
+            <div className="seg seg-full" style={{ marginBottom: "0.9rem" }}>
+              {(["individual", "business"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={form.client_type === t ? "active" : undefined}
+                  onClick={() => setForm({ ...form, client_type: t })}
+                >
+                  {t === "individual" ? "Individual" : "Business"}
+                </button>
+              ))}
+            </div>
+            <label>{form.client_type === "business" ? "Business name" : "Prospective client name"}
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={form.client_type === "business" ? "Entity name" : "Full name"} />
             </label>
             <div className="field-pair">
               <label>Email<input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="name@example.com" /></label>

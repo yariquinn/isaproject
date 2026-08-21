@@ -193,6 +193,7 @@ export type UserSettings = {
 export type Lead = {
   id: string;
   name: string;
+  client_type: string;
   email: string | null;
   phone: string | null;
   message: string | null;
