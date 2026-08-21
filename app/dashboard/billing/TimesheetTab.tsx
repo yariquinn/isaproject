@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ACTIVITY_TYPES, ATTORNEYS } from "@/lib/types";
 import { usePortal } from "../PortalProvider";
@@ -84,6 +84,25 @@ function MatterSearch({
   );
 }
 
+type Period = "day" | "week" | "month" | "year" | "all";
+type Compare = "none" | "prev" | "yoy";
+const PERIODS: { value: Period; label: string }[] = [
+  { value: "day", label: "Today" },
+  { value: "week", label: "This Week" },
+  { value: "month", label: "This Month" },
+  { value: "year", label: "This Year" },
+  { value: "all", label: "All Time" },
+];
+function periodStart(p: Period): number {
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  if (p === "day") return d.getTime();
+  if (p === "week") { const wd = (d.getDay() + 6) % 7; d.setDate(d.getDate() - wd); return d.getTime(); }
+  if (p === "month") return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  if (p === "year") return new Date(d.getFullYear(), 0, 1).getTime();
+  return 0;
+}
+const yearBack = (t: number) => { const d = new Date(t); d.setFullYear(d.getFullYear() - 1); return d.getTime(); };
+
 export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
   const { userName } = usePortal();
   const defaultLawyer = (ATTORNEYS as readonly string[]).includes(userName)
@@ -95,7 +114,14 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
   );
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+  const [entries, setEntries] = useState<{ duration_seconds: number; billable: boolean; logged_at: string }[]>([]);
+  const [period, setPeriod] = useState<Period>("month");
+  const [compare, setCompare] = useState<Compare>("none");
 
+  const loadEntries = () => {
+    supabase.from("time_entries").select("duration_seconds,billable,logged_at")
+      .then(({ data }) => setEntries((data as { duration_seconds: number; billable: boolean; logged_at: string }[]) ?? []));
+  };
   useEffect(() => {
     supabase
       .from("matters")
@@ -103,7 +129,36 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
       .eq("status", "open")
       .order("name")
       .then(({ data }) => setMatters((data as MatterLite[]) ?? []));
+    loadEntries();
   }, []);
+
+  // Logged time over the selected period (from saved entries), with comparison.
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const curStart = periodStart(period);
+    const sum = (s: number, e: number) => {
+      let total = 0, billable = 0, nCur = 0, nBill = 0;
+      for (const x of entries) {
+        const t = new Date(x.logged_at).getTime();
+        if (t < s || t >= e) continue;
+        const h = x.duration_seconds / 3600;
+        total += h; nCur++;
+        if (x.billable) { billable += h; nBill++; }
+      }
+      return { total, billable, nonbill: total - billable, nCur, nBill };
+    };
+    const cur = sum(curStart, now + 1);
+    let prev: ReturnType<typeof sum> | null = null;
+    if (compare === "prev" && period !== "all") {
+      const span = now - curStart;
+      prev = sum(curStart - span, curStart);
+    } else if (compare === "yoy") {
+      prev = sum(yearBack(curStart), yearBack(now));
+    }
+    return { cur, prev };
+  }, [entries, period, compare]);
+  const delta = (c: number, p: number | undefined) =>
+    p == null ? null : p > 0 ? Math.round(((c - p) / p) * 100) : c > 0 ? 100 : null;
 
   const update = (i: number, patch: Partial<Draft>) =>
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -146,26 +201,46 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
     );
     setRows(Array.from({ length: ROW_COUNT }, () => blank(defaultLawyer)));
     onSaved();
+    loadEntries();
     setTimeout(() => setSavedMsg(""), 4000);
   }
 
+  const deltaEl = (c: number, p: number | undefined) => {
+    const d = delta(c, p);
+    if (d == null) return null;
+    return <span className={`te-stat-delta ${d >= 0 ? "up" : "down"}`}>{d >= 0 ? "+" : ""}{d}% {compare === "yoy" ? "vs last yr" : "vs prev"}</span>;
+  };
+
   return (
     <>
+      <div className="ts-summary-head">
+        <select className="inline-select" value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
+          {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+        </select>
+        <select className="inline-select" value={compare} onChange={(e) => setCompare(e.target.value as Compare)} disabled={period === "all"}>
+          <option value="none">No comparison</option>
+          <option value="prev">vs previous period</option>
+          <option value="yoy">vs last year</option>
+        </select>
+      </div>
       <div className="te-summary">
         <div className="te-stat">
           <span className="te-stat-label">Time logged</span>
-          <span className="te-stat-amt">{fmtH(totalHours)}</span>
-          <span className="te-stat-hrs">{validRows.length} entr{validRows.length === 1 ? "y" : "ies"}</span>
+          <span className="te-stat-amt">{fmtH(stats.cur.total)}</span>
+          <span className="te-stat-hrs">{stats.cur.nCur} entr{stats.cur.nCur === 1 ? "y" : "ies"}</span>
+          {compare !== "none" && deltaEl(stats.cur.total, stats.prev?.total)}
         </div>
         <div className="te-stat ok">
           <span className="te-stat-label">Billable</span>
-          <span className="te-stat-amt">{fmtH(billableHours)}</span>
-          <span className="te-stat-hrs">{validRows.filter((r) => r.billable).length} entr{validRows.filter((r) => r.billable).length === 1 ? "y" : "ies"}</span>
+          <span className="te-stat-amt">{fmtH(stats.cur.billable)}</span>
+          <span className="te-stat-hrs">{stats.cur.nBill} entr{stats.cur.nBill === 1 ? "y" : "ies"}</span>
+          {compare !== "none" && deltaEl(stats.cur.billable, stats.prev?.billable)}
         </div>
         <div className="te-stat warn">
           <span className="te-stat-label">Non-billable</span>
-          <span className="te-stat-amt">{fmtH(nonbillableHours)}</span>
-          <span className="te-stat-hrs">{validRows.filter((r) => !r.billable).length} entr{validRows.filter((r) => !r.billable).length === 1 ? "y" : "ies"}</span>
+          <span className="te-stat-amt">{fmtH(stats.cur.nonbill)}</span>
+          <span className="te-stat-hrs">{stats.cur.nCur - stats.cur.nBill} entr{(stats.cur.nCur - stats.cur.nBill) === 1 ? "y" : "ies"}</span>
+          {compare !== "none" && deltaEl(stats.cur.nonbill, stats.prev?.nonbill)}
         </div>
       </div>
 

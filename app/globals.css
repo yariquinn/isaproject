@@ -2906,7 +2906,8 @@ section.block.alt {
   cursor: pointer;
   color: var(--dash-fg);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  font-weight: 400;
 }
 .contact-picker:hover {
   border-color: var(--accent);
@@ -5409,8 +5410,7 @@ a.activity-row:hover .act-desc {
   color: var(--dash-fg);
   word-break: break-word;
 }
-.cc-fields dd.cc-name-strong,
-.cc-fields dd.cc-name-strong .contact-picker {
+.cc-fields dd.cc-name-strong {
   font-weight: 700;
 }
 .cc-fields > div.cc-desc {
@@ -5553,6 +5553,33 @@ a.activity-row:hover .act-desc {
   cursor: pointer;
 }
 .te-toggle.on {
+  background: rgba(46, 125, 70, 0.13);
+  border-color: #8dc4a1;
+  color: #2e7d46;
+}
+.ts-summary-head {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-bottom: 0.3rem;
+}
+.te-stat-delta {
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.te-stat-delta.up { color: #2e7d46; }
+.te-stat-delta.down { color: #c0392b; }
+.te-status-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  border: 1px solid var(--dash-border);
+  background: var(--dash-bg);
+  color: var(--dash-muted);
+}
+.te-status-pill.on {
   background: rgba(46, 125, 70, 0.13);
   border-color: #8dc4a1;
   color: #2e7d46;

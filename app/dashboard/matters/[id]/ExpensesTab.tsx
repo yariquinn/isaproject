@@ -214,7 +214,7 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
                   <button type="button" className={`te-toggle${e.billable ? " on" : ""}`} onClick={() => toggleBillable(e)}>{e.billable ? "Billable" : "Non-bill"}</button>
                 </td>
                 <td>
-                  <button type="button" className={`te-toggle${e.invoiced ? " on" : ""}`} onClick={() => toggleInvoiced(e)}>{e.invoiced ? "Invoiced" : "Un-inv"}</button>
+                  <span className={`te-status-pill${e.invoiced ? " on" : ""}`} title={e.invoiced ? "On an invoice" : "Not yet invoiced"}>{e.invoiced ? "Invoiced" : "Un-inv"}</span>
                 </td>
                 <td className="ct-actions"><button type="button" className="ct-del" aria-label="Delete expense" onClick={() => remove(e)}>✕</button></td>
               </tr>
