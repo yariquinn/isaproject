@@ -303,6 +303,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
               </button>
             )}
           </div>
+          {client.client_type !== "business" && (
+            <div className="cc-name-lead">{client.name}</div>
+          )}
           <dl className="cc-fields">
             {client.client_type === "business" && (
               <div>

@@ -1347,7 +1347,7 @@ section.block.alt {
 }
 .hdr-bell-badge {
   position: absolute;
-  top: -7px;
+  top: -4px;
   right: -3px;
   min-width: 15px;
   height: 15px;
@@ -4146,6 +4146,13 @@ a.activity-row:hover .act-desc {
 .head-tabs {
   margin: 0 0.5rem 0 0;
   border: none;
+}
+/* Individual client: name shown as plain lettering atop the contact card */
+.cc-name-lead {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dash-fg);
+  margin-bottom: 0.7rem;
 }
 .lead-chart-legend {
   display: flex;
