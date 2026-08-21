@@ -28,6 +28,31 @@ export const CLIENT_TYPES = [
   { value: "business", label: "Business" },
 ] as const;
 
+// Professional (non-client) contacts: opposing counsel, co-counsel, experts, etc.
+export type Contact = {
+  id: string;
+  name: string;
+  role: string;
+  organization: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+export const CONTACT_ROLES = [
+  { value: "outside_counsel", label: "Outside Counsel" },
+  { value: "co_counsel", label: "Co-Counsel" },
+  { value: "adverse_counsel", label: "Adverse Party Counsel" },
+  { value: "expert", label: "Expert / Witness" },
+  { value: "vendor", label: "Vendor / Service" },
+  { value: "other", label: "Other" },
+] as const;
+
+export const contactRoleLabel = (v: string) =>
+  CONTACT_ROLES.find((r) => r.value === v)?.label ?? "Other";
+
 export type Matter = {
   id: string;
   name: string;

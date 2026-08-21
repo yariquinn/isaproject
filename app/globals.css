@@ -1862,6 +1862,54 @@ section.block.alt {
   accent-color: var(--accent);
   cursor: pointer;
 }
+/* Professional contacts table */
+.ct-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.ct-avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ct-role-select {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dash-fg);
+  cursor: pointer;
+}
+.ct-role-select:hover {
+  border-color: var(--dash-border);
+  background: var(--dash-bg);
+}
+.ct-actions {
+  text-align: center;
+}
+.ct-del {
+  border: none;
+  background: transparent;
+  color: var(--dash-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+}
+.ct-del:hover {
+  color: #c0392b;
+  background: color-mix(in srgb, #c0392b 10%, transparent);
+}
 /* Opt-in tables lay out to a fixed grid and wrap long tokens (e.g. client
    emails), so the table can never exceed its container → no horizontal scroll. */
 .data-table-wrap-cells {
