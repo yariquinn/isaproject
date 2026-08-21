@@ -4682,8 +4682,8 @@ a.activity-row:hover .act-desc {
   margin-bottom: 0.25rem;
 }
 .cc-name-lg {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: var(--dash-fg);
   margin-bottom: 0.6rem;
 }
@@ -5316,7 +5316,6 @@ a.activity-row:hover .act-desc {
 .cc-fields dd.cc-name-strong,
 .cc-fields dd.cc-name-strong .contact-picker {
   font-weight: 700;
-  font-size: 1rem;
 }
 .cc-fields > div.cc-desc {
   grid-template-columns: 1fr;

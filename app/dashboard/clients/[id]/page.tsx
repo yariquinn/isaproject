@@ -305,7 +305,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
             {client.client_type === "business" && (
               <div>
-                <dt>Contact person</dt>
+                <dt>Primary contact</dt>
                 <dd className="cc-name-strong">
                   <button type="button" className="contact-picker" onClick={openContactModal}>
                     {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
@@ -434,16 +434,37 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 </button>
               ))}
             </div>
-            {client.client_type !== "business" && client.partner_name && (
-              <label>
-                Second contact relationship
-                <select value={client.partner_relationship ?? "Spouse"} onChange={(e) => patch({ partner_relationship: e.target.value })}>
-                  {["Spouse", "Partner", "Parent", "Child", "Sibling", "Other"].map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </label>
-            )}
+            <div className="couple-fields">
+              <p className="field-note">Second contact (optional)</p>
+              <div className="field-pair">
+                <label>
+                  Name
+                  <input
+                    value={client.partner_name ?? ""}
+                    onChange={(e) => patch({ partner_name: e.target.value || null })}
+                    placeholder="Second contact name"
+                  />
+                </label>
+                <label>
+                  Relationship
+                  <select value={client.partner_relationship ?? "Spouse"} onChange={(e) => patch({ partner_relationship: e.target.value })}>
+                    {["Spouse", "Partner", "Parent", "Child", "Sibling", "Colleague", "Other"].map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="field-pair">
+                <label>
+                  Email
+                  <input value={client.partner_email ?? ""} onChange={(e) => patch({ partner_email: e.target.value || null })} />
+                </label>
+                <label>
+                  Phone
+                  <input value={client.partner_phone ?? ""} onChange={(e) => patch({ partner_phone: e.target.value || null })} />
+                </label>
+              </div>
+            </div>
             {(() => {
               const bc = client.billing_contact;
               const partner = client.partner_name;

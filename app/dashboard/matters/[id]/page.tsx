@@ -436,7 +436,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   async function saveClientField(
     clientId: string,
-    field: "primary_contact" | "email" | "phone" | "address" | "contact_title" | "billing_contact",
+    field: "primary_contact" | "email" | "phone" | "address" | "contact_title" | "billing_contact"
+      | "partner_name" | "partner_email" | "partner_phone" | "partner_relationship",
     v: string,
   ) {
     const next = v.trim() || null;
@@ -636,7 +637,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               </div>
               <dl className="cc-fields">
                 <div>
-                  <dt>{clientObj.client_type === "business" ? "Contact" : "Name"}</dt>
+                  <dt>{clientObj.client_type === "business" ? "Primary contact" : "Name"}</dt>
                   <dd className="cc-primary-contact cc-name-strong">
                     <InlineText
                       value={clientObj.primary_contact}
@@ -1265,11 +1266,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       <div className="cc-name-lg">{clientObj.primary_contact || clientObj.name}</div>
                       <dl className="cc-fields">
                         {clientObj.contact_title && (
-                          <div><dt>Title</dt><dd>{clientObj.contact_title}</dd></div>
+                          <div><dt>Title</dt><dd><InlineText value={clientObj.contact_title} onSave={(v) => saveClientField(clientObj.id, "contact_title", v)} placeholder="—" /></dd></div>
                         )}
-                        <div><dt>Email</dt><dd>{clientObj.email || "—"}</dd></div>
-                        <div><dt>Phone</dt><dd>{clientObj.phone || "—"}</dd></div>
-                        <div><dt>Address</dt><dd>{clientObj.address || "—"}</dd></div>
+                        <div><dt>Email</dt><dd><InlineText value={clientObj.email} onSave={(v) => saveClientField(clientObj.id, "email", v)} placeholder="—" /></dd></div>
+                        <div><dt>Phone</dt><dd><InlineText value={clientObj.phone} onSave={(v) => saveClientField(clientObj.id, "phone", v)} placeholder="—" /></dd></div>
+                        <div><dt>Address</dt><dd><InlineText value={clientObj.address} onSave={(v) => saveClientField(clientObj.id, "address", v)} placeholder="—" /></dd></div>
                       </dl>
                     </li>
                   )}
@@ -1278,8 +1279,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       <div className="cc-role">{clientObj.partner_relationship || "Second contact"}</div>
                       <div className="cc-name-lg">{clientObj.partner_name}</div>
                       <dl className="cc-fields">
-                        <div><dt>Email</dt><dd>{clientObj.partner_email || "—"}</dd></div>
-                        <div><dt>Phone</dt><dd>{clientObj.partner_phone || "—"}</dd></div>
+                        <div><dt>Email</dt><dd><InlineText value={clientObj.partner_email} onSave={(v) => saveClientField(clientObj.id, "partner_email", v)} placeholder="—" /></dd></div>
+                        <div><dt>Phone</dt><dd><InlineText value={clientObj.partner_phone} onSave={(v) => saveClientField(clientObj.id, "partner_phone", v)} placeholder="—" /></dd></div>
                       </dl>
                     </li>
                   )}
@@ -1558,6 +1559,42 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 onChange={(e) => patch({ show_case_timeline: e.target.checked })}
               />
             </label>
+            {clientObj && (
+              <div className="couple-fields" style={{ marginTop: "0.5rem" }}>
+                <p className="field-note">Second contact for {clientObj.name}</p>
+                <div className="field-pair">
+                  <label>
+                    Name
+                    <input
+                      defaultValue={clientObj.partner_name ?? ""}
+                      onBlur={(e) => saveClientField(clientObj.id, "partner_name", e.target.value)}
+                      placeholder="Second contact name"
+                    />
+                  </label>
+                  <label>
+                    Relationship
+                    <select
+                      defaultValue={clientObj.partner_relationship ?? "Spouse"}
+                      onChange={(e) => saveClientField(clientObj.id, "partner_relationship", e.target.value)}
+                    >
+                      {["Spouse", "Partner", "Parent", "Child", "Sibling", "Colleague", "Other"].map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="field-pair">
+                  <label>
+                    Email
+                    <input defaultValue={clientObj.partner_email ?? ""} onBlur={(e) => saveClientField(clientObj.id, "partner_email", e.target.value)} />
+                  </label>
+                  <label>
+                    Phone
+                    <input defaultValue={clientObj.partner_phone ?? ""} onBlur={(e) => saveClientField(clientObj.id, "partner_phone", e.target.value)} />
+                  </label>
+                </div>
+              </div>
+            )}
             <div className="modal-actions">
               <button type="button" className="btn" onClick={() => setEditOpen(false)}>
                 Done
