@@ -2816,6 +2816,46 @@ section.block.alt {
   }
 }
 
+/* Resizable two-panel layout */
+.rz-cols {
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 1.5rem;
+}
+.rz-pane {
+  min-width: 0;
+  flex-grow: 0;
+  flex-shrink: 1;
+  display: flex;
+}
+.rz-pane > * { width: 100%; }
+.rz-handle {
+  flex: none;
+  width: 1.5rem;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+}
+.rz-grip {
+  width: 3px;
+  height: 44px;
+  border-radius: 3px;
+  background: var(--dash-border);
+  transition: background 0.12s ease, height 0.12s ease;
+}
+.rz-handle:hover .rz-grip,
+.rz-handle.dragging .rz-grip {
+  background: var(--accent);
+  height: 72px;
+}
+@media (max-width: 900px) {
+  .rz-cols { flex-direction: column; }
+  .rz-pane { flex-basis: auto !important; }
+  .rz-handle { display: none; }
+}
+
 /* Primary-contact picker button */
 .contact-picker {
   display: flex;
@@ -6818,6 +6858,8 @@ a.activity-row:hover .act-desc {
   height: 28px;
   font-size: 1.1rem;
   border-radius: 8px;
+  margin-left: auto;
+  margin-right: -0.25rem;
 }
 
 /* Searchable matter picker (task modals) */

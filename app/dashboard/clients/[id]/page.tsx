@@ -8,6 +8,7 @@ import { PRACTICE_AREAS, ATTORNEYS, CLIENT_TYPES, type ActivityItem, type Client
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
+import ResizableCols from "../../ResizableCols";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -275,7 +276,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <div className="detail-cols" style={{ marginBottom: "1.5rem" }}>
+      <ResizableCols storageKey="clientRecordSplit">
         {/* Unified contact card — mirrors the Client card on a matter for continuity */}
         <div className="panel">
           <div className="panel-head">
@@ -391,7 +392,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
-      </div>
+      </ResizableCols>
 
       <div className="panel">
         <h2 className="combo-title">Activity</h2>
