@@ -3798,6 +3798,50 @@ a.activity-row:hover .act-desc {
   min-width: 240px;
 }
 
+/* Lead pipeline / intake */
+.lead-chart {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  display: block;
+}
+.lead-axis {
+  stroke: var(--dash-border);
+  stroke-width: 1;
+}
+.lead-chart-legend {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--dash-muted);
+}
+.lead-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.lead-chart-legend i {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.lead-sub {
+  font-size: 0.74rem;
+  color: var(--dash-muted);
+  font-weight: 400;
+}
+.lead-status-select {
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  background: var(--dash-surface);
+  color: var(--dash-fg);
+}
+
 /* Payments-by-practice-area donut */
 .pie-report {
   display: flex;

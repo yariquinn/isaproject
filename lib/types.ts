@@ -189,6 +189,30 @@ export type UserSettings = {
   created_at?: string;
 };
 
+export type Lead = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  message: string | null;
+  practice_area: string | null;
+  status: string;
+  source: string | null;
+  notes: string | null;
+  converted_client_id: string | null;
+  created_at: string;
+};
+
+export const LEAD_STATUSES = [
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "consult", label: "Consult" },
+  { value: "did_not_hire", label: "Did Not Hire" },
+  { value: "converted", label: "Converted" },
+] as const;
+export const leadStatusLabel = (v: string) =>
+  LEAD_STATUSES.find((s) => s.value === v)?.label ?? v;
+
 export const USER_ROLES = [
   { value: "admin", label: "Admin" },
   { value: "attorney", label: "Attorney" },
