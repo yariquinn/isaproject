@@ -179,11 +179,7 @@ export default function BillingPage() {
 
   return (
     <div>
-      <h1 className="page-title">Billing</h1>
-      <Disclaimer>
-        Invoices are demo data. Payment processing and accounting sync are
-        non-functional in this mock-up.
-      </Disclaimer>
+      <h1 className="page-title">Billing Dashboard</h1>
 
       <div className="doc-tabs" style={{ margin: "1.1rem 0" }}>
         <button

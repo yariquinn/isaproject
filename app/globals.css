@@ -4117,6 +4117,8 @@ a.activity-row:hover .act-desc {
   list-style: none;
   display: flex;
   flex-direction: column;
+  max-height: 300px;
+  overflow-y: auto;
 }
 .intake-activity-item {
   display: flex;
@@ -4163,6 +4165,10 @@ a.activity-row:hover .act-desc {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 0.75rem;
+}
+.intake-modal {
+  max-width: 42rem;
+  width: 100%;
 }
 /* Clients/Contacts switcher living inside the page-head, left of the icons */
 .head-tabs {

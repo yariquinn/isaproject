@@ -118,10 +118,7 @@ export default function IntakeClient() {
   return (
     <>
       <div className="intake-toptabs">
-        <div className="doc-tabs" style={{ margin: 0 }}>
-          <button type="button" className={view === "pipeline" ? "active" : undefined} onClick={() => setView("pipeline")}>Pipeline</button>
-          <button type="button" className={view === "form" ? "active" : undefined} onClick={() => setView("form")}>New Intake</button>
-        </div>
+        <button type="button" className="btn" onClick={() => setView("form")}>+ New Intake</button>
       </div>
 
       <div className="intake-graph-row">
@@ -144,11 +141,18 @@ export default function IntakeClient() {
             {xLabels.map(({ i, label }) => (
               <text key={i} x={px(i)} y={H - PADB + 16} textAnchor="middle" className="lead-axis-num">{label}</text>
             ))}
+            <defs>
+              <linearGradient id="addedFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2f6bff" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#2f6bff" stopOpacity="0" />
+              </linearGradient>
+            </defs>
             <line x1={PADL} y1={H - PADB} x2={W - PADR} y2={H - PADB} className="lead-axis" />
             <line x1={PADL} y1={PADT} x2={PADL} y2={H - PADB} className="lead-axis" />
-            <path d={line("added")} fill="none" stroke="#2f6bff" strokeWidth="2.5" />
-            <path d={line("converted")} fill="none" stroke="#3fa373" strokeWidth="2.5" />
-            <path d={line("lost")} fill="none" stroke="#c0392b" strokeWidth="2.5" />
+            <path d={`${line("added")} L${px(trend.length - 1).toFixed(1)},${(H - PADB).toFixed(1)} L${px(0).toFixed(1)},${(H - PADB).toFixed(1)} Z`} fill="url(#addedFill)" stroke="none" />
+            <path d={line("lost")} fill="none" stroke="#c0392b" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={line("converted")} fill="none" stroke="#3fa373" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={line("added")} fill="none" stroke="#2f6bff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <div className="panel intake-activity-panel">
@@ -171,9 +175,10 @@ export default function IntakeClient() {
         </div>
       </div>
 
-      {view === "form" ? (
-        <div className="panel" style={{ maxWidth: "40rem" }}>
-          <h2 className="panel-title">New Intake</h2>
+      {view === "form" && (
+        <div className="modal-backdrop" onClick={() => setView("pipeline")}>
+        <div className="modal intake-modal" onClick={(e) => e.stopPropagation()}>
+          <h3>New Intake</h3>
           <div className="intake-form">
             <div className="seg seg-full" style={{ marginBottom: "0.9rem" }}>
               {(["individual", "business"] as const).map((t) => (
@@ -214,8 +219,10 @@ export default function IntakeClient() {
             </button>
           </div>
         </div>
-      ) : (
-        <>
+        </div>
+      )}
+
+      <>
           <div className="inv-filter-row">
             {[["active", "Active"], ["all", "All"], ...LEAD_STATUSES.map((s) => [s.value, s.label])].map(([v, l]) => {
               const n =
@@ -266,7 +273,6 @@ export default function IntakeClient() {
             </div>
           )}
         </>
-      )}
 
       {detail && (() => {
         const l = leads.find((x) => x.id === detail.id) ?? detail;
