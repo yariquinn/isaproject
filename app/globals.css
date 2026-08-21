@@ -2897,18 +2897,6 @@ section.block.alt {
 .strip-item {
   font-size: 0.82rem;
 }
-.conflict-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.74rem;
-  font-weight: 600;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  color: #15803d;
-  background: color-mix(in srgb, #15803d 12%, transparent);
-}
-.conflict-badge svg { stroke: #15803d; }
 /* Compact priority dropdown in the sub-strip — sized to match the pills. */
 .matter-substrip .inline-select {
   height: 24px;
