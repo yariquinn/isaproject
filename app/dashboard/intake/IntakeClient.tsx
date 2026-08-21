@@ -171,9 +171,20 @@ export default function IntakeClient() {
         </div>
       </div>
 
-      <div className="doc-tabs" style={{ marginBottom: "1rem" }}>
-        <button type="button" className={view === "pipeline" ? "active" : undefined} onClick={() => setView("pipeline")}>Pipeline</button>
-        <button type="button" className={view === "form" ? "active" : undefined} onClick={() => setView("form")}>+ New Intake</button>
+      <div className="intake-tabbar">
+        <div className="doc-tabs" style={{ margin: 0 }}>
+          <button type="button" className={view === "pipeline" ? "active" : undefined} onClick={() => setView("pipeline")}>Pipeline</button>
+          <button type="button" className={view === "form" ? "active" : undefined} onClick={() => setView("form")}>New Intake</button>
+        </div>
+        <button
+          type="button"
+          className="btn icon-plus-btn"
+          onClick={() => setView("form")}
+          title="New intake"
+          aria-label="New intake"
+        >
+          +
+        </button>
       </div>
 
       {view === "form" ? (

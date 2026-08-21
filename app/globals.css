@@ -946,13 +946,16 @@ section.block.alt {
 }
 .hdr-search-sub {
   flex: 0 1 auto;
-  max-width: 320px;
+  max-width: 460px;
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 0.74rem;
   color: var(--dash-muted);
+}
+.hdr-search-menu {
+  width: 720px;
 }
 /* Universal top header (breadcrumb bar) — kept compact in height. */
 .app-header {
@@ -4096,6 +4099,13 @@ a.activity-row:hover .act-desc {
   font: inherit;
   cursor: pointer;
   text-align: left;
+}
+.intake-tabbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 .lead-chart-legend {
   display: flex;

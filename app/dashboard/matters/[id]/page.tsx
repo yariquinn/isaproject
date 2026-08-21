@@ -154,6 +154,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [acTab, setAcTab] = useState<"existing" | "new">("existing");
   const [acForm, setAcForm] = useState<{ name: string; role: string; organization: string; email: string; phone: string }>({ name: "", role: CONTACT_ROLES[0].value, organization: "", email: "", phone: "" });
   const [pcModal, setPcModal] = useState(false);
+  // Confirm-once guard before editing a business's primary contact from the matter card.
+  const [contactConfirmed, setContactConfirmed] = useState(false);
+  const confirmContactEdit = () => {
+    if (contactConfirmed) return true;
+    const ok = window.confirm("Editing the client's primary contact updates it everywhere this client appears. Continue?");
+    if (ok) setContactConfirmed(true);
+    return ok;
+  };
   const [pcTab, setPcTab] = useState<"search" | "new">("search");
   const [pcQuery, setPcQuery] = useState("");
   const [pcForm, setPcForm] = useState({ name: "", title: "", email: "", phone: "", address: "" });
@@ -691,12 +699,13 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     <dt>Primary contact</dt>
                     <dd className="cc-primary-contact cc-name-strong">
                       <span className="name-with-title">
-                        <button type="button" className="contact-picker" onClick={() => { setPcQuery(""); setPcTab("search"); setPcModal(true); }}>
+                        <button type="button" className="contact-picker" onClick={() => { if (!confirmContactEdit()) return; setPcQuery(""); setPcTab("search"); setPcModal(true); }}>
                           {clientObj.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
                         </button>
                         <TitlePill
                           value={clientObj.contact_title}
                           onSave={(v) => saveClientField(clientObj.id, "contact_title", v)}
+                          guard={confirmContactEdit}
                         />
                       </span>
                     </dd>
