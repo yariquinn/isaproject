@@ -68,8 +68,8 @@ function GlobalSearch() {
     let cancelled = false;
     const run = async () => {
       const [{ data: clients }, { data: matters }] = await Promise.all([
-        supabase.from("clients").select("id,name,primary_contact,archived").ilike("name", `%${term}%`).limit(6),
-        supabase.from("matters").select("id,name,practice_area,status").ilike("name", `%${term}%`).limit(6),
+        supabase.from("clients").select("id,name,primary_contact,archived").ilike("name", `%${term}%`),
+        supabase.from("matters").select("id,name,practice_area,status").ilike("name", `%${term}%`),
       ]);
       if (cancelled) return;
       const list: SearchHit[] = [];
@@ -77,6 +77,8 @@ function GlobalSearch() {
         list.push({ kind: "client", id: c.id, name: c.name, sub: c.primary_contact, closed: !!c.archived });
       for (const m of (matters as { id: string; name: string; practice_area: string | null; status: string | null }[]) ?? [])
         list.push({ kind: "matter", id: m.id, name: m.name, sub: m.practice_area, closed: m.status === "closed" });
+      // Active first, archived/closed last (stable within each group).
+      list.sort((a, b) => (a.closed ? 1 : 0) - (b.closed ? 1 : 0));
       setHits(list);
     };
     const t = setTimeout(run, 150);
@@ -128,7 +130,7 @@ function GlobalSearch() {
                 >
                   <span className={`hdr-search-kind hdr-search-${h.kind}`}>{h.kind === "client" ? "Client" : "Matter"}</span>
                   <span className="hdr-search-name">{h.name}</span>
-                  {h.closed && <span className="hdr-search-status">{h.kind === "client" ? "Archived" : "Closed"}</span>}
+                  {h.closed && <span className="hdr-search-status">Archived</span>}
                   {h.sub && <span className="hdr-search-sub">{h.sub}</span>}
                 </Link>
               ))
