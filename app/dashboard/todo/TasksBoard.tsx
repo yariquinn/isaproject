@@ -260,6 +260,23 @@ export default function TasksBoard() {
     await supabase.from("todos").delete().eq("id", id);
   }
 
+  // Bulk selection on the list view.
+  const [bulkSel, setBulkSel] = useState<Set<string>>(new Set());
+  const toggleBulk = (id: string) => setBulkSel((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  async function bulkPatchTasks(changes: Partial<Todo>) {
+    const ids = [...bulkSel]; if (!ids.length) return;
+    setTodos((prev) => prev.map((t) => (bulkSel.has(t.id) ? { ...t, ...changes } : t)));
+    await supabase.from("todos").update(changes).in("id", ids);
+    setBulkSel(new Set());
+  }
+  async function bulkDeleteTasks() {
+    const ids = [...bulkSel]; if (!ids.length) return;
+    if (!window.confirm(`Delete ${ids.length} task${ids.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    setTodos((prev) => prev.filter((t) => !bulkSel.has(t.id)));
+    await supabase.from("todos").delete().in("id", ids);
+    setBulkSel(new Set());
+  }
+
   function openAdd(prefill?: Partial<Draft>) {
     setDraft({ ...emptyDraft(), ...prefill });
     setAddOpen(true);
@@ -356,7 +373,27 @@ export default function TasksBoard() {
     );
   const renderList = () => (
     <div className="tb-wrap tb-listview">
+      {bulkSel.size > 0 && (
+        <div className="bulk-bar">
+          <span className="bulk-count">{bulkSel.size} selected</span>
+          <button type="button" className="ghost sm" onClick={() => bulkPatchTasks({ done: true })}>Mark done</button>
+          <button type="button" className="ghost sm" onClick={() => bulkPatchTasks({ done: false })}>Mark not done</button>
+          <label>Assign
+            <select defaultValue="" onChange={(e) => { if (e.target.value) bulkPatchTasks({ assignee: e.target.value }); e.target.value = ""; }}>
+              <option value="">Set…</option>
+              {ATTORNEYS.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </label>
+          <button type="button" className="ghost sm bulk-danger" onClick={bulkDeleteTasks}>Delete</button>
+          <button type="button" className="ghost sm" onClick={() => setBulkSel(new Set())}>Clear</button>
+        </div>
+      )}
       <div className="tb-lv-head">
+        <span>
+          <input type="checkbox" aria-label="Select all"
+            checked={listTasks.length > 0 && listTasks.every((t) => bulkSel.has(t.id))}
+            onChange={(e) => setBulkSel(e.target.checked ? new Set(listTasks.map((t) => t.id)) : new Set())} />
+        </span>
         <span>Task</span>
         <span>Matter</span>
         <span>Responsible</span>
@@ -372,7 +409,10 @@ export default function TasksBoard() {
             {t.done && (i === 0 || !listTasks[i - 1].done) && (
               <div className="tb-lv-divider">Completed</div>
             )}
-            <div className={`tb-lv-row${t.done ? " done" : ""}`}>
+            <div className={`tb-lv-row${t.done ? " done" : ""}${bulkSel.has(t.id) ? " row-selected" : ""}`}>
+              <span onClick={(e) => e.stopPropagation()}>
+                <input type="checkbox" checked={bulkSel.has(t.id)} onChange={() => toggleBulk(t.id)} aria-label="Select task" />
+              </span>
               <span className="tb-lv-task" onClick={(e) => { e.stopPropagation(); setLvEdit({ id: t.id, field: "title" }); }}>
                 {lvEditing(t.id, "title") ? (
                   <input

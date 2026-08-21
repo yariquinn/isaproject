@@ -1994,6 +1994,24 @@ section.block.alt {
   height: 20px;
   font-size: 0.52rem;
 }
+.ratecard-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px dashed var(--dash-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dash-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ratecard-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  border-style: solid;
+}
 .ct-role-select {
   font-family: inherit;
   font-size: 0.85rem;
@@ -7971,7 +7989,7 @@ a.activity-row:hover .act-desc {
 .tb-lv-head,
 .tb-lv-row {
   display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr) 60px 90px 90px;
+  grid-template-columns: 32px minmax(0, 2.2fr) minmax(0, 1.4fr) 60px 90px 90px;
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 1rem;

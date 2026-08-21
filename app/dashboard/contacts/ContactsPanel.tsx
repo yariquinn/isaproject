@@ -18,6 +18,7 @@ const COL_DEFS = [
   { key: "email", label: "Email" },
   { key: "phone", label: "Phone" },
   { key: "address", label: "Business Address" },
+  { key: "ratecard", label: "Rate Card" },
 ] as const;
 type ColKey = (typeof COL_DEFS)[number]["key"];
 
@@ -41,7 +42,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
   const filterRef = useRef<HTMLDivElement>(null);
 
   const [cols, setCols] = useState<Record<ColKey, boolean>>({
-    role: false, organization: true, email: true, phone: true, address: true,
+    role: false, organization: true, email: true, phone: true, address: true, ratecard: true,
   });
   const [colMenuOpen, setColMenuOpen] = useState(false);
   const colMenuRef = useRef<HTMLTableCellElement>(null);
@@ -275,6 +276,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
               {cols.email && <col style={{ width: "20%" }} />}
               {cols.phone && <col style={{ width: "12%" }} />}
               {cols.address && <col style={{ width: "17%" }} />}
+              {cols.ratecard && <col style={{ width: "100px" }} />}
               <col style={{ width: "44px" }} />
             </colgroup>
             <thead>
@@ -293,6 +295,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
                 {cols.email && <th>Email</th>}
                 {cols.phone && <th>Phone</th>}
                 {cols.address && <th>Business Address</th>}
+                {cols.ratecard && <th>Rate Card</th>}
                 <th className="col-menu-th" ref={colMenuRef}>
                   <button type="button" className="col-menu-btn" onClick={() => setColMenuOpen((o) => !o)} title="Add or remove columns" aria-label="Add or remove columns">+</button>
                   {colMenuOpen && (
@@ -312,7 +315,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={3 + Number(cols.role) + Number(cols.organization) + Number(cols.email) + Number(cols.phone) + Number(cols.address)} className="muted-line" style={{ padding: "1.2rem 1.1rem" }}>
+                  <td colSpan={3 + Number(cols.role) + Number(cols.organization) + Number(cols.email) + Number(cols.phone) + Number(cols.address) + Number(cols.ratecard)} className="muted-line" style={{ padding: "1.2rem 1.1rem" }}>
                     No contacts yet — click + to add outside counsel, co-counsel, adverse party lawyers, experts, and more.
                   </td>
                 </tr>
@@ -353,6 +356,22 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
                   {cols.address && (
                   <td>
                     <InlineText value={c.address} onSave={(v) => patch(c.id, { address: v || null })} placeholder="—" />
+                  </td>
+                  )}
+                  {cols.ratecard && (
+                  <td>
+                    <button
+                      type="button"
+                      className="ratecard-btn"
+                      title="Upload rate card (PDF)"
+                      aria-label="Upload rate card"
+                      onClick={() => window.alert("Rate card upload is a placeholder in this demo — attach a PDF here.")}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                      </svg>
+                      <span>PDF</span>
+                    </button>
                   </td>
                   )}
                   <td className="ct-actions">
