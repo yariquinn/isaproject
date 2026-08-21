@@ -938,7 +938,7 @@ section.block.alt {
   color: var(--dash-muted) !important;
   background: transparent;
 }
-/* Timesheet, timer and bell share one light-grey pill so they read as a set. */
+/* Timesheet, timer and bell share one pill (same grey as the search bar). */
 .hdr-icon-filled,
 .app-header .tracker-icon,
 .app-header .hdr-bell {
@@ -947,7 +947,15 @@ section.block.alt {
   height: 34px;
   padding: 0;
   border-radius: 9px;
-  background: color-mix(in srgb, var(--dash-fg) 7%, transparent);
+  background: var(--dash-bg);
+  color: var(--dash-fg) !important;
+}
+/* Every header pill renders its glyph at the same 18px box. */
+.hdr-icon-filled svg,
+.app-header .tracker-icon .tracker-icon-glyph svg,
+.app-header .hdr-bell svg {
+  width: 18px;
+  height: 18px;
 }
 .hdr-icon-filled:hover,
 .app-header .tracker-icon:hover,
@@ -1051,7 +1059,7 @@ section.block.alt {
   padding: 0;
   justify-content: center;
   gap: 0.4rem;
-  background: color-mix(in srgb, var(--dash-fg) 7%, transparent);
+  background: var(--dash-bg);
   border: none;
   color: var(--dash-fg);
   border-radius: 9px;
@@ -1331,8 +1339,8 @@ section.block.alt {
 }
 .hdr-bell-badge {
   position: absolute;
-  top: -3px;
-  right: 0;
+  top: -7px;
+  right: -3px;
   min-width: 15px;
   height: 15px;
   padding: 0 3px;
