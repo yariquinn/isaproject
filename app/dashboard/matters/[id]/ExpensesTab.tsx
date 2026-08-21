@@ -158,10 +158,12 @@ export default function ExpensesTab({ matterId }: { matterId: string }) {
 
   return (
     <>
-      <div className="ts-summary-head">
-        <select className="inline-select" value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
-          {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-        </select>
+      <div className="te-summary-head">
+        <div className="te-summary-head-right">
+          <select className="inline-select te-period" value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
+            {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
+        </div>
       </div>
       <div className="te-summary">
         {stat("Total", total, visibleRows.length)}
