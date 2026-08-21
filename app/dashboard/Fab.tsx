@@ -64,7 +64,6 @@ function Ic({ name }: { name: string }) {
 type Shortcut = { key: string; label: string; icon: string; href?: string; action?: string };
 
 const SHORTCUTS: Shortcut[] = [
-  { key: "timer", label: "Start timer", icon: "timer", action: "timer" },
   { key: "invoice", label: "Create invoice", icon: "invoice", action: "invoice" },
   { key: "payment", label: "Record payment", icon: "payment", action: "payment" },
   { key: "expense", label: "Add expense", icon: "expense", action: "expense" },

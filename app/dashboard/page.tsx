@@ -68,6 +68,19 @@ function periodPrevStart(key: string): number {
   return new Date(now.getFullYear() - 1, 0, 1).getTime();
 }
 
+// Same period one year earlier (today→same day last year, this month→same
+// month last year, etc.) — the baseline when comparing year-over-year.
+function periodPrevYearStart(key: string): number {
+  const now = new Date();
+  if (key === "day") return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).getTime();
+  if (key === "week") {
+    const s = new Date(periodStart("week"));
+    return new Date(s.getFullYear() - 1, s.getMonth(), s.getDate(), s.getHours(), s.getMinutes()).getTime();
+  }
+  if (key === "month") return new Date(now.getFullYear() - 1, now.getMonth(), 1).getTime();
+  return new Date(now.getFullYear() - 1, 0, 1).getTime();
+}
+
 const GOAL_TARGET = 50000; // revenue goal (placeholder — easy to make configurable later)
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
@@ -234,6 +247,7 @@ export default function Overview() {
   const [filter, setFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState<string>("month");
+  const [compareMode, setCompareMode] = useState<"prev" | "yoy">("prev");
   const [finRange, setFinRange] = useState<"7d" | "year">("7d");
   const [revLine, setRevLine] = useState(false);
   const [gearOpen, setGearOpen] = useState(false);
@@ -372,7 +386,7 @@ export default function Overview() {
     // Compare "this period so far" against the same span into the prior
     // calendar period (this month-to-date vs last month through the same day, etc.).
     const span = Date.now() - start;
-    const prevStart = periodPrevStart(period);
+    const prevStart = compareMode === "yoy" ? periodPrevYearStart(period) : periodPrevStart(period);
     const prevEnd = prevStart + span;
     let prevRev = 0;
     for (const i of invoices) {
@@ -428,7 +442,7 @@ export default function Overview() {
       closedDelta: pctDelta(closed, prevClosed),
       hoursDelta: pctDelta(secs, prevSecs),
     };
-  }, [entries, invoices, matters, clientRows, period]);
+  }, [entries, invoices, matters, clientRows, period, compareMode]);
 
   // Last 12 months of earnings + revenue, for the chart's "This Year" view
   // and the Revenue sparkline.
@@ -550,17 +564,28 @@ export default function Overview() {
 
       <div className="ov-stats-head">
         <span className="ov-stats-title">Snapshot</span>
-        <select
-          className="inline-select"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-        >
-          {PERIODS.map((p) => (
-            <option key={p.key} value={p.key}>
-              {p.label}
-            </option>
-          ))}
-        </select>
+        <div className="ov-stats-head-controls">
+          <select
+            className="inline-select"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+          >
+            {PERIODS.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <select
+            className="inline-select"
+            value={compareMode}
+            onChange={(e) => setCompareMode(e.target.value as "prev" | "yoy")}
+            aria-label="Comparison basis"
+          >
+            <option value="prev">vs previous period</option>
+            <option value="yoy">vs last year</option>
+          </select>
+        </div>
       </div>
 
       <div className="stat-row ov-stats">
@@ -640,7 +665,7 @@ export default function Overview() {
                   <span className="fin-hero">{money(revenue)}</span>
                   {revenueDelta != null && (
                     <span className={`fin-delta ${revenueDelta >= 0 ? "up" : "down"}`}>
-                      {revenueDelta >= 0 ? "+" : ""}{revenueDelta}% vs prev
+                      {revenueDelta >= 0 ? "+" : ""}{revenueDelta}% {compareMode === "yoy" ? "vs last yr" : "vs prev"}
                     </span>
                   )}
                 </>
