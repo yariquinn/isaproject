@@ -635,18 +635,16 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </Link>
               </div>
               <dl className="cc-fields">
-                {clientObj.client_type === "business" && (
-                  <div>
-                    <dt>Contact</dt>
-                    <dd className="cc-primary-contact">
-                      <InlineText
-                        value={clientObj.primary_contact}
-                        onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
-                        placeholder="—"
-                      />
-                    </dd>
-                  </div>
-                )}
+                <div>
+                  <dt>{clientObj.client_type === "business" ? "Contact" : "Name"}</dt>
+                  <dd className="cc-primary-contact cc-name-strong">
+                    <InlineText
+                      value={clientObj.primary_contact}
+                      onSave={(v) => saveClientField(clientObj.id, "primary_contact", v)}
+                      placeholder="—"
+                    />
+                  </dd>
+                </div>
                 {clientObj.client_type === "business" && (
                   <div>
                     <dt>Title</dt>

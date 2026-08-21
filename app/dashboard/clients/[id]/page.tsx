@@ -297,10 +297,16 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
           </div>
           <dl className="cc-fields">
+            {client.client_type !== "business" && (
+              <div>
+                <dt>Name</dt>
+                <dd className="cc-name-strong"><Guarded field="primary_contact" label="name" /></dd>
+              </div>
+            )}
             {client.client_type === "business" && (
               <div>
                 <dt>Contact person</dt>
-                <dd>
+                <dd className="cc-name-strong">
                   <button type="button" className="contact-picker" onClick={openContactModal}>
                     {client.primary_contact || "Search or add a contact…"}<span className="cp-icon">⌕</span>
                   </button>

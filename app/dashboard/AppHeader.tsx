@@ -102,6 +102,8 @@ function GlobalSearch() {
         next.time.push({ id: t.id, title: t.note || t.activity || "Time entry", sub: t.activity, href: matterHref(t.matter_id, "/dashboard/billing?tab=time"), closed: false });
       for (const x of (expenses.data as { id: string; description: string | null; amount: number | null; matter_id: string | null }[]) ?? [])
         next.expenses.push({ id: x.id, title: x.description || "Expense", sub: x.amount != null ? `$${x.amount}` : null, href: matterHref(x.matter_id, "/dashboard/billing"), closed: false });
+      // Archived / closed items always sort last within their group.
+      for (const g of GROUP_ORDER) next[g].sort((a, b) => (a.closed ? 1 : 0) - (b.closed ? 1 : 0));
       setGroups(next);
     };
     const t = setTimeout(run, 180);

@@ -814,8 +814,8 @@ section.block.alt {
   right: auto;
   transform: translateX(-50%);
   z-index: 45;
-  width: 480px;
-  max-width: 90vw;
+  width: 640px;
+  max-width: 92vw;
   max-height: 360px;
   overflow-y: auto;
   padding: 0.35rem;
@@ -876,7 +876,7 @@ section.block.alt {
 }
 .hdr-search-status-slot {
   flex: none;
-  width: 82px;
+  width: 74px;
   display: flex;
   justify-content: flex-end;
 }
@@ -896,7 +896,7 @@ section.block.alt {
 }
 .hdr-search-sub {
   flex: none;
-  width: 120px;
+  width: 96px;
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
@@ -5312,6 +5312,11 @@ a.activity-row:hover .act-desc {
   font-size: 0.92rem;
   color: var(--dash-fg);
   word-break: break-word;
+}
+.cc-fields dd.cc-name-strong,
+.cc-fields dd.cc-name-strong .contact-picker {
+  font-weight: 700;
+  font-size: 1rem;
 }
 .cc-fields > div.cc-desc {
   grid-template-columns: 1fr;
