@@ -31,7 +31,11 @@ export default function ClientsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
-  const [sortAsc, setSortAsc] = useState<boolean | null>(null);
+  const [csort, setCsort] = useState<{ key: "name" | "contact"; dir: 1 | -1 } | null>(null);
+  const toggleCsort = (key: "name" | "contact") =>
+    setCsort((s) => (s && s.key === key ? { key, dir: (s.dir === 1 ? -1 : 1) as 1 | -1 } : { key, dir: 1 }));
+  const csortArrow = (key: "name" | "contact") =>
+    !csort || csort.key !== key ? "↕" : csort.dir === 1 ? "↑" : "↓";
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"open" | "archived" | "all">("open");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -223,11 +227,14 @@ export default function ClientsPage() {
           .some((v) => (v as string).toLowerCase().includes(q)),
       );
     }
-    if (sortAsc === null) return list;
-    return [...list].sort((a, b) =>
-      sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
-    );
-  }, [clients, sortAsc, query, view, typeFilter]);
+    if (!csort) return list;
+    return [...list].sort((a, b) => {
+      const cmp = csort.key === "name"
+        ? a.name.localeCompare(b.name)
+        : (a.primary_contact || "").localeCompare(b.primary_contact || "");
+      return cmp * csort.dir;
+    });
+  }, [clients, csort, query, view, typeFilter]);
 
   async function patch(id: string, changes: Partial<Client>) {
     setClients((prev) =>
@@ -507,13 +514,10 @@ export default function ClientsPage() {
                     aria-label="Select all"
                   />
                 </th>
-                <th
-                  className="sortable"
-                  onClick={() => setSortAsc((s) => (s === true ? false : true))}
-                >
-                  Name {sortAsc === null ? "↕" : sortAsc ? "↑" : "↓"}
+                <th className="sortable" onClick={() => toggleCsort("name")}>
+                  Name {csortArrow("name")}
                 </th>
-                {ccols.contact && <th>Contact</th>}
+                {ccols.contact && <th className="sortable" onClick={() => toggleCsort("contact")}>Contact {csortArrow("contact")}</th>}
                 {ccols.email && <th>Email</th>}
                 {ccols.phone && <th>Phone</th>}
                 {ccols.matters && <th>Active Matters</th>}

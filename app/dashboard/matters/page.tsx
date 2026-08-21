@@ -39,20 +39,18 @@ export default function MattersPage() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY);
-  const [sort, setSort] = useState<{
-    key: "name" | "priority";
-    dir: 1 | -1;
-  } | null>({ key: "priority", dir: 1 });
+  type SortKey = "name" | "priority" | "status" | "client" | "rate";
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 } | null>(null);
   const [query, setQuery] = useState("");
 
-  function toggleSort(key: "name" | "priority") {
+  function toggleSort(key: SortKey) {
     setSort((s) =>
       s && s.key === key
         ? { key, dir: (s.dir === 1 ? -1 : 1) as 1 | -1 }
         : { key, dir: 1 },
     );
   }
-  const sortArrow = (key: "name" | "priority") =>
+  const sortArrow = (key: SortKey) =>
     !sort || sort.key !== key ? "↕" : sort.dir === 1 ? "↑" : "↓";
   const [statusFilter, setStatusFilter] = useState<"active" | "closed" | "all">(
     "active",
@@ -218,16 +216,21 @@ export default function MattersPage() {
       }
       return true;
     });
-    if (!sort) return list;
+    // Closed matters always sort to the bottom, regardless of the active sort.
     const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
-    return [...list].sort((a, b) => {
-      const cmp =
-        sort.key === "name"
-          ? a.name.localeCompare(b.name)
-          : (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9);
-      return cmp * sort.dir;
-    });
-  }, [matters, clients, sort, query, statusFilter, areaFilter]);
+    const sorted = sort
+      ? [...list].sort((a, b) => {
+          let cmp = 0;
+          if (sort.key === "name") cmp = a.name.localeCompare(b.name);
+          else if (sort.key === "priority") cmp = (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9);
+          else if (sort.key === "status") cmp = (a.status || "").localeCompare(b.status || "");
+          else if (sort.key === "client") cmp = nameOf(a.client_id).localeCompare(nameOf(b.client_id));
+          else if (sort.key === "rate") cmp = (a.hourly_rate ?? 0) - (b.hourly_rate ?? 0);
+          return cmp * sort.dir;
+        })
+      : list;
+    return [...sorted].sort((a, b) => (a.status === "closed" ? 1 : 0) - (b.status === "closed" ? 1 : 0));
+  }, [matters, clients, sort, query, statusFilter, areaFilter, prioFilter]);
 
   const nameOf = (id: string | null) =>
     clients.find((c) => c.id === id)?.name ?? "";
@@ -464,16 +467,16 @@ export default function MattersPage() {
                 <th className="sortable" onClick={() => toggleSort("name")}>
                   Matter {sortArrow("name")}
                 </th>
-                {cols.client && <th>Client</th>}
+                {cols.client && <th className="sortable" onClick={() => toggleSort("client")}>Client {sortArrow("client")}</th>}
                 {cols.practice && <th>Practice Area</th>}
                 {cols.tasks && <th>Tasks</th>}
-                {cols.rate && <th>Rate</th>}
+                {cols.rate && <th className="sortable" onClick={() => toggleSort("rate")}>Rate {sortArrow("rate")}</th>}
                 {cols.priority && (
                   <th className="sortable" onClick={() => toggleSort("priority")}>
                     Priority {sortArrow("priority")}
                   </th>
                 )}
-                {cols.status && <th>Status</th>}
+                {cols.status && <th className="sortable" onClick={() => toggleSort("status")}>Status {sortArrow("status")}</th>}
                 <th className="col-menu-th" ref={colMenuRef}>
                   <button
                     type="button"
