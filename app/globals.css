@@ -1367,6 +1367,21 @@ section.block.alt {
 .hdr-me {
   border: none;
   cursor: pointer;
+  /* Match the sidebar user avatar's slate gradient */
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 78%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 72%, #000)) !important;
+  color: #fff;
+}
+.hdr-search-inline-pill {
+  margin-left: 0.45rem;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #c0392b;
+  background: color-mix(in srgb, #c0392b 12%, transparent);
+  padding: 0.08rem 0.4rem;
+  border-radius: 10px;
+  vertical-align: middle;
 }
 .hdr-menu {
   position: absolute;

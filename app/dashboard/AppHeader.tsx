@@ -27,7 +27,7 @@ type Alert = {
 };
 
 type SearchGroup = "clients" | "matters" | "invoices" | "contacts" | "tasks" | "events" | "time" | "expenses";
-type SearchHit = { id: string; title: string; sub: string | null; href: string; closed: boolean; flag?: string | null; who?: string | null };
+type SearchHit = { id: string; title: string; sub: string | null; href: string; closed: boolean; flag?: string | null; who?: string | null; whoName?: string | null };
 const initialsOf = (n: string | null | undefined) =>
   (n || "").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 const todayIso = () => iso(new Date());
@@ -123,7 +123,7 @@ function GlobalSearch() {
       for (const t of (times.data as { id: string; note: string | null; activity: string | null; matter_id: string | null; lawyer: string | null }[]) ?? []) {
         const mName = t.matter_id ? matterNames[t.matter_id] ?? null : null;
         const sub = [mName, t.activity].filter(Boolean).join(" · ") || null;
-        next.time.push({ id: t.id, title: t.note || t.activity || "Time entry", sub, href: matterHref(t.matter_id, "/dashboard/billing?tab=time"), closed: false, who: initialsOf(t.lawyer) || null });
+        next.time.push({ id: t.id, title: t.note || t.activity || "Time entry", sub, href: matterHref(t.matter_id, "/dashboard/billing?tab=time"), closed: false, who: initialsOf(t.lawyer) || null, whoName: t.lawyer });
       }
       for (const x of (expenses.data as { id: string; description: string | null; amount: number | null; matter_id: string | null }[]) ?? [])
         next.expenses.push({ id: x.id, title: x.description || "Expense", sub: x.amount != null ? `$${x.amount}` : null, href: matterHref(x.matter_id, "/dashboard/billing"), closed: false });
@@ -170,14 +170,19 @@ function GlobalSearch() {
                       className={`hdr-search-hit${h.closed ? " closed" : ""}`}
                       onClick={() => { setOpen(false); setQ(""); }}
                     >
-                      <span className="hdr-search-name">{h.title}</span>
+                      <span className="hdr-search-name">
+                        {h.title}
+                        {h.closed && <span className="hdr-search-inline-pill">{g === "tasks" ? "Done" : "Archived"}</span>}
+                      </span>
                       <span className="hdr-search-status-slot">
-                        {h.closed ? (
-                          <span className="hdr-search-status">{g === "tasks" ? "Done" : "Archived"}</span>
-                        ) : h.flag ? (
+                        {!h.closed && h.flag ? (
                           <span className="hdr-search-status overdue">{h.flag}</span>
                         ) : null}
-                        {h.who && <span className="hdr-search-who" title="User">{h.who}</span>}
+                        {h.who && (
+                          <span className="hdr-search-who" title={h.whoName ?? "User"} style={{ background: personColor(h.whoName), color: "#fff" }}>
+                            {h.who}
+                          </span>
+                        )}
                       </span>
                       <span className="hdr-search-sub">{h.sub}</span>
                     </Link>
@@ -410,7 +415,6 @@ export default function AppHeader() {
           <button
             type="button"
             className="online-avatar hdr-me"
-            style={{ background: personColor(userName) }}
             onClick={() => {
               setMeOpen((o) => !o);
               setBellOpen(false);
