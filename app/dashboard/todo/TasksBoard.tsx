@@ -408,6 +408,24 @@ export default function TasksBoard() {
           <button type="button" className="ghost sm" onClick={() => setBulkSel(new Set())}>Clear</button>
         </div>
       )}
+      <div className="filter-search-row" style={{ marginBottom: "0.6rem" }}>
+        <div className="filter-row" style={{ margin: 0 }}>
+          {(["active", "done", "all"] as const).map((s) => {
+            const base = todos.filter((t) => filterWho === "all" || t.assignee === filterWho);
+            const n = s === "active" ? base.filter((t) => !t.done).length : s === "done" ? base.filter((t) => t.done).length : base.length;
+            return (
+              <button
+                key={s}
+                type="button"
+                className={`filter-chip${statusFilter === s ? " active" : ""}`}
+                onClick={() => setStatusFilter(s)}
+              >
+                {s === "active" ? "Active" : s === "done" ? "Completed" : "All"} <span className="chip-count">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <div className="tb-lv-head">
         <span>
           <input type="checkbox" aria-label="Select all"
@@ -567,13 +585,6 @@ export default function TasksBoard() {
               <option key={a} value={a}>{firstName(a)}</option>
             ))}
           </select>
-          {view === "list" && (
-            <select className="inline-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "done")}>
-              <option value="all">All tasks</option>
-              <option value="active">Active</option>
-              <option value="done">Completed</option>
-            </select>
-          )}
         </div>
       </div>
 

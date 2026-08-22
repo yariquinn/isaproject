@@ -572,22 +572,27 @@ function BillingInner() {
             </div>
           </div>
 
-          <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
-            <div className="stat" style={{ cursor: "default" }}>
-              <span className="stat-num">{shownEntries.length}</span>
-              <span className="stat-label">Entries</span>
+          {/* Same big summary cards as the Invoices tab, for visual consistency. */}
+          <div className="inv-panels inv-panels-4">
+            <div className="inv-panel">
+              <span className="inv-panel-label">Entries</span>
+              <span className="inv-panel-amt">{shownEntries.length}</span>
+              <span className="inv-panel-sub">in view</span>
             </div>
-            <div className="stat" style={{ cursor: "default" }}>
-              <span className="stat-num">{(totalSeconds / 3600).toFixed(1)}h</span>
-              <span className="stat-label">Time Logged</span>
+            <div className="inv-panel">
+              <span className="inv-panel-label">Time Logged</span>
+              <span className="inv-panel-amt">{(totalSeconds / 3600).toFixed(1)}h</span>
+              <span className="inv-panel-sub">total hours</span>
             </div>
-            <div className="stat" style={{ cursor: "default" }}>
-              <span className="stat-num">{(billableSeconds / 3600).toFixed(1)}h</span>
-              <span className="stat-label">Billable</span>
+            <div className="inv-panel">
+              <span className="inv-panel-label">Billable</span>
+              <span className="inv-panel-amt">{(billableSeconds / 3600).toFixed(1)}h</span>
+              <span className="inv-panel-sub">billed hours</span>
             </div>
-            <div className="stat" style={{ cursor: "default" }}>
-              <span className="stat-num">{(nonBillableSeconds / 3600).toFixed(1)}h</span>
-              <span className="stat-label">Non-billable</span>
+            <div className="inv-panel">
+              <span className="inv-panel-label">Non-billable</span>
+              <span className="inv-panel-amt">{(nonBillableSeconds / 3600).toFixed(1)}h</span>
+              <span className="inv-panel-sub">unbilled hours</span>
             </div>
           </div>
 
