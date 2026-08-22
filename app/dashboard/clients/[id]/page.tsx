@@ -50,7 +50,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   // the middle divider sets the contact/matters split inside it.
   const wrapRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const [comboRatio, setComboRatio] = useState(0.5);  // contact/matters split
+  const [comboRatio, setComboRatio] = useState(0.34);  // contact/matters split
   const [comboWidth, setComboWidth] = useState(1);    // overall panel width
   const [comboDrag, setComboDrag] = useState<null | "mid" | "width">(null);
   useEffect(() => {
@@ -355,10 +355,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Contact + Matters combined into one panel. The outer-right handle
-          resizes the whole panel; the middle divider sets the internal split. */}
-      <div className="combo-wrap" ref={wrapRef}>
-      <div className="panel combo-card" style={{ width: `${comboWidth * 100}%` }}>
+      {/* Contact + Matters combined into one panel (mirrors the matter record);
+          the divider between them is draggable to adjust the split. */}
+      <div className="panel combo-card">
         <div
           className="combo-grid combo-grid-resizable"
           ref={gridRef}
@@ -370,7 +369,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           onMouseDown={() => setComboDrag("mid")}
           role="separator"
           aria-orientation="vertical"
-          title="Drag to resize the split"
+          title="Drag to resize"
         >
           <span className="combo-resize-grip" />
         </div>
@@ -508,17 +507,30 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
+
+        {(() => {
+          const billed = invoices.reduce((s, i) => s + (i.amount ?? 0), 0);
+          const paid = invoices.filter((i) => i.status === "paid").reduce((s, i) => s + (i.amount ?? 0), 0);
+          const outstanding = billed - paid;
+          return (
+            <div className="combo-col">
+              <div className="panel-head">
+                <h2 className="combo-title">Financials</h2>
+              </div>
+              {userName === "Paralegal" ? (
+                <p className="muted-line">Billing access required.</p>
+              ) : (
+                <div className="cc-fin">
+                  <div className="cc-fin-row"><span className="cc-fin-label">Total billed</span><span className="cc-fin-val">{money(billed)}</span></div>
+                  <div className="cc-fin-row"><span className="cc-fin-label">Outstanding</span><span className="cc-fin-val cc-fin-warn">{money(outstanding)}</span></div>
+                  <div className="cc-fin-row"><span className="cc-fin-label">Paid</span><span className="cc-fin-val cc-fin-ok">{money(paid)}</span></div>
+                  <div className="cc-fin-row"><span className="cc-fin-label">Invoices</span><span className="cc-fin-val">{invoices.length}</span></div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
         </div>
-        <div
-          className={`combo-resize-handle combo-resize-handle-edge${comboDrag === "width" ? " dragging" : ""}`}
-          onMouseDown={() => setComboDrag("width")}
-          role="separator"
-          aria-orientation="vertical"
-          title="Drag to resize the panel"
-        >
-          <span className="combo-resize-grip" />
-        </div>
-      </div>
       </div>
 
       <div className="doc-tabs" style={{ margin: "1.25rem 0 1rem", justifyContent: "center" }}>
