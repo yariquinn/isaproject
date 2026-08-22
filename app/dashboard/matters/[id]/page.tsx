@@ -154,6 +154,29 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [matterContacts, setMatterContacts] = useState<{ linkId: string; contact: Contact }[]>([]);
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [previewInvoiceId, setPreviewInvoiceId] = useState<string | null>(null);
+  // Prev/Next matter follow the order the Matters overview last rendered
+  // (its active sort + filters), stashed in localStorage.
+  const [prevMatterId, setPrevMatterId] = useState<string | null>(null);
+  const [nextMatterId, setNextMatterId] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("mattersOrder");
+      const order = raw ? (JSON.parse(raw) as string[]) : [];
+      const idx = order.indexOf(params.id);
+      if (idx !== -1 && order.length > 1) {
+        const p = order[(idx - 1 + order.length) % order.length];
+        const n = order[(idx + 1) % order.length];
+        setPrevMatterId(p && p !== params.id ? p : null);
+        setNextMatterId(n && n !== params.id ? n : null);
+      } else {
+        setPrevMatterId(null);
+        setNextMatterId(null);
+      }
+    } catch {
+      setPrevMatterId(null);
+      setNextMatterId(null);
+    }
+  }, [params.id]);
   const [contactSearch, setContactSearch] = useState("");
   const [acTab, setAcTab] = useState<"existing" | "new">("existing");
   const [acForm, setAcForm] = useState<{ name: string; role: string; organization: string; email: string; phone: string }>({ name: "", role: CONTACT_ROLES[0].value, organization: "", email: "", phone: "" });
@@ -687,6 +710,30 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
         <div className="matter-meta">
+          {(prevMatterId || nextMatterId) && (
+            <div className="matter-nav">
+              <button
+                type="button"
+                className="ghost sm matter-nav-btn"
+                onClick={() => prevMatterId && router.push(`/dashboard/matters/${prevMatterId}`)}
+                disabled={!prevMatterId}
+                title="Previous matter (in the overview's current order)"
+                aria-label="Previous matter"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                className="ghost sm matter-nav-btn"
+                onClick={() => nextMatterId && router.push(`/dashboard/matters/${nextMatterId}`)}
+                disabled={!nextMatterId}
+                title="Next matter (in the overview's current order)"
+                aria-label="Next matter"
+              >
+                →
+              </button>
+            </div>
+          )}
           <button type="button" className="ghost sm" onClick={() => setEditOpen(true)}>
             Edit
           </button>
@@ -886,13 +933,11 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             </dd>
           </div>
 
-          {(upcomingItems.length > 0 || completedItems.length > 0) && (
+          {upcomingItems.length > 0 && (
             <div className="du">
-              {upcomingItems.length > 0 && (
-                <div className="du-head">
-                  <span className="du-label">Upcoming Tasks &amp; Deadlines</span>
-                </div>
-              )}
+              <div className="du-head">
+                <span className="du-label">Upcoming Tasks &amp; Deadlines</span>
+              </div>
               <ul className="du-list">
                 {/* Details panel holds only the 3 most urgent (by date); as each is
                     checked off, the next-most-urgent slides up to take its place. */}
@@ -941,35 +986,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   </li>
                   );
                 })}
-                {completedItems.map((it) => (
-                  <li key={`${it.kind}-${it.id}`} className="du-item-done">
-                    <span className="du-date">
-                      {new Date(it.date.slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <span className="du-title done" title={it.title}>{it.title}</span>
-                    <button
-                      type="button"
-                      className="du-check checked"
-                      title="Checked off — click to reopen"
-                      aria-label="Checked off — click to reopen"
-                      onClick={() => {
-                        if (it.kind === "event") {
-                          const ev = events.find((e) => e.id === it.id);
-                          if (ev) reopenEvent(ev);
-                        } else {
-                          reopenTask(it.id);
-                        }
-                      }}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
               </ul>
             </div>
           )}

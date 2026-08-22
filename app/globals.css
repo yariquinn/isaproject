@@ -9482,3 +9482,21 @@ a.activity-row:hover .act-desc {
   overflow-y: auto;
   padding: 0.9rem;
 }
+
+/* ---- Matter record: prev/next navigation (follows overview order) ---- */
+.matter-nav {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-right: 0.35rem;
+}
+.matter-nav-btn {
+  min-width: 2rem;
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+.matter-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

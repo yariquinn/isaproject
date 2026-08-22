@@ -233,6 +233,17 @@ export default function MattersPage() {
     return [...sorted].sort((a, b) => (a.status === "closed" ? 1 : 0) - (b.status === "closed" ? 1 : 0));
   }, [matters, clients, sort, query, statusFilter, areaFilter, prioFilter]);
 
+  // Persist the current visible order so a matter record can offer "Next"
+  // that follows whatever sort/filter is active on this overview.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem("mattersOrder", JSON.stringify(rows.map((m) => m.id)));
+    } catch {
+      /* ignore */
+    }
+  }, [rows]);
+
   const nameOf = (id: string | null) =>
     clients.find((c) => c.id === id)?.name ?? "";
 
