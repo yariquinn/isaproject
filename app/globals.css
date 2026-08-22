@@ -9473,3 +9473,12 @@ a.activity-row:hover .act-desc {
 .doc-download svg {
   flex: 0 0 auto;
 }
+
+/* ---- Invoice in-page preview modal (client & matter records) ---- */
+.inv-preview-modal {
+  max-width: 880px;
+  width: 94vw;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 0.9rem;
+}

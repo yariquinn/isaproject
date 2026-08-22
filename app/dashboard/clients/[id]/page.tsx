@@ -15,6 +15,7 @@ import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
 import TitlePill from "../../TitlePill";
 import CopyButton from "../../CopyButton";
+import InvoiceEditor from "../../InvoiceEditor";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -38,6 +39,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [recordTab, setRecordTab] = useState<"overview" | "invoices">("overview");
+  const [previewInvoiceId, setPreviewInvoiceId] = useState<string | null>(null);
   const changeRecordTab = (t: "overview" | "invoices") => {
     const y = window.scrollY;
     setRecordTab(t);
@@ -579,9 +581,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                   {invoices.map((inv) => (
                     <tr key={inv.id}>
                       <td className="strong-cell">
-                        <Link href={`/dashboard/invoices/${inv.id}?from=/dashboard/clients/${params.id}`} className="row-link">
+                        <button type="button" className="row-link" onClick={() => setPreviewInvoiceId(inv.id)}>
                           {inv.number || "Invoice"}
-                        </Link>
+                        </button>
                       </td>
                       <td>{matters.find((m) => m.id === inv.matter_id)?.name ?? "—"}</td>
                       <td>{shortDate(inv.issued_date)}</td>
@@ -594,6 +596,14 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {previewInvoiceId && (
+        <div className="modal-backdrop" onClick={() => setPreviewInvoiceId(null)}>
+          <div className="modal inv-preview-modal" onClick={(e) => e.stopPropagation()}>
+            <InvoiceEditor invoiceId={previewInvoiceId} preview onClose={() => setPreviewInvoiceId(null)} />
+          </div>
         </div>
       )}
 

@@ -37,6 +37,7 @@ import CopyButton from "../../CopyButton";
 import ExpensesTab from "./ExpensesTab";
 import Disclaimer from "../../Disclaimer";
 import TimeEntriesTab from "./TimeEntriesTab";
+import InvoiceEditor from "../../InvoiceEditor";
 
 const MATTER_DOCS = [
   { name: "Engagement Letter.pdf", updated: "Aug 18, 2026", sharedWith: "Client" },
@@ -152,6 +153,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [docQuery, setDocQuery] = useState("");
   const [matterContacts, setMatterContacts] = useState<{ linkId: string; contact: Contact }[]>([]);
   const [addContactOpen, setAddContactOpen] = useState(false);
+  const [previewInvoiceId, setPreviewInvoiceId] = useState<string | null>(null);
   const [contactSearch, setContactSearch] = useState("");
   const [acTab, setAcTab] = useState<"existing" | "new">("existing");
   const [acForm, setAcForm] = useState<{ name: string; role: string; organization: string; email: string; phone: string }>({ name: "", role: CONTACT_ROLES[0].value, organization: "", email: "", phone: "" });
@@ -1573,7 +1575,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                       <tr key={i.id}>
                         <td>{i.created_at ? new Date(i.created_at).toLocaleDateString() : "—"}</td>
                         <td>
-                          <Link href={`/dashboard/invoices/${i.id}?from=/dashboard/matters/${matter.id}`} className="row-link">{i.number || "—"}</Link>
+                          <button type="button" className="row-link" onClick={() => setPreviewInvoiceId(i.id)}>{i.number || "—"}</button>
                         </td>
                         <td className="strong-cell">{clientObj?.name ?? "—"}</td>
                         <td>{matter.name}</td>
@@ -1593,6 +1595,14 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         )}
 
       </div>
+
+      {previewInvoiceId && (
+        <div className="modal-backdrop" onClick={() => setPreviewInvoiceId(null)}>
+          <div className="modal inv-preview-modal" onClick={(e) => e.stopPropagation()}>
+            <InvoiceEditor invoiceId={previewInvoiceId} preview onClose={() => setPreviewInvoiceId(null)} />
+          </div>
+        </div>
+      )}
 
       {addContactOpen && (
         <div className="modal-backdrop" onClick={() => setAddContactOpen(false)}>
