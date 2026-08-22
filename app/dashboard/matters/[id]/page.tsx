@@ -140,7 +140,7 @@ function serializeNotes(entries: NoteEntry[]): string {
 }
 
 export default function MatterDetail({ params }: { params: { id: string } }) {
-  const { userName } = usePortal();
+  const { userName, canManageBilling } = usePortal();
   const router = useRouter();
   const confirm = useConfirm();
   const [confirmDel, setConfirmDel] = useState(false);
@@ -1181,12 +1181,12 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         {(
           [
             ["time", "Time Entries", entries.length],
-            ["expenses", "Expenses"],
+            ...(canManageBilling ? ([["expenses", "Expenses"]] as [string, string, number?][]) : []),
             ["tasks", "Tasks"],
             ["documents", "Documents"],
             ["contacts", "Contacts", (clientObj ? 1 + (clientObj.partner_name ? 1 : 0) : 0) + matterContacts.length],
             ["events", "Events", upcomingEvents.length],
-            ["invoices", "Invoices", invoices.length],
+            ...(canManageBilling ? ([["invoices", "Invoices", invoices.length]] as [string, string, number?][]) : []),
             ...(matter.show_case_timeline
               ? ([["timeline", "Case Timeline"]] as [string, string, number?][])
               : []),
@@ -1341,7 +1341,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           />
         )}
 
-        {bodyTab === "expenses" && (
+        {bodyTab === "expenses" && canManageBilling && (
           <ExpensesTab matterId={matter.id} />
         )}
 
@@ -1543,7 +1543,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </>
         )}
 
-        {bodyTab === "invoices" && (
+        {bodyTab === "invoices" && canManageBilling && (
           <>
             <div className="page-head" style={{ marginBottom: "0.75rem" }}>
               <span />

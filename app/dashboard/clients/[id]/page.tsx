@@ -45,40 +45,42 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   };
   const [loading, setLoading] = useState(true);
 
-  // Combined card is adjustable two ways: the middle divider sets the
-  // contact/matters split; the right-edge handle sets the Matters column width
-  // (it grows/shrinks into the empty margin on the right).
-  const comboRef = useRef<HTMLDivElement>(null);
-  const [comboRatio, setComboRatio] = useState(0.4);   // left (contact) width
-  const [comboRight, setComboRight] = useState(0.6);   // right (matters) width
-  const [comboDrag, setComboDrag] = useState<null | "mid" | "right">(null);
+  // Combined card is adjustable two ways: the OUTER RIGHT edge sets the whole
+  // panel's width (it shrinks/grows, leaving margin on the right of the page);
+  // the middle divider sets the contact/matters split inside it.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [comboRatio, setComboRatio] = useState(0.5);  // contact/matters split
+  const [comboWidth, setComboWidth] = useState(1);    // overall panel width
+  const [comboDrag, setComboDrag] = useState<null | "mid" | "width">(null);
   useEffect(() => {
     try {
       const a = parseFloat(localStorage.getItem("clientComboRatio") || "");
       if (!Number.isNaN(a)) setComboRatio(Math.min(0.7, Math.max(0.25, a)));
-      const b = parseFloat(localStorage.getItem("clientComboRight") || "");
-      if (!Number.isNaN(b)) setComboRight(Math.min(0.75, Math.max(0.2, b)));
+      const b = parseFloat(localStorage.getItem("clientComboWidth") || "");
+      if (!Number.isNaN(b)) setComboWidth(Math.min(1, Math.max(0.55, b)));
     } catch { /* ignore */ }
   }, []);
   useEffect(() => {
     if (!comboDrag) return;
     const onMove = (e: MouseEvent) => {
-      const el = comboRef.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
-      if (comboDrag === "mid") {
-        setComboRatio(Math.min(0.7, Math.max(0.25, x)));
+      if (comboDrag === "width") {
+        const w = wrapRef.current;
+        if (!w) return;
+        const r = w.getBoundingClientRect();
+        setComboWidth(Math.min(1, Math.max(0.55, (e.clientX - r.left) / r.width)));
       } else {
-        // right handle: matters width = distance from the split to the cursor
-        setComboRight(Math.min(1 - comboRatio, Math.max(0.2, x - comboRatio)));
+        const g = gridRef.current;
+        if (!g) return;
+        const r = g.getBoundingClientRect();
+        setComboRatio(Math.min(0.7, Math.max(0.25, (e.clientX - r.left) / r.width)));
       }
     };
     const onUp = () => {
       setComboDrag(null);
       try {
         localStorage.setItem("clientComboRatio", String(comboRatio));
-        localStorage.setItem("clientComboRight", String(comboRight));
+        localStorage.setItem("clientComboWidth", String(comboWidth));
       } catch { /* ignore */ }
     };
     document.addEventListener("mousemove", onMove);
@@ -91,8 +93,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
     };
-  }, [comboDrag, comboRatio, comboRight]);
-  const comboRightEff = Math.min(comboRight, 1 - comboRatio);
+  }, [comboDrag, comboRatio, comboWidth]);
 
   const [prompt, setPrompt] = useState<{ field: GuardField; label: string } | null>(null);
   // Once the user confirms they're updating the CURRENT primary contact, we
@@ -354,16 +355,14 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Contact + Matters combined into one panel; the divider is draggable so
-          the Matters (right) side is adjustable. */}
-      <div className="panel combo-card">
+      {/* Contact + Matters combined into one panel. The outer-right handle
+          resizes the whole panel; the middle divider sets the internal split. */}
+      <div className="combo-wrap" ref={wrapRef}>
+      <div className="panel combo-card" style={{ width: `${comboWidth * 100}%` }}>
         <div
           className="combo-grid combo-grid-resizable"
-          ref={comboRef}
-          style={{
-            ["--combo-left" as string]: `${comboRatio * 100}%`,
-            ["--combo-right" as string]: `${comboRightEff * 100}%`,
-          } as React.CSSProperties}
+          ref={gridRef}
+          style={{ ["--combo-left" as string]: `${comboRatio * 100}%` } as React.CSSProperties}
         >
         <div
           className={`combo-resize-handle${comboDrag === "mid" ? " dragging" : ""}`}
@@ -372,16 +371,6 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           role="separator"
           aria-orientation="vertical"
           title="Drag to resize the split"
-        >
-          <span className="combo-resize-grip" />
-        </div>
-        <div
-          className={`combo-resize-handle combo-resize-handle-right${comboDrag === "right" ? " dragging" : ""}`}
-          style={{ left: `${(comboRatio + comboRightEff) * 100}%` }}
-          onMouseDown={() => setComboDrag("right")}
-          role="separator"
-          aria-orientation="vertical"
-          title="Drag to resize the Matters panel"
         >
           <span className="combo-resize-grip" />
         </div>
@@ -520,6 +509,16 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
         </div>
+        <div
+          className={`combo-resize-handle combo-resize-handle-edge${comboDrag === "width" ? " dragging" : ""}`}
+          onMouseDown={() => setComboDrag("width")}
+          role="separator"
+          aria-orientation="vertical"
+          title="Drag to resize the panel"
+        >
+          <span className="combo-resize-grip" />
+        </div>
+      </div>
       </div>
 
       <div className="doc-tabs" style={{ margin: "1.25rem 0 1rem", justifyContent: "center" }}>

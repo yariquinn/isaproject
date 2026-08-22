@@ -9,6 +9,7 @@ import { ATTORNEYS, ACTIVITY_TYPES, invoiceBucket } from "@/lib/types";
 import InvoiceEditor from "../InvoiceEditor";
 import { useUndo } from "../UndoProvider";
 import { useConfirm } from "../ConfirmProvider";
+import { usePortal } from "../PortalProvider";
 
 const INVOICE_BUCKETS: { key: InvoiceBucket; label: string }[] = [
   { key: "created", label: "Created" },
@@ -40,6 +41,7 @@ function BillingInner() {
   const { pushUndo } = useUndo();
   const searchParams = useSearchParams();
   const confirm = useConfirm();
+  const { canManageBilling } = usePortal();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
@@ -131,6 +133,11 @@ function BillingInner() {
     () => shownEntries.reduce((s, e) => s + e.duration_seconds, 0),
     [shownEntries],
   );
+  const billableSeconds = useMemo(
+    () => shownEntries.filter((e) => e.billable).reduce((s, e) => s + e.duration_seconds, 0),
+    [shownEntries],
+  );
+  const nonBillableSeconds = totalSeconds - billableSeconds;
 
   const bucketCounts = useMemo(() => {
     const c: Record<InvoiceBucket, number> = {
@@ -286,7 +293,14 @@ function BillingInner() {
         </>
       )}
 
-      {tab === "invoices" && (
+      {tab === "invoices" && !canManageBilling && (
+        <>
+          <h1 className="page-title">Invoices</h1>
+          <p className="muted-line">You don&apos;t have permission to view invoices. Contact an administrator to enable billing access.</p>
+        </>
+      )}
+
+      {tab === "invoices" && canManageBilling && (
         <>
           <div className="page-head">
             <h1 className="page-title">Invoices</h1>
@@ -449,8 +463,16 @@ function BillingInner() {
               <span className="stat-label">Entries</span>
             </div>
             <div className="stat" style={{ cursor: "default" }}>
-              <span className="stat-num">{(totalSeconds / 3600).toFixed(1)}</span>
-              <span className="stat-label">Total Hours</span>
+              <span className="stat-num">{(totalSeconds / 3600).toFixed(1)}h</span>
+              <span className="stat-label">Time Logged</span>
+            </div>
+            <div className="stat" style={{ cursor: "default" }}>
+              <span className="stat-num">{(billableSeconds / 3600).toFixed(1)}h</span>
+              <span className="stat-label">Billable</span>
+            </div>
+            <div className="stat" style={{ cursor: "default" }}>
+              <span className="stat-num">{(nonBillableSeconds / 3600).toFixed(1)}h</span>
+              <span className="stat-label">Non-billable</span>
             </div>
           </div>
 

@@ -5164,10 +5164,11 @@ a.activity-row:hover .act-desc {
   min-width: 0;
 }
 /* Draggable divider variant (client record) */
+.combo-wrap { position: relative; }
+.combo-card { position: relative; }
 .combo-grid-resizable {
   position: relative;
-  grid-template-columns: var(--combo-left, 40%) var(--combo-right, 60%);
-  justify-content: start;
+  grid-template-columns: var(--combo-left, 50%) 1fr;
 }
 .combo-resize-handle {
   position: absolute;
@@ -5193,10 +5194,16 @@ a.activity-row:hover .act-desc {
   background: var(--accent);
   height: 80px;
 }
-.combo-resize-handle-right { transform: translateX(-100%); }
+/* Outer-right handle sits on the panel's right border and resizes the whole panel */
+.combo-resize-handle-edge {
+  left: auto;
+  right: 0;
+  transform: translateX(50%);
+}
 @media (max-width: 820px) {
   .combo-grid-resizable { grid-template-columns: 1fr; }
   .combo-resize-handle { display: none; }
+  .combo-wrap .combo-card { width: 100% !important; }
 }
 .combo-col:first-child {
   padding-right: 1.5rem;
@@ -6204,8 +6211,11 @@ a.activity-row:hover .act-desc {
   max-width: 12rem;
 }
 .te-toggle {
+  display: inline-block;
+  font-family: inherit;
   font-size: 0.72rem;
   font-weight: 600;
+  line-height: 1.2;
   padding: 0.2rem 0.55rem;
   border-radius: 20px;
   border: 1px solid var(--dash-border);
@@ -6213,6 +6223,7 @@ a.activity-row:hover .act-desc {
   color: var(--dash-muted);
   cursor: pointer;
 }
+.te-invoiced { line-height: 1.2; }
 .te-toggle.on {
   background: rgba(46, 125, 70, 0.13);
   border-color: #8dc4a1;
@@ -6221,10 +6232,10 @@ a.activity-row:hover .act-desc {
 .ts-summary-head {
   position: relative;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: flex-start;
   gap: 0.6rem;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.6rem;
 }
 .ts-summary-head-right {
   display: flex;
@@ -6232,15 +6243,10 @@ a.activity-row:hover .act-desc {
   gap: 0.6rem;
 }
 .ts-recents {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 300px;
-  max-width: 34%;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
   min-width: 0;
 }
 .ts-recents-label {
@@ -6251,7 +6257,7 @@ a.activity-row:hover .act-desc {
   color: var(--dash-muted);
 }
 .ts-recent-chip {
-  max-width: 100%;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

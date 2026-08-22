@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
+import { usePortal } from "./PortalProvider";
 import { logoutAction } from "./actions";
 
 type NavItem = { href: string; label: string; children?: NavItem[] };
@@ -61,6 +62,7 @@ function SidebarInner({ userName }: { userName: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab");
+  const { canManageBilling } = usePortal();
   const initials =
     userName
       .split(" ")
@@ -222,7 +224,9 @@ function SidebarInner({ userName }: { userName: string }) {
                 </div>
                 {open && (
                   <>
-                    {s.items.map(renderItem)}
+                    {s.items
+                      .filter((it) => canManageBilling || it.href !== "/dashboard/billing?tab=invoices")
+                      .map(renderItem)}
                     {customItems.map((c) => (
                       <div className="nav-item" key={c.id}>
                         <div className={`nav-row custom${isActive(c.href) ? " active" : ""}`}>

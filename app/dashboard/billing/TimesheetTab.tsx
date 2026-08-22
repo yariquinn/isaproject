@@ -225,50 +225,18 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
 
   return (
     <>
-      <div className="ts-summary-head">
-        <div className="ts-recents">
-          {recentMatters.length > 0 && (
-            <>
-              <span className="ts-recents-label">Recent</span>
-              {recentMatters.map((m) => (
-                <button key={m.id} type="button" className="ts-recent-chip" title={`Add time to ${m.name}`} onClick={() => fillRecent(m.id, m.name)}>
-                  {m.name}
-                </button>
-              ))}
-            </>
-          )}
+      {recentMatters.length > 0 && (
+        <div className="ts-summary-head">
+          <div className="ts-recents">
+            <span className="ts-recents-label">Recent</span>
+            {recentMatters.map((m) => (
+              <button key={m.id} type="button" className="ts-recent-chip" title={`Add time to ${m.name}`} onClick={() => fillRecent(m.id, m.name)}>
+                {m.name}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="ts-summary-head-right">
-          <select className="inline-select" value={period} onChange={(e) => setPeriod(e.target.value as Period)}>
-            {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-          </select>
-          <select className="inline-select" value={compare} onChange={(e) => setCompare(e.target.value as Compare)} disabled={period === "all"}>
-            <option value="none">No comparison</option>
-            <option value="prev">vs previous period</option>
-            <option value="yoy">vs last year</option>
-          </select>
-        </div>
-      </div>
-      <div className="te-summary">
-        <div className="te-stat">
-          <span className="te-stat-label">Time logged</span>
-          <span className="te-stat-amt">{fmtH(stats.cur.total)}</span>
-          <span className="te-stat-hrs">{stats.cur.nCur} entr{stats.cur.nCur === 1 ? "y" : "ies"}</span>
-          {compare !== "none" && deltaEl(stats.cur.total, stats.prev?.total)}
-        </div>
-        <div className="te-stat ok">
-          <span className="te-stat-label">Billable</span>
-          <span className="te-stat-amt">{fmtH(stats.cur.billable)}</span>
-          <span className="te-stat-hrs">{stats.cur.nBill} entr{stats.cur.nBill === 1 ? "y" : "ies"}</span>
-          {compare !== "none" && deltaEl(stats.cur.billable, stats.prev?.billable)}
-        </div>
-        <div className="te-stat warn">
-          <span className="te-stat-label">Non-billable</span>
-          <span className="te-stat-amt">{fmtH(stats.cur.nonbill)}</span>
-          <span className="te-stat-hrs">{stats.cur.nCur - stats.cur.nBill} entr{(stats.cur.nCur - stats.cur.nBill) === 1 ? "y" : "ies"}</span>
-          {compare !== "none" && deltaEl(stats.cur.nonbill, stats.prev?.nonbill)}
-        </div>
-      </div>
+      )}
 
       <div className="table-wrap">
         <table className="data-table ts-table">
