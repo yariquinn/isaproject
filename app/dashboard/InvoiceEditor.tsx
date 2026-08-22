@@ -184,10 +184,13 @@ export default function InvoiceEditor({
     }
     const { data: m } = await supabase.from("matters").select("hourly_rate,rate_type").eq("id", inv.matter_id).single();
     const rate = (m as { hourly_rate: number | null; rate_type: string | null } | null);
-    const hourly = rate?.rate_type === "flat" ? 0 : (rate?.hourly_rate ?? 0);
+    // On a flat-fee matter the time entries are documented at $0 and the flat
+    // fee is billed once as its own separate line item.
+    const isFlat = rate?.rate_type === "flat";
+    const hourly = isFlat ? 0 : (rate?.hourly_rate ?? 0);
     const rows = entries.map((e, idx) => {
       const hrs = Number((e.duration_seconds / 3600).toFixed(2));
-      const r = e.rate ?? hourly;
+      const r = isFlat ? 0 : (e.rate ?? hourly);
       return {
         invoice_id: inv.id,
         item_date: e.logged_at.slice(0, 10),
@@ -198,11 +201,25 @@ export default function InvoiceEditor({
         sort_order: items.length + idx,
       };
     });
+    // Flat fee: add it once, separate from the time entries.
+    const flatAmount = rate?.hourly_rate ?? 0;
+    const hasFlatFee = items.some((it) => (it.description ?? "").toLowerCase().startsWith("flat fee"));
+    if (isFlat && flatAmount > 0 && !hasFlatFee) {
+      rows.push({
+        invoice_id: inv.id,
+        item_date: new Date().toISOString().slice(0, 10),
+        description: "Flat fee",
+        quantity: 1,
+        rate: flatAmount,
+        amount: Number(flatAmount.toFixed(2)),
+        sort_order: items.length + rows.length,
+      });
+    }
     const { data } = await supabase.from("invoice_items").insert(rows).select();
     if (data) setItems((prev) => [...prev, ...(data as Item[])]);
     await supabase.from("time_entries").update({ invoiced: true }).in("id", entries.map((e) => e.id));
     setPulling(false);
-    setPullMsg(`Pulled ${entries.length} entr${entries.length === 1 ? "y" : "ies"}.`);
+    setPullMsg(`Pulled ${entries.length} entr${entries.length === 1 ? "y" : "ies"}${isFlat && flatAmount > 0 && !hasFlatFee ? " + flat fee" : ""}.`);
     setTimeout(() => setPullMsg(""), 4000);
   };
 
