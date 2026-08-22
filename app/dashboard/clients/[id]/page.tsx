@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { PRACTICE_AREAS, ATTORNEYS, CONTACT_TITLES, type ActivityItem, type Client, type Invoice, type Matter } from "@/lib/types";
 
@@ -44,6 +44,40 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
     requestAnimationFrame(() => window.scrollTo(0, y));
   };
   const [loading, setLoading] = useState(true);
+
+  // Draggable divider so the Matters (right) side of the combined card is adjustable.
+  const comboRef = useRef<HTMLDivElement>(null);
+  const [comboRatio, setComboRatio] = useState(0.5);
+  const [comboDrag, setComboDrag] = useState(false);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("clientComboRatio");
+      if (v) { const n = parseFloat(v); if (!Number.isNaN(n)) setComboRatio(Math.min(0.7, Math.max(0.3, n))); }
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => {
+    if (!comboDrag) return;
+    const onMove = (e: MouseEvent) => {
+      const el = comboRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setComboRatio(Math.min(0.7, Math.max(0.3, (e.clientX - r.left) / r.width)));
+    };
+    const onUp = () => {
+      setComboDrag(false);
+      try { localStorage.setItem("clientComboRatio", String(comboRatio)); } catch { /* ignore */ }
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [comboDrag, comboRatio]);
 
   const [prompt, setPrompt] = useState<{ field: GuardField; label: string } | null>(null);
   // Once the user confirms they're updating the CURRENT primary contact, we
@@ -305,9 +339,24 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Contact + Matters combined into one panel (mirrors the matter record) */}
+      {/* Contact + Matters combined into one panel; the divider is draggable so
+          the Matters (right) side is adjustable. */}
       <div className="panel combo-card">
-        <div className="combo-grid">
+        <div
+          className="combo-grid combo-grid-resizable"
+          ref={comboRef}
+          style={{ ["--combo-left" as string]: `${comboRatio * 100}%` } as React.CSSProperties}
+        >
+        <div
+          className={`combo-resize-handle${comboDrag ? " dragging" : ""}`}
+          style={{ left: `${comboRatio * 100}%` }}
+          onMouseDown={() => setComboDrag(true)}
+          role="separator"
+          aria-orientation="vertical"
+          title="Drag to resize"
+        >
+          <span className="combo-resize-grip" />
+        </div>
         <div className="combo-col">
           <div className="panel-head">
             <h2 className="combo-title">Contact</h2>
