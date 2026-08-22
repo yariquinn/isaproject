@@ -9614,3 +9614,15 @@ a.activity-row:hover .act-desc {
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* ---- Matter record: prev/next arrows pinned to the top-right (breadcrumb row) ---- */
+.matter-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.matter-nav-top {
+  flex: 0 0 auto;
+  margin-right: 0;
+}

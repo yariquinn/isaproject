@@ -659,17 +659,43 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <nav className="crumbs" aria-label="Breadcrumb">
-        <Link href="/dashboard/matters">Matters</Link>
-        <span className="crumb-sep">/</span>
-        {clientObj ? (
-          <Link href={`/dashboard/clients/${clientObj.id}`}>{clientObj.name}</Link>
-        ) : (
-          <span className="crumb-current">—</span>
+      <div className="matter-topbar">
+        <nav className="crumbs" aria-label="Breadcrumb">
+          <Link href="/dashboard/matters">Matters</Link>
+          <span className="crumb-sep">/</span>
+          {clientObj ? (
+            <Link href={`/dashboard/clients/${clientObj.id}`}>{clientObj.name}</Link>
+          ) : (
+            <span className="crumb-current">—</span>
+          )}
+          <span className="crumb-sep">/</span>
+          <span className="crumb-current">{matter.name}</span>
+        </nav>
+        {(prevMatterId || nextMatterId) && (
+          <div className="matter-nav matter-nav-top">
+            <button
+              type="button"
+              className="ghost sm matter-nav-btn"
+              onClick={() => prevMatterId && router.push(`/dashboard/matters/${prevMatterId}`)}
+              disabled={!prevMatterId}
+              title="Previous matter (in the overview's current order)"
+              aria-label="Previous matter"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              className="ghost sm matter-nav-btn"
+              onClick={() => nextMatterId && router.push(`/dashboard/matters/${nextMatterId}`)}
+              disabled={!nextMatterId}
+              title="Next matter (in the overview's current order)"
+              aria-label="Next matter"
+            >
+              →
+            </button>
+          </div>
         )}
-        <span className="crumb-sep">/</span>
-        <span className="crumb-current">{matter.name}</span>
-      </nav>
+      </div>
       <div className="matter-head">
         <div className="matter-head-title">
           <h1 className="page-title editable-title">
@@ -713,30 +739,6 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
         <div className="matter-meta">
-          {(prevMatterId || nextMatterId) && (
-            <div className="matter-nav">
-              <button
-                type="button"
-                className="ghost sm matter-nav-btn"
-                onClick={() => prevMatterId && router.push(`/dashboard/matters/${prevMatterId}`)}
-                disabled={!prevMatterId}
-                title="Previous matter (in the overview's current order)"
-                aria-label="Previous matter"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                className="ghost sm matter-nav-btn"
-                onClick={() => nextMatterId && router.push(`/dashboard/matters/${nextMatterId}`)}
-                disabled={!nextMatterId}
-                title="Next matter (in the overview's current order)"
-                aria-label="Next matter"
-              >
-                →
-              </button>
-            </div>
-          )}
           <button type="button" className="ghost sm" onClick={() => setEditOpen(true)}>
             Edit
           </button>
