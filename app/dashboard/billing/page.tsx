@@ -290,32 +290,34 @@ function BillingInner() {
         <>
           <div className="page-head">
             <h1 className="page-title">Invoices</h1>
-            <div className="head-controls">
+            <div className="head-controls inv-head-controls">
+              <div className="inv-head-controls-row">
+                <div className="seg seg-view" role="tablist" aria-label="Invoice view">
+                  <button type="button" className={invView === "list" ? "active" : undefined} onClick={() => changeInvView("list")} title="List view" aria-label="List view">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+                  </button>
+                  <button type="button" className={invView === "preview" ? "active" : undefined} onClick={() => changeInvView("preview")} title="Preview view" aria-label="Preview view">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="18" rx="1" /><rect x="13" y="3" width="8" height="18" rx="1" /></svg>
+                  </button>
+                </div>
+                <select
+                  className="inline-select inv-filter-select"
+                  value={invFilter}
+                  onChange={(e) => setInvFilter(e.target.value as InvoiceBucket | "all")}
+                >
+                  <option value="all">All invoices ({invoices.length})</option>
+                  {INVOICE_BUCKETS.map((b) => (
+                    <option key={b.key} value={b.key}>{b.label} ({bucketCounts[b.key]})</option>
+                  ))}
+                </select>
+              </div>
               <input
-                className="activity-search"
+                className="activity-search inv-search-below"
                 type="search"
                 placeholder="Search invoices…"
                 value={invQuery}
                 onChange={(e) => setInvQuery(e.target.value)}
               />
-              <div className="seg seg-view" role="tablist" aria-label="Invoice view">
-                <button type="button" className={invView === "list" ? "active" : undefined} onClick={() => changeInvView("list")} title="List view" aria-label="List view">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
-                </button>
-                <button type="button" className={invView === "preview" ? "active" : undefined} onClick={() => changeInvView("preview")} title="Preview view" aria-label="Preview view">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="18" rx="1" /><rect x="13" y="3" width="8" height="18" rx="1" /></svg>
-                </button>
-              </div>
-              <select
-                className="inline-select inv-filter-select"
-                value={invFilter}
-                onChange={(e) => setInvFilter(e.target.value as InvoiceBucket | "all")}
-              >
-                <option value="all">All invoices ({invoices.length})</option>
-                {INVOICE_BUCKETS.map((b) => (
-                  <option key={b.key} value={b.key}>{b.label} ({bucketCounts[b.key]})</option>
-                ))}
-              </select>
             </div>
           </div>
 
@@ -348,12 +350,13 @@ function BillingInner() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Due date</th>
+                    <th>Date</th>
+                    <th>Invoice #</th>
                     <th>Client</th>
                     <th>Matter</th>
-                    <th>Status</th>
                     <th>Amount</th>
-                    <th>Invoice #</th>
+                    <th>Due</th>
+                    <th>Status</th>
                     <th aria-label="Delete"></th>
                   </tr>
                 </thead>
@@ -362,14 +365,15 @@ function BillingInner() {
                     const bucket = invoiceBucket(i);
                     return (
                       <tr key={i.id}>
-                        <td>{i.due_date ? new Date(i.due_date).toLocaleDateString() : "—"}</td>
-                        <td className="strong-cell">
-                          <Link href={`/dashboard/invoices/${i.id}`} className="row-link">{clientName(i.client_id)}</Link>
+                        <td>{i.created_at ? new Date(i.created_at).toLocaleDateString() : "—"}</td>
+                        <td>
+                          <Link href={`/dashboard/invoices/${i.id}`} className="row-link">{i.number || "—"}</Link>
                         </td>
+                        <td className="strong-cell">{clientName(i.client_id)}</td>
                         <td>{i.matter_id ? matterName(i.matter_id) : "—"}</td>
-                        <td><span className={`pill inv-${bucket}`}>{bucket}</span></td>
                         <td>{i.amount != null ? usd(i.amount) : "—"}</td>
-                        <td>{i.number || "—"}</td>
+                        <td>{i.due_date ? new Date(i.due_date).toLocaleDateString() : "—"}</td>
+                        <td><span className={`pill inv-${bucket}`}>{bucket}</span></td>
                         <td className="ct-actions">
                           <button type="button" className="ct-del" title="Delete invoice" aria-label="Delete invoice" onClick={() => deleteInvoice(i.id, i.number)}>✕</button>
                         </td>

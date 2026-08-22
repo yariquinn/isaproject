@@ -2151,6 +2151,19 @@ section.block.alt {
 .inv-sheet-preview .ii-x { display: none; }
 .inv-sheet-preview .inv-tax-input { width: 2.5rem; }
 
+/* Invoices head: toggle + filter on top, search bar beneath (under the dropdown) */
+.inv-head-controls {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+.inv-head-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.inv-search-below { width: 260px; }
+
 /* Invoice view toggle (icon segmented control) */
 .seg-view button {
   display: inline-flex;
@@ -5134,7 +5147,8 @@ a.activity-row:hover .act-desc {
 /* Draggable divider variant (client record) */
 .combo-grid-resizable {
   position: relative;
-  grid-template-columns: var(--combo-left, 50%) 1fr;
+  grid-template-columns: var(--combo-left, 40%) var(--combo-right, 60%);
+  justify-content: start;
 }
 .combo-resize-handle {
   position: absolute;

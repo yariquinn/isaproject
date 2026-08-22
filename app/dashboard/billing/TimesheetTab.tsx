@@ -225,7 +225,7 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
 
   return (
     <>
-      <div className="ts-summary-head" style={{ justifyContent: "space-between" }}>
+      <div className="ts-summary-head">
         <div className="ts-recents">
           {recentMatters.length > 0 && (
             <>

@@ -45,14 +45,19 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   };
   const [loading, setLoading] = useState(true);
 
-  // Draggable divider so the Matters (right) side of the combined card is adjustable.
+  // Combined card is adjustable two ways: the middle divider sets the
+  // contact/matters split; the right-edge handle sets the Matters column width
+  // (it grows/shrinks into the empty margin on the right).
   const comboRef = useRef<HTMLDivElement>(null);
-  const [comboRatio, setComboRatio] = useState(0.5);
-  const [comboDrag, setComboDrag] = useState(false);
+  const [comboRatio, setComboRatio] = useState(0.4);   // left (contact) width
+  const [comboRight, setComboRight] = useState(0.6);   // right (matters) width
+  const [comboDrag, setComboDrag] = useState<null | "mid" | "right">(null);
   useEffect(() => {
     try {
-      const v = localStorage.getItem("clientComboRatio");
-      if (v) { const n = parseFloat(v); if (!Number.isNaN(n)) setComboRatio(Math.min(0.7, Math.max(0.3, n))); }
+      const a = parseFloat(localStorage.getItem("clientComboRatio") || "");
+      if (!Number.isNaN(a)) setComboRatio(Math.min(0.7, Math.max(0.25, a)));
+      const b = parseFloat(localStorage.getItem("clientComboRight") || "");
+      if (!Number.isNaN(b)) setComboRight(Math.min(0.75, Math.max(0.2, b)));
     } catch { /* ignore */ }
   }, []);
   useEffect(() => {
@@ -61,11 +66,20 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       const el = comboRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      setComboRatio(Math.min(0.7, Math.max(0.3, (e.clientX - r.left) / r.width)));
+      const x = (e.clientX - r.left) / r.width;
+      if (comboDrag === "mid") {
+        setComboRatio(Math.min(0.7, Math.max(0.25, x)));
+      } else {
+        // right handle: matters width = distance from the split to the cursor
+        setComboRight(Math.min(1 - comboRatio, Math.max(0.2, x - comboRatio)));
+      }
     };
     const onUp = () => {
-      setComboDrag(false);
-      try { localStorage.setItem("clientComboRatio", String(comboRatio)); } catch { /* ignore */ }
+      setComboDrag(null);
+      try {
+        localStorage.setItem("clientComboRatio", String(comboRatio));
+        localStorage.setItem("clientComboRight", String(comboRight));
+      } catch { /* ignore */ }
     };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
@@ -77,7 +91,8 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
     };
-  }, [comboDrag, comboRatio]);
+  }, [comboDrag, comboRatio, comboRight]);
+  const comboRightEff = Math.min(comboRight, 1 - comboRatio);
 
   const [prompt, setPrompt] = useState<{ field: GuardField; label: string } | null>(null);
   // Once the user confirms they're updating the CURRENT primary contact, we
@@ -345,15 +360,28 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <div
           className="combo-grid combo-grid-resizable"
           ref={comboRef}
-          style={{ ["--combo-left" as string]: `${comboRatio * 100}%` } as React.CSSProperties}
+          style={{
+            ["--combo-left" as string]: `${comboRatio * 100}%`,
+            ["--combo-right" as string]: `${comboRightEff * 100}%`,
+          } as React.CSSProperties}
         >
         <div
-          className={`combo-resize-handle${comboDrag ? " dragging" : ""}`}
+          className={`combo-resize-handle${comboDrag === "mid" ? " dragging" : ""}`}
           style={{ left: `${comboRatio * 100}%` }}
-          onMouseDown={() => setComboDrag(true)}
+          onMouseDown={() => setComboDrag("mid")}
           role="separator"
           aria-orientation="vertical"
-          title="Drag to resize"
+          title="Drag to resize the split"
+        >
+          <span className="combo-resize-grip" />
+        </div>
+        <div
+          className={`combo-resize-handle combo-resize-handle-right${comboDrag === "right" ? " dragging" : ""}`}
+          style={{ left: `${(comboRatio + comboRightEff) * 100}%` }}
+          onMouseDown={() => setComboDrag("right")}
+          role="separator"
+          aria-orientation="vertical"
+          title="Drag to resize the Matters panel"
         >
           <span className="combo-resize-grip" />
         </div>
