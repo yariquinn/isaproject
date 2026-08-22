@@ -24,7 +24,7 @@ const blank = (lawyer: string): Draft => ({
   matter_id: "",
   matterQuery: "",
   date: todayStr(),
-  activity: ACTIVITY_TYPES[0],
+  activity: "",
   note: "",
   lawyer,
   hours: "",
@@ -224,7 +224,13 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   const addRow = () => setRows((prev) => [...prev, blank(defaultLawyer)]);
 
-  const validRows = rows.filter((r) => r.matter_id && parseFloat(r.hours) > 0);
+  // A row only saves when every field is filled in: matter, activity,
+  // description, and hours (date + user always carry a default).
+  const validRows = rows.filter(
+    (r) => r.matter_id && r.activity && r.note.trim() && r.date && r.lawyer && parseFloat(r.hours) > 0,
+  );
+  const clearRow = (i: number) =>
+    setRows((prev) => prev.map((r, idx) => (idx === i ? blank(defaultLawyer) : r)));
 
   // Running totals reflect what's typed in the grid right now.
   const totalHours = validRows.reduce((s, r) => s + (parseFloat(r.hours) || 0), 0);
@@ -297,6 +303,7 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
             <col style={{ width: "70px" }} />
             <col style={{ width: "74px" }} />
             <col style={{ width: "70px" }} />
+            <col style={{ width: "40px" }} />
           </colgroup>
           <thead>
             <tr>
@@ -307,6 +314,7 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
               <th>User</th>
               <th>Hours</th>
               <th>Billable</th>
+              <th aria-label="Clear row"></th>
             </tr>
           </thead>
           <tbody>
@@ -333,6 +341,7 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
                     value={r.activity}
                     onChange={(e) => update(i, { activity: e.target.value })}
                   >
+                    <option value="" disabled>Select…</option>
                     {ACTIVITY_TYPES.map((a) => (
                       <option key={a} value={a}>
                         {a}
@@ -378,6 +387,17 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
                     onChange={(e) => update(i, { billable: e.target.checked })}
                     aria-label="Billable"
                   />
+                </td>
+                <td style={{ textAlign: "center" }}>
+                  <button
+                    type="button"
+                    className="ct-del ts-clear-row"
+                    title="Clear this row"
+                    aria-label="Clear this row"
+                    onClick={() => clearRow(i)}
+                  >
+                    ✕
+                  </button>
                 </td>
               </tr>
             ))}

@@ -507,7 +507,7 @@ export default function MattersPage() {
               <col style={{ width: "22%" }} />
               {cols.client && <col style={{ width: "16%" }} />}
               {cols.practice && <col style={{ width: "14%" }} />}
-              {cols.tasks && <col style={{ width: "18%" }} />}
+              {cols.tasks && <col style={{ width: "9%" }} />}
               {cols.rate && <col style={{ width: "11%" }} />}
               {cols.status && <col style={{ width: "15%" }} />}
               <col style={{ width: "44px" }} />
