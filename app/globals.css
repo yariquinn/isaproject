@@ -3390,8 +3390,10 @@ section.block.alt {
 }
 .inline-view.block {
   display: block;
-  min-height: 1.5rem;
-  color: var(--dash-fg);
+  min-height: 1.4rem;
+  color: color-mix(in srgb, var(--dash-fg) 88%, transparent);
+  font-size: 0.82rem;
+  line-height: 1.55;
 }
 .inline-placeholder {
   color: var(--dash-muted);
@@ -3413,7 +3415,8 @@ section.block.alt {
 }
 .inline-textarea {
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--accent);
   border-radius: 4px;
