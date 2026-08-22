@@ -29,6 +29,7 @@ import {
   InlineTextarea,
 } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
+import { useConfirm } from "../../ConfirmProvider";
 import { pushRecent } from "@/lib/recents";
 import MatterTasksList from "./MatterTasksList";
 import TitlePill from "../../TitlePill";
@@ -141,6 +142,7 @@ function serializeNotes(entries: NoteEntry[]): string {
 export default function MatterDetail({ params }: { params: { id: string } }) {
   const { userName } = usePortal();
   const router = useRouter();
+  const confirm = useConfirm();
   const [confirmDel, setConfirmDel] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [matter, setMatter] = useState<Matter | null>(null);
@@ -322,6 +324,34 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     supabase.from("contacts").select("*").order("name").then(({ data }) => setAllContacts((data as Contact[]) ?? []));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
+
+  // Create a new invoice for this matter and open its editor.
+  async function createInvoice() {
+    if (!matter) return;
+    const { data: all } = await supabase.from("invoices").select("number");
+    let max = 1000;
+    for (const r of (all as { number: string | null }[] | null) ?? []) {
+      const mm = /(\d+)/.exec(r.number || "");
+      if (mm) max = Math.max(max, parseInt(mm[1], 10));
+    }
+    const due = new Date();
+    due.setDate(due.getDate() + 30);
+    const { data } = await supabase.from("invoices").insert({
+      matter_id: matter.id,
+      client_id: matter.client_id,
+      number: `INV-${max + 1}`,
+      status: "created",
+      due_date: due.toISOString().slice(0, 10),
+      amount: 0,
+    }).select().single();
+    if (data) router.push(`/dashboard/invoices/${(data as { id: string }).id}?from=/dashboard/matters/${matter.id}`);
+  }
+  async function deleteInvoice(id: string, number: string | null) {
+    if (!(await confirm({ title: `Delete invoice ${number || ""}?`.trim(), message: "This cannot be undone." }))) return;
+    await supabase.from("invoice_items").delete().eq("invoice_id", id);
+    await supabase.from("invoices").delete().eq("id", id);
+    setInvoices((prev) => prev.filter((x) => x.id !== id));
+  }
 
   async function patch(changes: Partial<Matter>) {
     if (!matter) return;
@@ -1515,44 +1545,44 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
 
         {bodyTab === "invoices" && (
           <>
+            <div className="page-head" style={{ marginBottom: "0.75rem" }}>
+              <span />
+              <button className="btn icon-plus-btn" onClick={createInvoice} type="button" title="Create invoice" aria-label="Create invoice">+</button>
+            </div>
             {invoices.length === 0 ? (
               <p className="muted-line">No invoices for this matter.</p>
             ) : (
               <div className="table-wrap" style={{ border: "none" }}>
-                <table className="data-table invoice-table">
+                <table className="data-table">
                   <thead>
                     <tr>
+                      <th>Date</th>
                       <th>Invoice #</th>
-                      <th>Date Created</th>
-                      <th>Amount Due</th>
+                      <th>Client</th>
+                      <th>Matter</th>
+                      <th>Amount</th>
+                      <th>Due</th>
                       <th>Status</th>
-                      <th>Total</th>
+                      <th aria-label="Delete"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {invoices.map((i) => {
-                      const created = i.issued_date || i.created_at;
-                      const due = i.status === "paid" ? 0 : i.amount;
-                      return (
-                        <tr key={i.id} className="inv-row" onClick={() => router.push(`/dashboard/invoices/${i.id}?from=/dashboard/matters/${matter.id}`)}>
-                          <td className="strong-cell">{i.number || "—"}</td>
-                          <td>
-                            {created
-                              ? new Date(created).toLocaleDateString(undefined, {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })
-                              : "—"}
-                          </td>
-                          <td>{due != null ? `$${due.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
-                          <td>
-                            <span className={`pill inv-${i.status}`}>{i.status}</span>
-                          </td>
-                          <td>{i.amount != null ? `$${i.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
-                        </tr>
-                      );
-                    })}
+                    {invoices.map((i) => (
+                      <tr key={i.id}>
+                        <td>{i.created_at ? new Date(i.created_at).toLocaleDateString() : "—"}</td>
+                        <td>
+                          <Link href={`/dashboard/invoices/${i.id}?from=/dashboard/matters/${matter.id}`} className="row-link">{i.number || "—"}</Link>
+                        </td>
+                        <td className="strong-cell">{clientObj?.name ?? "—"}</td>
+                        <td>{matter.name}</td>
+                        <td>{i.amount != null ? `$${i.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</td>
+                        <td>{i.due_date ? new Date(i.due_date).toLocaleDateString() : "—"}</td>
+                        <td><span className={`pill inv-${i.status}`}>{i.status}</span></td>
+                        <td className="ct-actions">
+                          <button type="button" className="ct-del" title="Delete invoice" aria-label="Delete invoice" onClick={() => deleteInvoice(i.id, i.number)}>✕</button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { usePortal } from "./PortalProvider";
 
 // Firm identity for the invoice header. (Will become editable in Settings later.)
 const FIRM = {
@@ -55,6 +56,7 @@ export default function InvoiceEditor({
   fullPage?: boolean;
   preview?: boolean;
 }) {
+  const { userName } = usePortal();
   // In `preview` mode the invoice opens as a read-only PDF-style view; the
   // Edit button flips it into the editable editor.
   const [editing, setEditing] = useState(!preview);
@@ -134,6 +136,21 @@ export default function InvoiceEditor({
       })
       .select().single();
     if (data) setItems((prev) => [...prev, data as Item]);
+    // A billable line with hours is also recorded as a system time entry
+    // (already invoiced, so it won't be pulled onto another invoice).
+    if (inv.matter_id && qty > 0) {
+      await supabase.from("time_entries").insert({
+        matter_id: inv.matter_id,
+        activity: null,
+        lawyer: userName,
+        duration_seconds: Math.round(qty * 3600),
+        note: draft.description.trim() || null,
+        billable: true,
+        invoiced: true,
+        rate: rate || null,
+        logged_at: new Date((draft.item_date || new Date().toISOString().slice(0, 10)) + "T12:00:00").toISOString(),
+      });
+    }
     setDraft({ ...emptyDraft });
   };
   const patchItem = async (id: string, changes: Partial<Item>) => {

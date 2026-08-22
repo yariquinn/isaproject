@@ -1771,7 +1771,7 @@ section.block.alt {
    Content: titles, stats, panels, tables
    ============================================================ */
 .page-title {
-  font-size: 1.45rem;
+  font-size: 1.5rem;
   color: var(--dash-fg);
   margin-bottom: 1.25rem;
 }
@@ -2949,8 +2949,8 @@ section.block.alt {
   gap: 0.65rem;
   text-transform: none;
   letter-spacing: -0.02em;
-  font-size: 1.6rem;
-  font-weight: 800;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 .page-title.upper .count-badge {
   margin-left: 0;
@@ -5173,26 +5173,27 @@ a.activity-row:hover .act-desc {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 16px;
+  width: 18px;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: col-resize;
-  z-index: 3;
+  z-index: 5;
 }
 .combo-resize-grip {
-  width: 3px;
-  height: 56px;
-  border-radius: 3px;
-  background: var(--dash-border);
+  width: 4px;
+  height: 44px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
   transition: background 0.12s, height 0.12s;
 }
 .combo-resize-handle:hover .combo-resize-grip,
 .combo-resize-handle.dragging .combo-resize-grip {
   background: var(--accent);
-  height: 76px;
+  height: 80px;
 }
+.combo-resize-handle-right { transform: translateX(-100%); }
 @media (max-width: 820px) {
   .combo-grid-resizable { grid-template-columns: 1fr; }
   .combo-resize-handle { display: none; }
