@@ -1942,6 +1942,8 @@ section.block.alt {
 .col-menu-th,
 .col-menu-cell {
   width: 44px;
+  padding-left: 0;
+  padding-right: 0;
   position: relative;
   text-align: center;
   vertical-align: middle;
@@ -2422,6 +2424,8 @@ section.block.alt {
   font-weight: 600;
 }
 .pill {
+  display: inline-block;
+  white-space: nowrap;
   font-size: 0.72rem;
   text-transform: capitalize;
   padding: 0.15rem 0.6rem;
@@ -9762,4 +9766,24 @@ a.activity-row:hover .act-desc {
   align-items: center;
   justify-content: center;
   color: var(--dash-muted);
+}
+
+/* ---- Add Time: Recent strip scroll cue ---- */
+.ts-recents-wrap {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.ts-recents-cue {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--dash-muted);
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--dash-surface) 65%);
 }

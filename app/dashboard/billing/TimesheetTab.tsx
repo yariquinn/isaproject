@@ -145,6 +145,18 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
   const [period, setPeriod] = useState<Period>("month");
   const [compare, setCompare] = useState<Compare>("none");
   const [recentMatters, setRecentMatters] = useState<{ id: string; name: string }[]>([]);
+  // Show a small chevron cue when the Recent strip has more to scroll to.
+  const recentsRef = useRef<HTMLDivElement>(null);
+  const [recentsScrollable, setRecentsScrollable] = useState(false);
+  useEffect(() => {
+    const el = recentsRef.current;
+    if (!el) return;
+    const check = () => setRecentsScrollable(el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
+    check();
+    el.addEventListener("scroll", check);
+    window.addEventListener("resize", check);
+    return () => { el.removeEventListener("scroll", check); window.removeEventListener("resize", check); };
+  }, [recentMatters]);
   useEffect(() => {
     // Recently-viewed matters (localStorage) come first; then fill the row out with
     // the firm's most-recently-opened matters so the strip never looks empty.
@@ -282,13 +294,22 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
     <>
       {recentMatters.length > 0 && (
         <div className="ts-summary-head">
-          <div className="ts-recents">
-            <span className="ts-recents-label">Recent</span>
-            {recentMatters.map((m) => (
-              <button key={m.id} type="button" className="ts-recent-chip" title={`Add time to ${m.name}`} onClick={() => fillRecent(m.id, m.name)}>
-                {m.name}
-              </button>
-            ))}
+          <div className="ts-recents-wrap">
+            <div className="ts-recents" ref={recentsRef}>
+              <span className="ts-recents-label">Recent</span>
+              {recentMatters.map((m) => (
+                <button key={m.id} type="button" className="ts-recent-chip" title={`Add time to ${m.name}`} onClick={() => fillRecent(m.id, m.name)}>
+                  {m.name}
+                </button>
+              ))}
+            </div>
+            {recentsScrollable && (
+              <span className="ts-recents-cue" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </span>
+            )}
           </div>
         </div>
       )}
