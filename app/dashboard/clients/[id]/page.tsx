@@ -13,7 +13,6 @@ const shortDate = (s: string | null | undefined) =>
 import { InlineText, InlineTextarea } from "../../Inline";
 import { usePortal, useCrumbs } from "../../PortalProvider";
 import { pushRecent } from "@/lib/recents";
-import ResizableCols from "../../ResizableCols";
 import TitlePill from "../../TitlePill";
 import CopyButton from "../../CopyButton";
 
@@ -306,9 +305,10 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <ResizableCols storageKey="clientRecordSplit" rightHandle>
-        {/* Unified contact card — mirrors the Client card on a matter for continuity */}
-        <div className="panel">
+      {/* Contact + Matters combined into one panel (mirrors the matter record) */}
+      <div className="panel combo-card">
+        <div className="combo-grid">
+        <div className="combo-col">
           <div className="panel-head">
             <h2 className="combo-title">Contact</h2>
             {client.client_type !== "business" && client.partner_name && (
@@ -421,7 +421,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        <div className="panel">
+        <div className="combo-col">
           <div className="panel-head">
             <h2 className="combo-title">Matters <span className="count-badge">{matters.length}</span></h2>
             <button type="button" className="btn icon-plus-btn sm-plus" style={{ marginTop: "-0.5rem", marginRight: "-0.35rem", alignSelf: "flex-start" }} onClick={() => { setMForm({ name: `${client.name} · `, practice_area: PRACTICE_AREAS[0], assigned_to: ATTORNEYS[0] }); setAddMatterOpen(true); }} title="Add matter" aria-label="Add matter">+</button>
@@ -442,7 +442,8 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             )}
           </div>
         </div>
-      </ResizableCols>
+        </div>
+      </div>
 
       <div className="doc-tabs" style={{ margin: "1.25rem 0 1rem", justifyContent: "center" }}>
         <button type="button" className={recordTab === "overview" ? "active" : undefined} onClick={() => changeRecordTab("overview")}>
