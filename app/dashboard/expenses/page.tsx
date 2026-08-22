@@ -33,6 +33,12 @@ export default function ExpensesPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "invoiced" | "uninvoiced" | "nonbillable">("all");
+  type SortKey = "date" | "client" | "matter" | "amount" | "status";
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "date", dir: -1 });
+  const toggleSort = (key: SortKey) =>
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
+  const sortArrow = (key: SortKey) => (sort.key !== key ? "↕" : sort.dir === 1 ? "↑" : "↓");
 
   async function load() {
     const [{ data: e }, { data: m }, { data: c }] = await Promise.all([
@@ -53,16 +59,33 @@ export default function ExpensesPage() {
     return clients.find((c) => c.id === cid)?.name ?? "—";
   };
 
+  // Derived status: non-billable · invoiced · un-invoiced (billable, not yet billed).
+  const statusOf = (x: Expense) => (!x.billable ? "nonbillable" : x.invoiced ? "invoiced" : "uninvoiced");
+  const statusRank: Record<string, number> = { uninvoiced: 0, invoiced: 1, nonbillable: 2 };
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return expenses;
-    return expenses.filter((x) => {
-      const hay = [x.description, x.user_name, matterOf(x.matter_id)?.name, clientName(x.matter_id)]
-        .filter(Boolean).join(" ").toLowerCase();
-      return hay.includes(q);
+    const list = expenses.filter((x) => {
+      if (statusFilter !== "all" && statusOf(x) !== statusFilter) return false;
+      if (q) {
+        const hay = [x.description, x.user_name, matterOf(x.matter_id)?.name, clientName(x.matter_id)]
+          .filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
     });
+    const sorted = [...list].sort((a, b) => {
+      let cmp = 0;
+      if (sort.key === "date") cmp = (a.expense_date || "").localeCompare(b.expense_date || "");
+      else if (sort.key === "client") cmp = clientName(a.matter_id).localeCompare(clientName(b.matter_id));
+      else if (sort.key === "matter") cmp = (matterOf(a.matter_id)?.name ?? "").localeCompare(matterOf(b.matter_id)?.name ?? "");
+      else if (sort.key === "amount") cmp = (a.amount ?? 0) - (b.amount ?? 0);
+      else if (sort.key === "status") cmp = statusRank[statusOf(a)] - statusRank[statusOf(b)];
+      return cmp * sort.dir;
+    });
+    return sorted;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenses, matters, clients, query]);
+  }, [expenses, matters, clients, query, statusFilter, sort]);
 
   const total = rows.reduce((s, x) => s + (x.amount ?? 0), 0);
   const billable = rows.filter((x) => x.billable).reduce((s, x) => s + (x.amount ?? 0), 0);
@@ -102,22 +125,31 @@ export default function ExpensesPage() {
         </div>
       </div>
 
+      <div className="filter-search-row" style={{ justifyContent: "flex-end", marginBottom: "0.6rem" }}>
+        <select className="inline-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
+          <option value="all">All statuses</option>
+          <option value="uninvoiced">Un-invoiced</option>
+          <option value="invoiced">Invoiced</option>
+          <option value="nonbillable">Non-billable</option>
+        </select>
+      </div>
+
       {loading ? (
         <p className="muted-line">Loading…</p>
       ) : rows.length === 0 ? (
-        <p className="muted-line">No expenses yet.</p>
+        <p className="muted-line">No expenses match this filter.</p>
       ) : (
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Date</th>
+                <th className="sortable" onClick={() => toggleSort("date")}>Date <span className="sort-arrow">{sortArrow("date")}</span></th>
                 <th>Description</th>
-                <th>Client</th>
-                <th>Matter</th>
+                <th className="sortable" onClick={() => toggleSort("client")}>Client <span className="sort-arrow">{sortArrow("client")}</span></th>
+                <th className="sortable" onClick={() => toggleSort("matter")}>Matter <span className="sort-arrow">{sortArrow("matter")}</span></th>
                 <th style={{ textAlign: "center" }}>User</th>
-                <th style={{ textAlign: "right" }}>Amount</th>
-                <th>Status</th>
+                <th className="sortable" style={{ textAlign: "right" }} onClick={() => toggleSort("amount")}>Amount <span className="sort-arrow">{sortArrow("amount")}</span></th>
+                <th className="sortable" onClick={() => toggleSort("status")}>Status <span className="sort-arrow">{sortArrow("status")}</span></th>
                 <th aria-label="Delete"></th>
               </tr>
             </thead>
