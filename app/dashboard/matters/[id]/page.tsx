@@ -892,7 +892,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                 </div>
               )}
               <ul className="du-list">
-                {upcomingItems.slice(0, 5).map((it) => {
+                {/* Details panel holds only the 3 most urgent (by date); as each is
+                    checked off, the next-most-urgent slides up to take its place. */}
+                {upcomingItems.slice(0, 3).map((it) => {
                   const overdue = it.date.slice(0, 10) < todayStrLocal;
                   return (
                   <li key={`${it.kind}-${it.id}`}>
@@ -1185,7 +1187,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
             ["tasks", "Tasks"],
             ["documents", "Documents"],
             ["contacts", "Contacts", (clientObj ? 1 + (clientObj.partner_name ? 1 : 0) : 0) + matterContacts.length],
-            ["events", "Events", upcomingEvents.length],
+            ["events", "Deadlines", upcomingEvents.length],
             ...(canManageBilling ? ([["invoices", "Invoices", invoices.length]] as [string, string, number?][]) : []),
             ...(matter.show_case_timeline
               ? ([["timeline", "Case Timeline"]] as [string, string, number?][])

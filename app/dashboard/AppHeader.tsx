@@ -84,7 +84,7 @@ function GlobalSearch() {
         supabase.from("matters").select("id,name,status").ilike("name", like).limit(6),
         supabase.from("invoices").select("id,number,status,matter_id").ilike("number", like).limit(6),
         supabase.from("contacts").select("id,name,organization,archived").ilike("name", like).limit(6),
-        supabase.from("todos").select("id,title,matter_id,done,due_date").ilike("title", like).limit(6),
+        supabase.from("todos").select("id,title,matter_id,done,due_date,assignee").ilike("title", like).limit(6),
         supabase.from("events").select("id,title,matter_id,event_date").ilike("title", like).limit(6),
         supabase.from("time_entries").select("id,note,activity,matter_id,lawyer").or(`note.ilike.${like},activity.ilike.${like}`).limit(6),
         supabase.from("expenses").select("id,description,amount,matter_id").ilike("description", like).limit(6),
@@ -115,11 +115,11 @@ function GlobalSearch() {
         next.invoices.push({ id: i.id, title: i.number || "Invoice", sub: i.status, href: `/dashboard/invoices/${i.id}${i.matter_id ? `?from=/dashboard/matters/${i.matter_id}` : ""}`, closed: false });
       for (const c of (contacts.data as { id: string; name: string; organization: string | null; archived: boolean | null }[]) ?? [])
         next.contacts.push({ id: c.id, title: c.name, sub: c.organization, href: `/dashboard/contacts`, closed: !!c.archived });
-      for (const t of (todos.data as { id: string; title: string; matter_id: string | null; done: boolean; due_date: string | null }[]) ?? []) {
+      for (const t of (todos.data as { id: string; title: string; matter_id: string | null; done: boolean; due_date: string | null; assignee: string | null }[]) ?? []) {
         const overdue = !t.done && !!t.due_date && t.due_date.slice(0, 10) < today;
         const mName = t.matter_id ? matterNames[t.matter_id] ?? null : null;
         const sub = [mName, t.due_date ? `Due ${fmt(t.due_date.slice(0, 10))}` : null].filter(Boolean).join(" · ") || null;
-        next.tasks.push({ id: t.id, title: t.title, sub, href: matterHref(t.matter_id, "/dashboard/todo"), closed: t.done, flag: overdue ? "Overdue" : null });
+        next.tasks.push({ id: t.id, title: t.title, sub, href: matterHref(t.matter_id, "/dashboard/todo"), closed: t.done, flag: overdue ? "Overdue" : null, who: t.assignee ? initialsOf(t.assignee) : null, whoName: t.assignee });
       }
       for (const e of (events.data as { id: string; title: string; matter_id: string | null; event_date: string | null }[]) ?? []) {
         const mName = e.matter_id ? matterNames[e.matter_id] ?? null : null;

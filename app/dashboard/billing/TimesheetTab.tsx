@@ -120,7 +120,29 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
   const [compare, setCompare] = useState<Compare>("none");
   const [recentMatters, setRecentMatters] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
-    setRecentMatters(getRecents().filter((r) => r.kind === "matter").slice(0, 3).map((r) => ({ id: r.id, name: r.name })));
+    // Recently-viewed matters (localStorage) come first; then fill the row out with
+    // the firm's most-recently-opened matters so the strip never looks empty.
+    const ls = getRecents().filter((r) => r.kind === "matter").map((r) => ({ id: r.id, name: r.name }));
+    supabase
+      .from("matters")
+      .select("id,name,created_at,clients(name)")
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(12)
+      .then(({ data }) => {
+        type Row = { id: string; name: string; clients: { name: string } | { name: string }[] | null };
+        const rows = (data as unknown as Row[]) ?? [];
+        const dbRecents = rows.map((m) => {
+          const cli = Array.isArray(m.clients) ? m.clients[0] : m.clients;
+          return { id: m.id, name: `${cli?.name ? cli.name + " · " : ""}${m.name}` };
+        });
+        const merged: { id: string; name: string }[] = [];
+        for (const r of [...ls, ...dbRecents]) {
+          if (!merged.some((x) => x.id === r.id)) merged.push(r);
+          if (merged.length >= 6) break;
+        }
+        setRecentMatters(merged);
+      });
   }, []);
   // Drop a recent matter into the first empty grid row.
   const fillRecent = (id: string, name: string) =>

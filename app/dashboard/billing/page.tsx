@@ -5,8 +5,9 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { Client, Invoice, Matter, TimeEntry, InvoiceBucket } from "@/lib/types";
-import { ATTORNEYS, ACTIVITY_TYPES, invoiceBucket } from "@/lib/types";
+import { ATTORNEYS, ACTIVITY_TYPES, invoiceBucket, personColor } from "@/lib/types";
 import InvoiceEditor from "../InvoiceEditor";
+import TimesheetTab from "./TimesheetTab";
 import { useUndo } from "../UndoProvider";
 import { useConfirm } from "../ConfirmProvider";
 import { usePortal } from "../PortalProvider";
@@ -26,6 +27,8 @@ function fmtHm(seconds: number): string {
 }
 const usd = (n: number, dp = 2) =>
   `$${Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp })}`;
+const initialsOf = (n: string | null | undefined) =>
+  (n || "").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
 
 const EMPTY_TIME = {
   matter_id: "",
@@ -590,7 +593,15 @@ function BillingInner() {
                       </td>
                       <td>{e.activity || "—"}</td>
                       <td>{e.note || "—"}</td>
-                      <td>{e.lawyer}</td>
+                      <td>
+                        <span
+                          className="te-user-badge"
+                          title={e.lawyer}
+                          style={{ background: personColor(e.lawyer), color: "#fff" }}
+                        >
+                          {initialsOf(e.lawyer)}
+                        </span>
+                      </td>
                       <td>{fmtHm(e.duration_seconds)}</td>
                       <td className="ct-actions">
                         <button type="button" className="ct-del" title="Delete entry" aria-label="Delete entry" onClick={() => deleteEntry(e.id)}>✕</button>
@@ -604,72 +615,10 @@ function BillingInner() {
 
           {addTimeOpen && (
             <div className="modal-backdrop" onClick={() => setAddTimeOpen(false)}>
-              <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <h3>Add Time Entry</h3>
-                <label>
-                  Matter
-                  <div className="ts-matter">
-                    <input
-                      value={matterQuery}
-                      placeholder="Search matter…"
-                      onFocus={() => setMatterMenuOpen(true)}
-                      onBlur={() => setTimeout(() => setMatterMenuOpen(false), 150)}
-                      onChange={(e) => { setMatterQuery(e.target.value); setTimeForm({ ...timeForm, matter_id: "" }); setMatterMenuOpen(true); }}
-                    />
-                    {matterMenuOpen && matterHits.length > 0 && (
-                      <div className="ts-matter-menu">
-                        {matterHits.map((m) => (
-                          <button
-                            key={m.id}
-                            type="button"
-                            className="ts-matter-hit"
-                            onClick={() => { setTimeForm({ ...timeForm, matter_id: m.id }); setMatterQuery(m.name); setMatterMenuOpen(false); }}
-                          >
-                            {m.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </label>
-                <div className="field-pair">
-                  <label>
-                    User
-                    <select value={timeForm.lawyer} onChange={(e) => setTimeForm({ ...timeForm, lawyer: e.target.value })}>
-                      {ATTORNEYS.map((a) => <option key={a} value={a}>{a}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    Activity
-                    <select value={timeForm.activity} onChange={(e) => setTimeForm({ ...timeForm, activity: e.target.value })}>
-                      {ACTIVITY_TYPES.map((a) => <option key={a} value={a}>{a}</option>)}
-                    </select>
-                  </label>
-                </div>
-                <label>
-                  Description
-                  <input value={timeForm.note} onChange={(e) => setTimeForm({ ...timeForm, note: e.target.value })} placeholder="What did you work on?" />
-                </label>
-                <div className="field-pair">
-                  <label>
-                    Date
-                    <input type="date" value={timeForm.logged_at} onChange={(e) => setTimeForm({ ...timeForm, logged_at: e.target.value })} />
-                  </label>
-                  <label>
-                    Hours
-                    <input type="number" step="0.1" min="0" value={timeForm.hours} onChange={(e) => setTimeForm({ ...timeForm, hours: e.target.value })} placeholder="1.5" />
-                  </label>
-                </div>
-                <label className="checkbox-row">
-                  <input type="checkbox" checked={timeForm.billable} onChange={(e) => setTimeForm({ ...timeForm, billable: e.target.checked })} />
-                  Billable
-                </label>
-                <div className="modal-actions">
-                  <button type="button" className="ghost" onClick={() => setAddTimeOpen(false)}>Cancel</button>
-                  <button type="button" className="btn" onClick={saveTimeEntry} disabled={savingTime || !timeForm.matter_id || !parseFloat(timeForm.hours)}>
-                    {savingTime ? "Saving…" : "Add entry"}
-                  </button>
-                </div>
+              <div className="modal ts-add-modal" onClick={(e) => e.stopPropagation()}>
+                <h3>Add Time</h3>
+                {/* Same multi-row quick-entry grid as the header timesheet shortcut. */}
+                <TimesheetTab onSaved={() => { setAddTimeOpen(false); load(); }} />
               </div>
             </div>
           )}

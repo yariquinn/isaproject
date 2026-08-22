@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Matter, TimeEntry } from "@/lib/types";
+import { personColor } from "@/lib/types";
+
+const initialsOf = (n: string | null | undefined) =>
+  (n || "").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
 
 function fmtHm(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -115,7 +119,15 @@ export default function TimeEntriesPage() {
                     </td>
                     <td>{e.activity || "—"}</td>
                     <td>{e.note || "—"}</td>
-                    <td>{e.lawyer}</td>
+                    <td>
+                      <span
+                        className="te-user-badge"
+                        title={e.lawyer}
+                        style={{ background: personColor(e.lawyer), color: "#fff" }}
+                      >
+                        {initialsOf(e.lawyer)}
+                      </span>
+                    </td>
                     <td>{fmtHm(e.duration_seconds)}</td>
                   </tr>
                 );

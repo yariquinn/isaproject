@@ -23,8 +23,16 @@ type AgingRow = {
   total: number;
 };
 
+type ReportKey = "aging" | "statement" | "practice";
+const REPORTS: { key: ReportKey; name: string; desc: string }[] = [
+  { key: "aging", name: "Aging Invoices", desc: "Outstanding balances bucketed by days past due." },
+  { key: "statement", name: "Statement of Account", desc: "All invoices and balance due for a single client." },
+  { key: "practice", name: "Payments by Practice Area", desc: "Collected revenue broken down by practice area." },
+];
+
 export default function ReportsClient() {
-  const [tab, setTab] = useState<"aging" | "statement" | "practice">("aging");
+  const [selected, setSelected] = useState<ReportKey | "">("");
+  const [ran, setRan] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
@@ -46,6 +54,11 @@ export default function ReportsClient() {
 
   const clientName = (id: string | null) => clients.find((c) => c.id === id)?.name ?? "—";
   const matterName = (id: string | null) => matters.find((m) => m.id === id)?.name ?? "—";
+
+  function pick(k: ReportKey) {
+    setSelected(k);
+    setRan(false);
+  }
 
   // ---- Aging report: unpaid invoices bucketed by days past due ----
   const aging = useMemo(() => {
@@ -116,171 +129,200 @@ export default function ReportsClient() {
 
   if (loading) return <p className="muted-line">Loading…</p>;
 
+  const meta = REPORTS.find((r) => r.key === selected);
+  // Statement needs a client chosen before it can be run.
+  const runDisabled = selected === "statement" && stmtClient === "";
+
   return (
-    <>
-      <div className="doc-tabs" style={{ margin: "1.1rem 0" }}>
-        <button type="button" className={tab === "aging" ? "active" : undefined} onClick={() => setTab("aging")}>
-          Aging Invoices
-        </button>
-        <button type="button" className={tab === "statement" ? "active" : undefined} onClick={() => setTab("statement")}>
-          Statement of Account
-        </button>
-        <button type="button" className={tab === "practice" ? "active" : undefined} onClick={() => setTab("practice")}>
-          Payments by Practice Area
-        </button>
-      </div>
+    <div className="reports-layout">
+      <aside className="reports-list">
+        <h2 className="reports-list-title">Reports</h2>
+        {REPORTS.map((r) => (
+          <button
+            key={r.key}
+            type="button"
+            className={`report-item${selected === r.key ? " active" : ""}`}
+            onClick={() => pick(r.key)}
+          >
+            <span className="report-item-name">{r.name}</span>
+            <span className="report-item-desc">{r.desc}</span>
+          </button>
+        ))}
+      </aside>
 
-      {tab === "aging" ? (
-        <>
-          <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
-            <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(agingTotals.total)}</span><span className="stat-label">Total Outstanding</span></div>
-            <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(agingTotals.current)}</span><span className="stat-label">Not Yet Due</span></div>
-            <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(agingTotals.d31 + agingTotals.d61 + agingTotals.d90)}</span><span className="stat-label">Over 30 Days</span></div>
+      <section className="reports-result">
+        {!meta ? (
+          <div className="reports-empty">
+            <p className="muted-line">Select a report on the left, then run it to see results here.</p>
           </div>
-          {aging.length === 0 ? (
-            <p className="muted-line">No outstanding invoices — everything is paid.</p>
-          ) : (
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Client</th>
-                    <th style={{ textAlign: "right" }}>Current</th>
-                    <th style={{ textAlign: "right" }}>1–30</th>
-                    <th style={{ textAlign: "right" }}>31–60</th>
-                    <th style={{ textAlign: "right" }}>61–90</th>
-                    <th style={{ textAlign: "right" }}>90+</th>
-                    <th style={{ textAlign: "right" }}>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {aging.map((r) => (
-                    <tr key={r.clientId}>
-                      <td className="strong-cell">{r.client}</td>
-                      <td style={{ textAlign: "right" }}>{money(r.current)}</td>
-                      <td style={{ textAlign: "right" }}>{money(r.d1)}</td>
-                      <td style={{ textAlign: "right" }}>{money(r.d31)}</td>
-                      <td style={{ textAlign: "right" }}>{money(r.d61)}</td>
-                      <td style={{ textAlign: "right", color: r.d90 > 0 ? "#c0392b" : undefined }}>{money(r.d90)}</td>
-                      <td style={{ textAlign: "right", fontWeight: 700 }}>{money(r.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="report-total-row">
-                    <td className="strong-cell">All clients</td>
-                    <td style={{ textAlign: "right" }}>{money(agingTotals.current)}</td>
-                    <td style={{ textAlign: "right" }}>{money(agingTotals.d1)}</td>
-                    <td style={{ textAlign: "right" }}>{money(agingTotals.d31)}</td>
-                    <td style={{ textAlign: "right" }}>{money(agingTotals.d61)}</td>
-                    <td style={{ textAlign: "right" }}>{money(agingTotals.d90)}</td>
-                    <td style={{ textAlign: "right", fontWeight: 700 }}>{money(agingTotals.total)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          )}
-        </>
-      ) : tab === "statement" ? (
-        <>
-          <div className="filter-search-row">
-            <label className="report-client-pick">
-              Client
-              <select value={stmtClient} onChange={(e) => setStmtClient(e.target.value)}>
-                <option value="">Select a client…</option>
-                {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </label>
-          </div>
-
-          {stmtClient === "" ? (
-            <p className="muted-line">Choose a client to generate their statement.</p>
-          ) : (
-            <>
-              <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
-                <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(stmtInvoiced)}</span><span className="stat-label">Invoiced</span></div>
-                <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(stmtPaid)}</span><span className="stat-label">Paid</span></div>
-                <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(stmtOutstanding)}</span><span className="stat-label">Balance Due</span></div>
+        ) : (
+          <>
+            <div className="reports-run-head">
+              <div>
+                <h2 className="reports-result-title">{meta.name}</h2>
+                <p className="muted-line" style={{ margin: "0.15rem 0 0" }}>{meta.desc}</p>
               </div>
-              {stmtInvoices.length === 0 ? (
-                <p className="muted-line">No invoices for this client.</p>
-              ) : (
-                <div className="table-wrap">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Invoice</th>
-                        <th>Matter</th>
-                        <th>Issued</th>
-                        <th>Due</th>
-                        <th>Status</th>
-                        <th style={{ textAlign: "right" }}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stmtInvoices.map((i) => (
-                        <tr key={i.id}>
-                          <td className="strong-cell">
-                            <Link href={`/dashboard/invoices/${i.id}`} className="row-link">{i.number || "—"}</Link>
-                          </td>
-                          <td>{matterName(i.matter_id)}</td>
-                          <td>{i.issued_date ? new Date(i.issued_date).toLocaleDateString() : "—"}</td>
-                          <td>{i.due_date ? new Date(i.due_date).toLocaleDateString() : "—"}</td>
-                          <td><span className={`pill inv-${i.status}`}>{i.status}</span></td>
-                          <td style={{ textAlign: "right" }}>{money(i.amount ?? 0)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="report-total-row">
-                        <td colSpan={5} className="strong-cell">Balance due</td>
-                        <td style={{ textAlign: "right", fontWeight: 700 }}>{money(stmtOutstanding)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
+              <button type="button" className="btn" disabled={runDisabled} onClick={() => setRan(true)}>
+                Run report
+              </button>
+            </div>
+
+            {selected === "statement" && (
+              <div className="filter-search-row" style={{ marginBottom: "0.4rem" }}>
+                <label className="report-client-pick">
+                  Client
+                  <select value={stmtClient} onChange={(e) => { setStmtClient(e.target.value); setRan(false); }}>
+                    <option value="">Select a client…</option>
+                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {!ran ? (
+              <div className="reports-empty">
+                <p className="muted-line">
+                  {runDisabled ? "Choose a client, then run the report." : "Press “Run report” to generate results."}
+                </p>
+              </div>
+            ) : selected === "aging" ? (
+              <>
+                <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
+                  <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(agingTotals.total)}</span><span className="stat-label">Total Outstanding</span></div>
+                  <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(agingTotals.current)}</span><span className="stat-label">Not Yet Due</span></div>
+                  <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(agingTotals.d31 + agingTotals.d61 + agingTotals.d90)}</span><span className="stat-label">Over 30 Days</span></div>
                 </div>
-              )}
-              <button type="button" className="ghost sm" style={{ marginTop: "1rem" }} onClick={() => window.print()}>Print / PDF statement</button>
-            </>
-          )}
-        </>
-      ) : (
-        <>
-          {areaTotal === 0 ? (
-            <p className="muted-line">No paid invoices yet — collected revenue will break down here by practice area.</p>
-          ) : (
-            <div className="pie-report">
-              <svg viewBox="0 0 160 160" className="pie-svg" role="img" aria-label="Payments by practice area">
-                <g transform="rotate(-90 80 80)">
-                  {segments.map((s) => (
-                    <circle
-                      key={s.area}
-                      cx="80" cy="80" r={R}
-                      fill="none"
-                      stroke={s.color}
-                      strokeWidth="28"
-                      strokeDasharray={`${s.dash} ${C - s.dash}`}
-                      strokeDashoffset={s.offset}
-                    />
-                  ))}
-                </g>
-                <text x="80" y="76" textAnchor="middle" className="pie-center-num">{money(areaTotal)}</text>
-                <text x="80" y="92" textAnchor="middle" className="pie-center-label">Collected</text>
-              </svg>
-              <div className="pie-legend">
-                {byArea.map((r) => (
-                  <div className="pie-legend-row" key={r.area}>
-                    <span className="pie-swatch" style={{ background: r.color }} />
-                    <span className="pie-legend-name">{r.area}</span>
-                    <span className="pie-legend-val">{money(r.amount)}</span>
-                    <span className="pie-legend-pct">{areaTotal > 0 ? Math.round((r.amount / areaTotal) * 100) : 0}%</span>
+                {aging.length === 0 ? (
+                  <p className="muted-line">No outstanding invoices — everything is paid.</p>
+                ) : (
+                  <div className="table-wrap">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Client</th>
+                          <th style={{ textAlign: "right" }}>Current</th>
+                          <th style={{ textAlign: "right" }}>1–30</th>
+                          <th style={{ textAlign: "right" }}>31–60</th>
+                          <th style={{ textAlign: "right" }}>61–90</th>
+                          <th style={{ textAlign: "right" }}>90+</th>
+                          <th style={{ textAlign: "right" }}>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {aging.map((r) => (
+                          <tr key={r.clientId}>
+                            <td className="strong-cell">{r.client}</td>
+                            <td style={{ textAlign: "right" }}>{money(r.current)}</td>
+                            <td style={{ textAlign: "right" }}>{money(r.d1)}</td>
+                            <td style={{ textAlign: "right" }}>{money(r.d31)}</td>
+                            <td style={{ textAlign: "right" }}>{money(r.d61)}</td>
+                            <td style={{ textAlign: "right", color: r.d90 > 0 ? "#c0392b" : undefined }}>{money(r.d90)}</td>
+                            <td style={{ textAlign: "right", fontWeight: 700 }}>{money(r.total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="report-total-row">
+                          <td className="strong-cell">All clients</td>
+                          <td style={{ textAlign: "right" }}>{money(agingTotals.current)}</td>
+                          <td style={{ textAlign: "right" }}>{money(agingTotals.d1)}</td>
+                          <td style={{ textAlign: "right" }}>{money(agingTotals.d31)}</td>
+                          <td style={{ textAlign: "right" }}>{money(agingTotals.d61)}</td>
+                          <td style={{ textAlign: "right" }}>{money(agingTotals.d90)}</td>
+                          <td style={{ textAlign: "right", fontWeight: 700 }}>{money(agingTotals.total)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </>
+                )}
+              </>
+            ) : selected === "statement" ? (
+              <>
+                <div className="stat-row" style={{ marginBottom: "1.25rem" }}>
+                  <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(stmtInvoiced)}</span><span className="stat-label">Invoiced</span></div>
+                  <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(stmtPaid)}</span><span className="stat-label">Paid</span></div>
+                  <div className="stat" style={{ cursor: "default" }}><span className="stat-num">{money(stmtOutstanding)}</span><span className="stat-label">Balance Due</span></div>
+                </div>
+                {stmtInvoices.length === 0 ? (
+                  <p className="muted-line">No invoices for this client.</p>
+                ) : (
+                  <div className="table-wrap">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Invoice</th>
+                          <th>Matter</th>
+                          <th>Issued</th>
+                          <th>Due</th>
+                          <th>Status</th>
+                          <th style={{ textAlign: "right" }}>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stmtInvoices.map((i) => (
+                          <tr key={i.id}>
+                            <td className="strong-cell">
+                              <Link href={`/dashboard/invoices/${i.id}`} className="row-link">{i.number || "—"}</Link>
+                            </td>
+                            <td>{matterName(i.matter_id)}</td>
+                            <td>{i.issued_date ? new Date(i.issued_date).toLocaleDateString() : "—"}</td>
+                            <td>{i.due_date ? new Date(i.due_date).toLocaleDateString() : "—"}</td>
+                            <td><span className={`pill inv-${i.status}`}>{i.status}</span></td>
+                            <td style={{ textAlign: "right" }}>{money(i.amount ?? 0)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="report-total-row">
+                          <td colSpan={5} className="strong-cell">Balance due</td>
+                          <td style={{ textAlign: "right", fontWeight: 700 }}>{money(stmtOutstanding)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+                <button type="button" className="ghost sm" style={{ marginTop: "1rem" }} onClick={() => window.print()}>Print / PDF statement</button>
+              </>
+            ) : (
+              <>
+                {areaTotal === 0 ? (
+                  <p className="muted-line">No paid invoices yet — collected revenue will break down here by practice area.</p>
+                ) : (
+                  <div className="pie-report">
+                    <svg viewBox="0 0 160 160" className="pie-svg" role="img" aria-label="Payments by practice area">
+                      <g transform="rotate(-90 80 80)">
+                        {segments.map((s) => (
+                          <circle
+                            key={s.area}
+                            cx="80" cy="80" r={R}
+                            fill="none"
+                            stroke={s.color}
+                            strokeWidth="28"
+                            strokeDasharray={`${s.dash} ${C - s.dash}`}
+                            strokeDashoffset={s.offset}
+                          />
+                        ))}
+                      </g>
+                      <text x="80" y="76" textAnchor="middle" className="pie-center-num">{money(areaTotal)}</text>
+                      <text x="80" y="92" textAnchor="middle" className="pie-center-label">Collected</text>
+                    </svg>
+                    <div className="pie-legend">
+                      {byArea.map((r) => (
+                        <div className="pie-legend-row" key={r.area}>
+                          <span className="pie-swatch" style={{ background: r.color }} />
+                          <span className="pie-legend-name">{r.area}</span>
+                          <span className="pie-legend-val">{money(r.amount)}</span>
+                          <span className="pie-legend-pct">{areaTotal > 0 ? Math.round((r.amount / areaTotal) * 100) : 0}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </section>
+    </div>
   );
 }
