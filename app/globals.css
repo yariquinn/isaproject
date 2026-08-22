@@ -2204,6 +2204,16 @@ section.block.alt {
 .inv-meta-row { justify-content: flex-end; gap: 1rem; }
 .inv-billto-box { max-width: 340px; }
 
+/* In the editor, drop the firm letterhead + "INVOICE" word so the Bill To box
+   takes their place (more room to edit). Restored for print/PDF. */
+.inv-sheet-editing .inv-firm,
+.inv-sheet-editing .inv-word { display: none; }
+.inv-sheet-editing .inv-head-left .inv-billto { margin-top: 0; }
+@media print {
+  .inv-firm, .inv-word { display: block !important; }
+  .inv-sheet-editing .inv-head-left .inv-billto { margin-top: 1.5rem; }
+}
+
 /* Searchable matter filter on the Time Entries list (styled like inline-select) */
 .te-matter-pick { width: 200px; }
 .te-matter-pick input {

@@ -188,7 +188,7 @@ export default function InvoiceEditor({
         </div>
       </div>
 
-      <div className={`inv-sheet printable${editing ? "" : " inv-sheet-preview"}`}>
+      <div className={`inv-sheet printable${editing ? " inv-sheet-editing" : " inv-sheet-preview"}`}>
         {/* Header */}
         <div className="inv-head">
           <div className="inv-head-left">
