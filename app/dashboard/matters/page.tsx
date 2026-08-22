@@ -88,6 +88,21 @@ export default function MattersPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pendingTasks, setPendingTasks] = useState<Record<string, number>>({});
   const [matterTasks, setMatterTasks] = useState<Record<string, { title: string; assignee: string | null }[]>>({});
+  // Pending-tasks popover (same pattern as the clients "Active matters" popover);
+  // rendered fixed so the table's overflow can't clip it.
+  const [taskPop, setTaskPop] = useState<{ id: string; top: number; left: number } | null>(null);
+  const taskPopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openTaskPop = (id: string, el: HTMLElement) => {
+    if (taskPopTimer.current) clearTimeout(taskPopTimer.current);
+    const r = el.getBoundingClientRect();
+    const center = Math.max(140, Math.min(r.left + r.width / 2, window.innerWidth - 140));
+    setTaskPop({ id, top: r.bottom + 6, left: center });
+  };
+  const scheduleCloseTaskPop = () => {
+    if (taskPopTimer.current) clearTimeout(taskPopTimer.current);
+    taskPopTimer.current = setTimeout(() => setTaskPop(null), 140);
+  };
+  const cancelCloseTaskPop = () => { if (taskPopTimer.current) clearTimeout(taskPopTimer.current); };
   const [ncOpen, setNcOpen] = useState(false);
   const [nc, setNc] = useState({ name: "", client_type: "individual", email: "", phone: "" });
 
@@ -593,14 +608,13 @@ export default function MattersPage() {
                   {cols.tasks && (
                   <td>
                     {matterTasks[m.id]?.length ? (
-                      <div className="mt-tasks" title={matterTasks[m.id].map((t) => t.title).join("\n")}>
-                        {matterTasks[m.id].slice(0, 2).map((t, i) => (
-                          <span key={i} className="mt-task-line">{t.title}</span>
-                        ))}
-                        {matterTasks[m.id].length > 2 && (
-                          <span className="mt-task-more">+{matterTasks[m.id].length - 2} more</span>
-                        )}
-                      </div>
+                      <span
+                        className="matter-count-badge"
+                        onMouseEnter={(e) => openTaskPop(m.id, e.currentTarget)}
+                        onMouseLeave={scheduleCloseTaskPop}
+                      >
+                        {matterTasks[m.id].length} task{matterTasks[m.id].length === 1 ? "" : "s"}
+                      </span>
                     ) : (
                       <span className="inline-placeholder">—</span>
                     )}
@@ -835,6 +849,20 @@ export default function MattersPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {taskPop && matterTasks[taskPop.id]?.length && (
+        <div
+          className="matter-pop matter-pop-fixed"
+          style={{ top: taskPop.top, left: taskPop.left }}
+          onMouseEnter={cancelCloseTaskPop}
+          onMouseLeave={scheduleCloseTaskPop}
+        >
+          <span className="matter-pop-head">Pending tasks</span>
+          {matterTasks[taskPop.id].map((t, i) => (
+            <span key={i} className="matter-pop-item">{t.title}</span>
+          ))}
         </div>
       )}
     </div>

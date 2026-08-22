@@ -538,10 +538,24 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 <p className="muted-line">Billing access required.</p>
               ) : (
                 <div className="cc-fin">
-                  <div className="cc-fin-row"><span className="cc-fin-label">Total billed</span><span className="cc-fin-val">{money(billed)}</span></div>
-                  <div className="cc-fin-row"><span className="cc-fin-label">Outstanding</span><span className="cc-fin-val cc-fin-warn">{money(outstanding)}</span></div>
-                  <div className="cc-fin-row"><span className="cc-fin-label">Paid</span><span className="cc-fin-val cc-fin-ok">{money(paid)}</span></div>
-                  <div className="cc-fin-row"><span className="cc-fin-label">Invoices</span><span className="cc-fin-val">{invoices.length}</span></div>
+                  <div className="cc-fin-stat">
+                    <span className="cc-fin-stat-label">Total billed</span>
+                    <span className="cc-fin-stat-val">{money(billed)}</span>
+                  </div>
+                  <div className="cc-fin-stat">
+                    <span className="cc-fin-stat-label">Outstanding</span>
+                    <span className="cc-fin-stat-val warn">{money(outstanding)}</span>
+                    {billed > 0 && (
+                      <span className="cc-fin-bar"><span className="cc-fin-bar-fill warn" style={{ width: `${Math.min(100, Math.round((outstanding / billed) * 100))}%` }} /></span>
+                    )}
+                  </div>
+                  <div className="cc-fin-stat">
+                    <span className="cc-fin-stat-label">Paid</span>
+                    <span className="cc-fin-stat-val ok">{money(paid)}</span>
+                    {billed > 0 && (
+                      <span className="cc-fin-bar"><span className="cc-fin-bar-fill ok" style={{ width: `${Math.min(100, Math.round((paid / billed) * 100))}%` }} /></span>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
