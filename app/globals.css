@@ -9594,3 +9594,23 @@ a.activity-row:hover .act-desc {
   font-size: 0.72rem;
   color: var(--dash-muted);
 }
+
+/* ---- New-matter modal: "<Client> ·" prefix hint before the title input ---- */
+.matter-name-compose {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.matter-name-prefix {
+  color: var(--dash-muted);
+  white-space: nowrap;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+  flex: 0 0 auto;
+}
+.matter-name-compose input {
+  flex: 1 1 auto;
+  min-width: 0;
+}

@@ -119,10 +119,15 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
   async function addMatter() {
     if (!mForm.name.trim() || !client) return;
     setMSaving(true);
+    // Enforce the "<Client> · <Title>" naming convention. The user types just the
+    // title; we compose the full name (the client record strips the prefix back off,
+    // the Matters overview shows it in full). If they already typed the prefix, keep it.
+    const title = mForm.name.trim();
+    const fullName = title.startsWith(`${client.name} · `) ? title : `${client.name} · ${title}`;
     const { data: created } = await supabase
       .from("matters")
       .insert({
-        name: mForm.name.trim(),
+        name: fullName,
         client_id: client.id,
         practice_area: mForm.practice_area,
         assigned_to: mForm.assigned_to,
@@ -136,7 +141,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       kind: "matter_created",
       client_id: client.id,
       matter_id: created?.id ?? null,
-      description: `${userName} opened matter ${mForm.name.trim()}`,
+      description: `${userName} opened matter ${fullName}`,
     });
     setMSaving(false);
     setAddMatterOpen(false);
@@ -307,13 +312,23 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
       </span>
     );
 
+  // Inside a client record the client is already the context, so drop the
+  // "<Client> · " prefix and show just the matter title. (The Matters overview
+  // keeps the full "Client · Matter" name for cross-client disambiguation.)
+  const matterShortName = (name: string) => {
+    const prefix = `${client?.name ?? ""} · `;
+    if (client?.name && name.startsWith(prefix)) return name.slice(prefix.length);
+    const idx = name.indexOf(" · ");
+    return idx >= 0 ? name.slice(idx + 3) : name;
+  };
+
   const MatterPill = ({ m }: { m: Matter }) => (
     <Link
       href={`/dashboard/matters/${m.id}`}
       className={`matter-card matter-card-${m.status}`}
     >
       <span className="matter-card-main">
-        <span className="matter-card-name">{m.name}</span>
+        <span className="matter-card-name">{matterShortName(m.name)}</span>
         <span className="matter-card-sub">
           <span className={`pill pill-${m.status}`}>{m.status === "closed" ? "Archived" : "Active"}</span>
           <span className="matter-card-date">
@@ -491,7 +506,7 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         <div className="combo-col">
           <div className="panel-head">
             <h2 className="combo-title">Matters <span className="count-badge">{matters.length}</span></h2>
-            <button type="button" className="btn icon-plus-btn sm-plus" style={{ marginTop: "-0.5rem", marginRight: "-0.35rem", alignSelf: "flex-start" }} onClick={() => { setMForm({ name: `${client.name} · `, practice_area: PRACTICE_AREAS[0], assigned_to: ATTORNEYS[0] }); setAddMatterOpen(true); }} title="Add matter" aria-label="Add matter">+</button>
+            <button type="button" className="btn icon-plus-btn sm-plus" style={{ marginTop: "-0.5rem", marginRight: "-0.35rem", alignSelf: "flex-start" }} onClick={() => { setMForm({ name: "", practice_area: PRACTICE_AREAS[0], assigned_to: ATTORNEYS[0] }); setAddMatterOpen(true); }} title="Add matter" aria-label="Add matter">+</button>
           </div>
           <div className="panel-scroll">
             {matters.length === 0 ? <p className="muted-line">No matters yet.</p> : (
@@ -753,7 +768,11 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
             <h3>New matter for {client.name}</h3>
             <label>
               Matter name
-              <input autoFocus value={mForm.name} onChange={(e) => setMForm({ ...mForm, name: e.target.value })} placeholder="e.g. 2025 Refinance" />
+              <div className="matter-name-compose">
+                <span className="matter-name-prefix" title={client.name}>{client.name} ·</span>
+                <input autoFocus value={mForm.name} onChange={(e) => setMForm({ ...mForm, name: e.target.value })} placeholder="e.g. 2025 Refinance" />
+              </div>
+              <span className="field-note">Shown here as just the title; the Matters overview shows the full “{client.name} · …” name.</span>
             </label>
             <div className="field-pair">
               <label>
