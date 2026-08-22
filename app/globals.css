@@ -9758,7 +9758,7 @@ a.activity-row:hover .act-desc {
 .tb-list-search { max-width: 190px; }
 
 /* ---- Time Entries: invoiced (locked) rows ---- */
-.te-invoiced {
+.te-row-invoiced td {
   background: color-mix(in srgb, var(--dash-fg) 3%, transparent);
 }
 .te-lock {

@@ -503,13 +503,13 @@ export default function MattersPage() {
           )}
           <table className="data-table data-table-wrap-cells">
             <colgroup>
-              <col style={{ width: "38px" }} />
-              <col style={{ width: "22%" }} />
-              {cols.client && <col style={{ width: "16%" }} />}
+              <col style={{ width: "44px" }} />
+              <col style={{ width: "28%" }} />
+              {cols.client && <col style={{ width: "18%" }} />}
               {cols.practice && <col style={{ width: "14%" }} />}
-              {cols.tasks && <col style={{ width: "9%" }} />}
-              {cols.rate && <col style={{ width: "11%" }} />}
-              {cols.status && <col style={{ width: "15%" }} />}
+              {cols.tasks && <col style={{ width: "8%" }} />}
+              {cols.rate && <col style={{ width: "12%" }} />}
+              {cols.status && <col style={{ width: "20%" }} />}
               <col style={{ width: "44px" }} />
             </colgroup>
             <thead>

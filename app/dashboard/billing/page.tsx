@@ -708,7 +708,7 @@ function BillingInner() {
                 </thead>
                 <tbody>
                   {shownEntries.map((e) => (
-                    <tr key={e.id} className={`${selEntries.has(e.id) ? "row-selected" : ""}${e.invoiced ? " te-invoiced" : ""}`.trim() || undefined}>
+                    <tr key={e.id} className={`${selEntries.has(e.id) ? "row-selected" : ""}${e.invoiced ? " te-row-invoiced" : ""}`.trim() || undefined}>
                       <td className="check-col">
                         <input
                           type="checkbox"
