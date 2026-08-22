@@ -577,23 +577,8 @@ export default function MattersPage() {
                   {cols.tasks && (
                   <td>
                     {pendingTasks[m.id] ? (
-                      <span className="task-pop-wrap">
-                        <span className="task-badge">
-                          {pendingTasks[m.id]} task{pendingTasks[m.id] === 1 ? "" : "s"}
-                        </span>
-                        <span className="task-pop">
-                          <span className="task-pop-head">Pending tasks</span>
-                          {(matterTasks[m.id] ?? []).map((t, i) => (
-                            <span className="task-pop-item" key={i}>
-                              <span className="task-pop-title">{t.title}</span>
-                              {t.assignee && (
-                                <span className="task-pop-avatar" style={{ background: personColor(t.assignee) }} title={t.assignee}>
-                                  {initialsOf(t.assignee)}
-                                </span>
-                              )}
-                            </span>
-                          ))}
-                        </span>
+                      <span className="task-badge" title={`${pendingTasks[m.id]} pending task${pendingTasks[m.id] === 1 ? "" : "s"}`}>
+                        {pendingTasks[m.id]} task{pendingTasks[m.id] === 1 ? "" : "s"}
                       </span>
                     ) : (
                       <span className="inline-placeholder">—</span>
