@@ -9593,10 +9593,14 @@ a.activity-row:hover .act-desc {
 /* ---- Deadlines & Calendar: kind + user filters ---- */
 .dl-filters {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+.dl-filters .inv-filter-row {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .dl-chip-kind {
   text-transform: capitalize;
@@ -9670,4 +9674,13 @@ a.activity-row:hover .act-desc {
   color: #c0392b;
   font-weight: 700;
   margin-left: 0.15rem;
+}
+
+/* ---- Tasks list view: sortable column headers ---- */
+.tb-lv-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.tb-lv-sortable:hover {
+  color: var(--dash-fg);
 }

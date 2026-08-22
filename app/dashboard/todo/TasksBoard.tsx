@@ -123,6 +123,13 @@ export default function TasksBoard() {
   const [collapsedPeople, setCollapsedPeople] = useState<Record<string, boolean>>({});
   const [view, setView] = useState<"calendar" | "list">("list");
   const [lvEdit, setLvEdit] = useState<{ id: string; field: "title" | "assignee" | "scheduled_date" | "due_date" } | null>(null);
+  // List-view column sort + status filter (active / completed).
+  const [lvSort, setLvSort] = useState<{ key: "matter" | "user" | "day" | "due"; dir: 1 | -1 } | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "done">("all");
+  const toggleLvSort = (key: "matter" | "user" | "day" | "due") =>
+    setLvSort((s) => (s?.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
+  const lvSortArrow = (key: "matter" | "user" | "day" | "due") =>
+    lvSort?.key !== key ? "↕" : lvSort.dir === 1 ? "↑" : "↓";
   const dragId = useRef<string | null>(null);
   const lvEditing = (id: string, field: string) => lvEdit?.id === id && lvEdit.field === field;
 
@@ -366,13 +373,24 @@ export default function TasksBoard() {
 
   const fmtDay = (d: string) =>
     new Date(d.slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const lvMatterName = (id: string | null) => matters.find((m) => m.id === id)?.name ?? "";
   const listTasks = todos
     .filter((t) => filterWho === "all" || t.assignee === filterWho)
-    .sort(
-      (a, b) =>
-        (a.done ? 1 : 0) - (b.done ? 1 : 0) ||
-        (a.scheduled_date || a.due_date || "9999").localeCompare(b.scheduled_date || b.due_date || "9999"),
-    );
+    .filter((t) => (statusFilter === "all" ? true : statusFilter === "done" ? t.done : !t.done))
+    .sort((a, b) => {
+      // Completed always sink to the bottom; within a group, apply the chosen sort.
+      const doneCmp = (a.done ? 1 : 0) - (b.done ? 1 : 0);
+      if (doneCmp !== 0) return doneCmp;
+      if (lvSort) {
+        let cmp = 0;
+        if (lvSort.key === "matter") cmp = lvMatterName(a.matter_id).localeCompare(lvMatterName(b.matter_id));
+        else if (lvSort.key === "user") cmp = (a.assignee || "").localeCompare(b.assignee || "");
+        else if (lvSort.key === "day") cmp = (a.scheduled_date || "9999").localeCompare(b.scheduled_date || "9999");
+        else if (lvSort.key === "due") cmp = (a.due_date || "9999").localeCompare(b.due_date || "9999");
+        if (cmp !== 0) return cmp * lvSort.dir;
+      }
+      return (a.scheduled_date || a.due_date || "9999").localeCompare(b.scheduled_date || b.due_date || "9999");
+    });
   const renderList = () => (
     <div className="tb-wrap tb-listview">
       {bulkSel.size > 0 && (
@@ -397,10 +415,10 @@ export default function TasksBoard() {
             onChange={(e) => setBulkSel(e.target.checked ? new Set(listTasks.map((t) => t.id)) : new Set())} />
         </span>
         <span>Task</span>
-        <span>Matter</span>
-        <span>User</span>
-        <span>Day</span>
-        <span>Due</span>
+        <span className="tb-lv-sortable" onClick={() => toggleLvSort("matter")}>Matter <span className="sort-arrow">{lvSortArrow("matter")}</span></span>
+        <span className="tb-lv-sortable" onClick={() => toggleLvSort("user")}>User <span className="sort-arrow">{lvSortArrow("user")}</span></span>
+        <span className="tb-lv-sortable" onClick={() => toggleLvSort("day")}>Day <span className="sort-arrow">{lvSortArrow("day")}</span></span>
+        <span className="tb-lv-sortable" onClick={() => toggleLvSort("due")}>Due <span className="sort-arrow">{lvSortArrow("due")}</span></span>
       </div>
       <div className="tb-lv-body">
         {listTasks.length === 0 ? (
@@ -549,6 +567,13 @@ export default function TasksBoard() {
               <option key={a} value={a}>{firstName(a)}</option>
             ))}
           </select>
+          {view === "list" && (
+            <select className="inline-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "done")}>
+              <option value="all">All tasks</option>
+              <option value="active">Active</option>
+              <option value="done">Completed</option>
+            </select>
+          )}
         </div>
       </div>
 
