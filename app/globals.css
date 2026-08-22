@@ -9740,3 +9740,15 @@ a.activity-row:hover .act-desc {
 }
 .rp-item:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .rp-empty { padding: 0.5rem 0.55rem; color: var(--dash-muted); font-size: 0.85rem; }
+
+/* ---- Reports: run/print action cluster ---- */
+.reports-run-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+/* ---- Tasks list toolbar: chips + search live in the top-right ---- */
+.tb-toolbar-right { flex-wrap: wrap; }
+.tb-list-search { max-width: 190px; }

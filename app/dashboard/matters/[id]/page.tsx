@@ -969,7 +969,8 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                         {it.label}
                       </span>
                     )}
-                    <span className="du-title">{it.title}</span>
+                    {/* A closing is self-explanatory — the "Closing" label says it all. */}
+                    <span className="du-title">{it.label === "Closing" ? "" : it.title}</span>
                     <button
                       type="button"
                       className="du-check"

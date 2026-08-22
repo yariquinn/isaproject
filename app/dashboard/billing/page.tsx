@@ -126,6 +126,7 @@ function BillingInner() {
   const [timeMatterQuery, setTimeMatterQuery] = useState("");
   const [timeMatterOpen, setTimeMatterOpen] = useState(false);
   const [timeUser, setTimeUser] = useState<string>("all");
+  const [timeQuery, setTimeQuery] = useState("");
   const timeUsers = useMemo(
     () => Array.from(new Set(entries.map((e) => e.lawyer).filter(Boolean))).sort() as string[],
     [entries],
@@ -136,13 +137,20 @@ function BillingInner() {
     if (timePeriod === "day") cutoff.setDate(now.getDate() - 1);
     else if (timePeriod === "week") cutoff.setDate(now.getDate() - 7);
     else if (timePeriod === "month") cutoff.setMonth(now.getMonth() - 1);
+    const q = timeQuery.trim().toLowerCase();
     return entries.filter((e) => {
       if (timeMatter !== "all" && e.matter_id !== timeMatter) return false;
       if (timeUser !== "all" && e.lawyer !== timeUser) return false;
       if (timePeriod !== "all" && new Date(e.logged_at) < cutoff) return false;
+      if (q) {
+        const hay = [e.note, e.activity, e.lawyer, matters.find((m) => m.id === e.matter_id)?.name]
+          .filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [entries, timePeriod, timeMatter, timeUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, matters, timePeriod, timeMatter, timeUser, timeQuery]);
   const totalSeconds = useMemo(
     () => shownEntries.reduce((s, e) => s + e.duration_seconds, 0),
     [shownEntries],
@@ -563,12 +571,21 @@ function BillingInner() {
 
       {tab === "time" && (
         <>
-          <div className="page-head">
+          <div className="page-head inv-page-head">
             <h1 className="page-title">Time Entries</h1>
-            <div className="head-controls">
-              <button className="btn icon-plus-btn" onClick={openAddTime} type="button" title="Add time" aria-label="Add time">
-                +
-              </button>
+            <div className="head-controls inv-head-controls">
+              <div className="inv-head-controls-row">
+                <button className="btn icon-plus-btn" onClick={openAddTime} type="button" title="Add time" aria-label="Add time">
+                  +
+                </button>
+              </div>
+              <input
+                className="activity-search inv-search-below"
+                type="search"
+                placeholder="Search time entries…"
+                value={timeQuery}
+                onChange={(e) => setTimeQuery(e.target.value)}
+              />
             </div>
           </div>
 
@@ -657,7 +674,7 @@ function BillingInner() {
                     <th>Matter</th>
                     <th>Activity</th>
                     <th>Description</th>
-                    <th>User</th>
+                    <th style={{ textAlign: "center" }}>User</th>
                     <th>Duration</th>
                     <th aria-label="Delete"></th>
                   </tr>
@@ -683,7 +700,7 @@ function BillingInner() {
                       </td>
                       <td>{e.activity || "—"}</td>
                       <td>{e.note || "—"}</td>
-                      <td>
+                      <td style={{ textAlign: "center" }}>
                         <span
                           className="te-user-badge"
                           title={e.lawyer}

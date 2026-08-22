@@ -126,6 +126,7 @@ export default function TasksBoard() {
   // List-view column sort + status filter (active / completed).
   const [lvSort, setLvSort] = useState<{ key: "matter" | "user" | "day" | "due"; dir: 1 | -1 } | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "done">("all");
+  const [listQuery, setListQuery] = useState("");
   const toggleLvSort = (key: "matter" | "user" | "day" | "due") =>
     setLvSort((s) => (s?.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
   const lvSortArrow = (key: "matter" | "user" | "day" | "due") =>
@@ -374,9 +375,11 @@ export default function TasksBoard() {
   const fmtDay = (d: string) =>
     new Date(d.slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const lvMatterName = (id: string | null) => matters.find((m) => m.id === id)?.name ?? "";
+  const lq = listQuery.trim().toLowerCase();
   const listTasks = todos
     .filter((t) => filterWho === "all" || t.assignee === filterWho)
     .filter((t) => (statusFilter === "all" ? true : statusFilter === "done" ? t.done : !t.done))
+    .filter((t) => lq === "" || [t.title, lvMatterName(t.matter_id), t.assignee].filter(Boolean).join(" ").toLowerCase().includes(lq))
     .sort((a, b) => {
       // Completed always sink to the bottom; within a group, apply the chosen sort.
       const doneCmp = (a.done ? 1 : 0) - (b.done ? 1 : 0);
@@ -408,24 +411,6 @@ export default function TasksBoard() {
           <button type="button" className="ghost sm" onClick={() => setBulkSel(new Set())}>Clear</button>
         </div>
       )}
-      <div className="filter-search-row" style={{ marginBottom: "0.6rem" }}>
-        <div className="filter-row" style={{ margin: 0 }}>
-          {(["active", "done", "all"] as const).map((s) => {
-            const base = todos.filter((t) => filterWho === "all" || t.assignee === filterWho);
-            const n = s === "active" ? base.filter((t) => !t.done).length : s === "done" ? base.filter((t) => t.done).length : base.length;
-            return (
-              <button
-                key={s}
-                type="button"
-                className={`filter-chip${statusFilter === s ? " active" : ""}`}
-                onClick={() => setStatusFilter(s)}
-              >
-                {s === "active" ? "Active" : s === "done" ? "Completed" : "All"} <span className="chip-count">{n}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
       <div className="tb-lv-head">
         <span>
           <input type="checkbox" aria-label="Select all"
@@ -578,7 +563,35 @@ export default function TasksBoard() {
           </button>
         </div>
         <div className="tb-toolbar-right">
-          <span className="tb-groupby">Group by responsible</span>
+          {view === "list" ? (
+            <>
+              <div className="filter-row" style={{ margin: 0 }}>
+                {(["active", "done", "all"] as const).map((s) => {
+                  const base = todos.filter((t) => filterWho === "all" || t.assignee === filterWho);
+                  const n = s === "active" ? base.filter((t) => !t.done).length : s === "done" ? base.filter((t) => t.done).length : base.length;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`filter-chip${statusFilter === s ? " active" : ""}`}
+                      onClick={() => setStatusFilter(s)}
+                    >
+                      {s === "active" ? "Active" : s === "done" ? "Completed" : "All"} <span className="chip-count">{n}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                className="activity-search tb-list-search"
+                type="search"
+                placeholder="Search tasks…"
+                value={listQuery}
+                onChange={(e) => setListQuery(e.target.value)}
+              />
+            </>
+          ) : (
+            <span className="tb-groupby">Group by responsible</span>
+          )}
           <select className="inline-select" value={filterWho} onChange={(e) => setFilterWho(e.target.value)}>
             <option value="all">All people</option>
             {(ATTORNEYS as readonly string[]).map((a) => (

@@ -159,9 +159,16 @@ export default function ReportsClient() {
                 <h2 className="reports-result-title">{meta.name}</h2>
                 <p className="muted-line" style={{ margin: "0.15rem 0 0" }}>{meta.desc}</p>
               </div>
-              <button type="button" className="btn" disabled={runDisabled} onClick={() => setRan(true)}>
-                Run report
-              </button>
+              <div className="reports-run-actions">
+                {ran && (
+                  <button type="button" className="ghost sm" onClick={() => window.print()}>
+                    Print / PDF
+                  </button>
+                )}
+                <button type="button" className="btn" disabled={runDisabled} onClick={() => setRan(true)}>
+                  Run report
+                </button>
+              </div>
             </div>
 
             {selected === "statement" && (
@@ -297,7 +304,6 @@ export default function ReportsClient() {
                     </table>
                   </div>
                 )}
-                <button type="button" className="ghost sm" style={{ marginTop: "1rem" }} onClick={() => window.print()}>Print / PDF statement</button>
               </>
             ) : (
               <>

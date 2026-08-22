@@ -115,7 +115,7 @@ export default function ExpensesPage() {
                 <th>Description</th>
                 <th>Client</th>
                 <th>Matter</th>
-                <th>User</th>
+                <th style={{ textAlign: "center" }}>User</th>
                 <th style={{ textAlign: "right" }}>Amount</th>
                 <th>Status</th>
                 <th aria-label="Delete"></th>
@@ -134,7 +134,7 @@ export default function ExpensesPage() {
                         <Link href={`/dashboard/matters/${m.id}`} className="row-link">{m.name}</Link>
                       ) : "—"}
                     </td>
-                    <td>
+                    <td style={{ textAlign: "center" }}>
                       <span className="te-user-badge" title={x.user_name ?? undefined} style={{ background: personColor(x.user_name), color: "#fff" }}>
                         {initialsOf(x.user_name)}
                       </span>
