@@ -2338,6 +2338,7 @@ section.block.alt {
 .inv-pull-range {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 0.75rem;
   margin: 0 0 1rem;
