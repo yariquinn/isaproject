@@ -113,6 +113,32 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
   const [rows, setRows] = useState<Draft[]>(() =>
     Array.from({ length: ROW_COUNT }, () => blank(defaultLawyer)),
   );
+  // Never lose in-progress rows: persist the grid to localStorage as it's edited
+  // and restore it on mount, so accidentally closing the modal keeps your work.
+  const DRAFT_KEY = "timesheetDraft";
+  const hydrated = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Draft[];
+        if (Array.isArray(saved) && saved.length) setRows(saved);
+      }
+    } catch {
+      /* ignore */
+    }
+    hydrated.current = true;
+  }, []);
+  useEffect(() => {
+    if (!hydrated.current) return;
+    try {
+      const hasData = rows.some((r) => r.matter_id || r.note.trim() || r.hours.trim());
+      if (hasData) localStorage.setItem(DRAFT_KEY, JSON.stringify(rows));
+      else localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [rows]);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
   const [entries, setEntries] = useState<{ duration_seconds: number; billable: boolean; logged_at: string }[]>([]);
@@ -234,6 +260,7 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
       `Saved ${validRows.length} ${validRows.length === 1 ? "entry" : "entries"}.`,
     );
     setRows(Array.from({ length: ROW_COUNT }, () => blank(defaultLawyer)));
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
     onSaved();
     loadEntries();
     setTimeout(() => setSavedMsg(""), 4000);

@@ -6306,9 +6306,13 @@ a.activity-row:hover .act-desc {
   align-items: center;
   gap: 0.4rem;
   min-width: 0;
-  /* Keep to a single line — chips that don't fit are clipped, not wrapped. */
-  overflow: hidden;
+  /* One line, horizontally scrollable, with the scrollbar hidden. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
+.ts-recents::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 .ts-recents-label {
   flex: 0 0 auto;
 }
