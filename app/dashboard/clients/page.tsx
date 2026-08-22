@@ -572,15 +572,6 @@ export default function ClientsPage() {
           {selected.size > 0 && (
             <div className="bulk-bar">
               <span className="bulk-count">{selected.size} selected</span>
-              <label>
-                Type
-                <select defaultValue="" onChange={(e) => { if (e.target.value) bulkPatch({ client_type: e.target.value }); e.target.value = ""; }}>
-                  <option value="">Set…</option>
-                  {CLIENT_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </label>
               <button type="button" className="ghost sm" onClick={() => bulkPatch({ archived: true })}>Archive</button>
               <button type="button" className="ghost sm" onClick={() => bulkPatch({ archived: false })}>Unarchive</button>
               <button type="button" className="ghost sm" onClick={() => setSelected(new Set())}>Clear</button>

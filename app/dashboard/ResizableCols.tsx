@@ -25,9 +25,10 @@ export default function ResizableCols({
   const wrapRef = useRef<HTMLDivElement>(null);
   const [ratio, setRatio] = useState(0.5);
   const [dragging, setDragging] = useState(false);
-  // Overall block width (fraction of the available row width), adjustable
-  // from the far-right handle. 1 = full width.
-  const [width, setWidth] = useState(1);
+  // Right pane width as a fraction of the row, adjustable from the far-right
+  // handle. Only the right pane changes — the left pane stays put and the
+  // right pane grows/shrinks into the empty margin beside it.
+  const [rightW, setRightW] = useState(0.5);
   const [wDragging, setWDragging] = useState(false);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function ResizableCols({
       const rw = localStorage.getItem(`${storageKey}-w`);
       if (rw) {
         const v = parseFloat(rw);
-        if (!Number.isNaN(v)) setWidth(Math.min(1, Math.max(0.55, v)));
+        if (!Number.isNaN(v)) setRightW(Math.min(0.9, Math.max(0.2, v)));
       }
     } catch { /* ignore */ }
   }, [storageKey, min, max]);
@@ -48,15 +49,17 @@ export default function ResizableCols({
   useEffect(() => {
     if (!wDragging) return;
     const onMove = (e: MouseEvent) => {
-      const el = wrapRef.current?.parentElement;
+      const el = wrapRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const w = Math.min(1, Math.max(0.55, (e.clientX - rect.left) / rect.width));
-      setWidth(w);
+      // Right pane starts after the fixed left pane (ratio of the row).
+      const paneLeft = rect.left + ratio * rect.width;
+      const w = Math.min(1 - ratio, Math.max(0.2, (e.clientX - paneLeft) / rect.width));
+      setRightW(w);
     };
     const onUp = () => {
       setWDragging(false);
-      try { localStorage.setItem(`${storageKey}-w`, String(width)); } catch { /* ignore */ }
+      try { localStorage.setItem(`${storageKey}-w`, String(rightW)); } catch { /* ignore */ }
     };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
@@ -68,7 +71,7 @@ export default function ResizableCols({
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
     };
-  }, [wDragging, width, storageKey]);
+  }, [wDragging, rightW, ratio, storageKey]);
 
   useEffect(() => {
     if (!dragging) return;
@@ -96,12 +99,17 @@ export default function ResizableCols({
   }, [dragging, ratio, storageKey, min, max]);
 
   return (
-    <div className="rz-cols" ref={wrapRef} style={rightHandle ? { width: `${width * 100}%` } : undefined}>
+    <div className={`rz-cols${rightHandle ? " rz-cols-rhandle" : ""}`} ref={wrapRef}>
       {single ? (
         <div className="rz-pane" style={{ flexBasis: "100%" }}>{left ?? right}</div>
       ) : (
         <>
-          <div className="rz-pane" style={{ flexBasis: `${ratio * 100}%` }}>{left}</div>
+          <div
+            className="rz-pane"
+            style={rightHandle
+              ? { flex: `0 0 ${ratio * 100}%` }
+              : { flexBasis: `${ratio * 100}%` }}
+          >{left}</div>
           <div
             className={`rz-handle${dragging ? " dragging" : ""}`}
             onMouseDown={() => setDragging(true)}
@@ -111,7 +119,12 @@ export default function ResizableCols({
           >
             <span className="rz-grip" />
           </div>
-          <div className="rz-pane" style={{ flexBasis: `${(1 - ratio) * 100}%` }}>{right}</div>
+          <div
+            className="rz-pane"
+            style={rightHandle
+              ? { flex: `0 0 ${Math.min(rightW, 1 - ratio) * 100}%` }
+              : { flexBasis: `${(1 - ratio) * 100}%` }}
+          >{right}</div>
           {rightHandle && (
             <div
               className={`rz-handle rz-handle-edge${wDragging ? " dragging" : ""}`}

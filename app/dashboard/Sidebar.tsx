@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import { logoutAction } from "./actions";
 
@@ -23,10 +23,10 @@ const SECTIONS: Section[] = [
     key: "practice",
     label: "Practice",
     items: [
+      { href: "/dashboard/billing", label: "Billing Dashboard" },
       { href: "/dashboard/todo", label: "Tasks" },
       { href: "/dashboard/deadlines", label: "Deadlines" },
       { href: "/dashboard/reports", label: "Reports" },
-      { href: "/dashboard/billing", label: "Billing Dashboard" },
       { href: "/dashboard/billing?tab=invoices", label: "Invoices" },
       { href: "/dashboard/billing?tab=time", label: "Time Entries" },
       { href: "/dashboard/intake", label: "Intake" },
@@ -57,8 +57,10 @@ const DESTINATIONS: { href: string; label: string }[] = [
 
 type Custom = { id: string; label: string; href: string };
 
-export default function Sidebar({ userName }: { userName: string }) {
+function SidebarInner({ userName }: { userName: string }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab");
   const initials =
     userName
       .split(" ")
@@ -66,10 +68,20 @@ export default function Sidebar({ userName }: { userName: string }) {
       .slice(0, 2)
       .join("")
       .toUpperCase() || "U";
-  const isActive = (href: string) =>
-    href === "/dashboard"
-      ? pathname === "/dashboard"
-      : pathname === href || pathname.startsWith(href + "/");
+  const isActive = (href: string) => {
+    if (href === "/dashboard") return pathname === "/dashboard";
+    const [hrefPath, hrefQuery] = href.split("?");
+    // Billing links share one route (/dashboard/billing) and differ only by
+    // ?tab= — match on the tab so Invoices/Time Entries highlight correctly
+    // and Billing Dashboard only highlights on the plain (no-tab) view.
+    if (hrefPath === "/dashboard/billing") {
+      if (pathname !== "/dashboard/billing") return false;
+      const hrefTab = hrefQuery ? new URLSearchParams(hrefQuery).get("tab") : null;
+      if (!hrefTab) return currentTab !== "invoices" && currentTab !== "time";
+      return currentTab === hrefTab;
+    }
+    return pathname === hrefPath || pathname.startsWith(hrefPath + "/");
+  };
 
   // Collapse state (per section + per parent item), persisted per browser.
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -301,5 +313,13 @@ export default function Sidebar({ userName }: { userName: string }) {
         </div>
       </div>
     </aside>
+  );
+}
+
+export default function Sidebar({ userName }: { userName: string }) {
+  return (
+    <Suspense fallback={<aside className="sidebar" />}>
+      <SidebarInner userName={userName} />
+    </Suspense>
   );
 }

@@ -48,11 +48,16 @@ export default function InvoiceEditor({
   invoiceId,
   onClose,
   fullPage,
+  preview,
 }: {
   invoiceId: string;
   onClose?: () => void;
   fullPage?: boolean;
+  preview?: boolean;
 }) {
+  // In `preview` mode the invoice opens as a read-only PDF-style view; the
+  // Edit button flips it into the editable editor.
+  const [editing, setEditing] = useState(!preview);
   const [inv, setInv] = useState<Invoice | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [clientName, setClientName] = useState<string>("");
@@ -168,6 +173,13 @@ export default function InvoiceEditor({
           <span className="inv-save-state">{saving === "saving" ? "Saving…" : saving === "saved" ? "Saved" : ""}</span>
         </div>
         <div className="inv-toolbar-right">
+          {preview && (
+            editing ? (
+              <button type="button" className="ghost sm" onClick={() => setEditing(false)}>Done editing</button>
+            ) : (
+              <button type="button" className="btn sm" onClick={() => setEditing(true)}>Edit</button>
+            )
+          )}
           <button type="button" className="ghost sm" onClick={() => window.print()}>Print / PDF</button>
           {!fullPage && (
             <a className="ghost sm" href={`/dashboard/invoices/${inv.id}`} target="_blank" rel="noopener noreferrer">Open full page ↗</a>
@@ -176,7 +188,7 @@ export default function InvoiceEditor({
         </div>
       </div>
 
-      <div className="inv-sheet printable">
+      <div className={`inv-sheet printable${editing ? "" : " inv-sheet-preview"}`}>
         {/* Header */}
         <div className="inv-head">
           <div className="inv-firm">

@@ -1433,7 +1433,7 @@ section.block.alt {
   overflow: hidden;
 }
 .hdr-alerts {
-  width: 380px;
+  width: min(560px, 92vw);
 }
 .hdr-menu-head {
   display: flex;
@@ -1485,12 +1485,11 @@ section.block.alt {
 }
 .hdr-alert-title {
   min-width: 0;
-  font-size: 0.94rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 500;
   color: var(--dash-fg);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .hdr-alert-high {
   align-self: flex-start;
@@ -2135,6 +2134,22 @@ section.block.alt {
    invoice sits at the very top of the pane. */
 .inv-preview .inv-toolbar { padding-top: 0.45rem; padding-bottom: 0.45rem; }
 .inv-preview .inv-sheet { padding-top: 1.1rem; }
+
+/* Read-only PDF view: inputs render as plain text, no chrome, no interaction */
+.inv-sheet-preview input,
+.inv-sheet-preview select,
+.inv-sheet-preview textarea {
+  border-color: transparent !important;
+  background: transparent !important;
+  pointer-events: none;
+  resize: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.inv-sheet-preview input[type="date"]::-webkit-calendar-picker-indicator { display: none; }
+.inv-sheet-preview .inv-items-actions,
+.inv-sheet-preview .ii-x { display: none; }
+.inv-sheet-preview .inv-tax-input { width: 2.5rem; }
 .inv-list {
   display: flex;
   flex-direction: column;
@@ -3165,6 +3180,11 @@ section.block.alt {
   display: flex;
   align-items: stretch;
   margin-bottom: 1.5rem;
+}
+/* Right-handle mode: panes keep a fixed basis and any spare row width sits as
+   empty margin on the right, so the edge handle resizes the right pane only. */
+.rz-cols-rhandle {
+  justify-content: flex-start;
 }
 .rz-pane {
   min-width: 0;
@@ -5632,7 +5652,7 @@ a.activity-row:hover .act-desc {
 }
 .task-pop {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   left: 50%;
   z-index: 40;
   min-width: 220px;
@@ -6056,7 +6076,7 @@ a.activity-row:hover .act-desc {
 .ts-summary-head {
   display: flex;
   justify-content: flex-end;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.6rem;
   margin-bottom: 0.3rem;
 }
@@ -6067,9 +6087,9 @@ a.activity-row:hover .act-desc {
 }
 .ts-recents {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
   min-width: 0;
 }
 .ts-recents-label {

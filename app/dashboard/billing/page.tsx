@@ -237,26 +237,18 @@ function BillingInner() {
         <>
           <div className="page-head">
             <h1 className="page-title">Invoices</h1>
-          </div>
-
-          <div className="inv-filter-row">
-            <button
-              type="button"
-              className={`inv-chip${invFilter === "all" ? " on" : ""}`}
-              onClick={() => setInvFilter("all")}
-            >
-              All <span className="inv-chip-count">{invoices.length}</span>
-            </button>
-            {INVOICE_BUCKETS.map((b) => (
-              <button
-                key={b.key}
-                type="button"
-                className={`inv-chip inv-chip-${b.key}${invFilter === b.key ? " on" : ""}`}
-                onClick={() => setInvFilter(b.key)}
+            <div className="head-controls">
+              <select
+                className="inline-select inv-filter-select"
+                value={invFilter}
+                onChange={(e) => setInvFilter(e.target.value as InvoiceBucket | "all")}
               >
-                {b.label} <span className="inv-chip-count">{bucketCounts[b.key]}</span>
-              </button>
-            ))}
+                <option value="all">All invoices ({invoices.length})</option>
+                {INVOICE_BUCKETS.map((b) => (
+                  <option key={b.key} value={b.key}>{b.label} ({bucketCounts[b.key]})</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {loading ? (
@@ -302,7 +294,7 @@ function BillingInner() {
               </div>
               <div className="inv-preview">
                 {selInvoiceId ? (
-                  <InvoiceEditor key={selInvoiceId} invoiceId={selInvoiceId} />
+                  <InvoiceEditor key={selInvoiceId} invoiceId={selInvoiceId} preview />
                 ) : (
                   <p className="muted-line" style={{ padding: "2rem" }}>Select an invoice to preview.</p>
                 )}
