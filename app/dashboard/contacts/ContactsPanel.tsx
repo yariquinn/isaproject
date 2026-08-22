@@ -8,11 +8,10 @@ import { useConfirm } from "../ConfirmProvider";
 import { InlineText } from "../Inline";
 import ImportExport from "../ImportExport";
 
-const EMPTY = { name: "", role: "outside_counsel", organization: "", email: "", phone: "", address: "", notes: "" };
+const EMPTY = { name: "", role: "other", organization: "", email: "", phone: "", address: "", notes: "" };
 
 // Optional columns, toggled by the + at the end of the header.
 const COL_DEFS = [
-  { key: "role", label: "Type" },
   { key: "organization", label: "Firm" },
   { key: "email", label: "Email" },
   { key: "phone", label: "Phone" },
@@ -42,7 +41,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
   const filterRef = useRef<HTMLDivElement>(null);
 
   const [cols, setCols] = useState<Record<ColKey, boolean>>({
-    role: false, organization: true, email: true, phone: true, address: true, ratecard: true,
+    organization: true, email: true, phone: true, address: true, ratecard: true,
   });
   const [colMenuOpen, setColMenuOpen] = useState(false);
   const colMenuRef = useRef<HTMLTableCellElement>(null);
@@ -157,14 +156,12 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
     const q = query.trim().toLowerCase();
     const filtered = contacts.filter((c) => {
       if (view === "archived" ? !c.archived : view === "open" ? c.archived : false) return false;
-      if (roleFilter !== "all" && c.role !== roleFilter) return false;
       if (q === "") return true;
       return (
         c.name.toLowerCase().includes(q) ||
         (c.organization || "").toLowerCase().includes(q) ||
         (c.email || "").toLowerCase().includes(q) ||
-        (c.address || "").toLowerCase().includes(q) ||
-        contactRoleLabel(c.role).toLowerCase().includes(q)
+        (c.address || "").toLowerCase().includes(q)
       );
     });
     if (!csort) return filtered;
@@ -173,7 +170,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
       const bv = (csort.key === "name" ? b.name : b.organization || "").toLowerCase();
       return av.localeCompare(bv) * csort.dir;
     });
-  }, [contacts, query, roleFilter, csort, view]);
+  }, [contacts, query, csort, view]);
 
   return (
     <>
@@ -183,36 +180,10 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
         </div>
         <div className="head-controls">
           {headTabs}
-          <div className="filter-wrap" ref={filterRef}>
-            <button
-              type="button"
-              className={`icon-btn${roleFilter !== "all" ? " filter-on" : ""}`}
-              onClick={() => setFilterOpen((o) => !o)}
-              title="Filter"
-              aria-label="Filter"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-              </svg>
-            </button>
-            {filterOpen && (
-              <div className="filter-menu">
-                <div className="filter-menu-group">
-                  <div className="filter-menu-label">Type</div>
-                  <button type="button" className={`filter-menu-item${roleFilter === "all" ? " on" : ""}`} onClick={() => { setRoleFilter("all"); setFilterOpen(false); }}>All types</button>
-                  {CONTACT_ROLES.map((r) => (
-                    <button key={r.value} type="button" className={`filter-menu-item${roleFilter === r.value ? " on" : ""}`} onClick={() => { setRoleFilter(r.value); setFilterOpen(false); }}>
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
           <ImportExport
             filename="contacts"
-            headers={["Name", "Type", "Firm", "Email", "Phone", "Business Address"]}
-            rows={rows.map((c) => [c.name, contactRoleLabel(c.role), c.organization, c.email, c.phone, c.address])}
+            headers={["Name", "Firm", "Email", "Phone", "Business Address"]}
+            rows={rows.map((c) => [c.name, c.organization, c.email, c.phone, c.address])}
             onImport={importContacts}
           />
           <button type="button" className="btn icon-plus-btn" onClick={() => setAddOpen(true)} title="Add contact" aria-label="Add contact">+</button>
@@ -249,13 +220,6 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
       {selected.size > 0 && (
         <div className="bulk-bar">
           <span className="bulk-count">{selected.size} selected</span>
-          <label>
-            Type
-            <select defaultValue="" onChange={(e) => { if (e.target.value) bulkPatch({ role: e.target.value }); e.target.value = ""; }}>
-              <option value="">Change…</option>
-              {CONTACT_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-          </label>
           <button type="button" className="ghost sm" onClick={() => bulkPatch({ archived: true })}>Archive</button>
           <button type="button" className="ghost sm" onClick={() => bulkPatch({ archived: false })}>Unarchive</button>
           <button type="button" className="ghost sm bulk-danger" onClick={bulkDelete}>Delete</button>
@@ -272,7 +236,6 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
               <col style={{ width: "38px" }} />
               {cols.organization && <col style={{ width: "18%" }} />}
               <col style={{ width: "19%" }} />
-              {cols.role && <col style={{ width: "18%" }} />}
               {cols.email && <col style={{ width: "20%" }} />}
               {cols.phone && <col style={{ width: "12%" }} />}
               {cols.address && <col style={{ width: "17%" }} />}
@@ -291,7 +254,6 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
                 </th>
                 {cols.organization && <th className="sortable" onClick={() => toggleCsort("organization")}>Firm {csortArrow("organization")}</th>}
                 <th className="sortable" onClick={() => toggleCsort("name")}>Contact {csortArrow("name")}</th>
-                {cols.role && <th>Type</th>}
                 {cols.email && <th>Email</th>}
                 {cols.phone && <th>Phone</th>}
                 {cols.address && <th>Business Address</th>}
@@ -315,7 +277,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={3 + Number(cols.role) + Number(cols.organization) + Number(cols.email) + Number(cols.phone) + Number(cols.address) + Number(cols.ratecard)} className="muted-line" style={{ padding: "1.2rem 1.1rem" }}>
+                  <td colSpan={3 + Number(cols.organization) + Number(cols.email) + Number(cols.phone) + Number(cols.address) + Number(cols.ratecard)} className="muted-line" style={{ padding: "1.2rem 1.1rem" }}>
                     No contacts yet — click + to add outside counsel, co-counsel, adverse party lawyers, experts, and more.
                   </td>
                 </tr>
@@ -335,13 +297,6 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
                       <InlineText value={c.name} onSave={(v) => { if (v) patch(c.id, { name: v }); }} />
                     </span>
                   </td>
-                  {cols.role && (
-                  <td>
-                    <select className="ct-role-select" value={c.role} onChange={(e) => patch(c.id, { role: e.target.value })}>
-                      {CONTACT_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-                    </select>
-                  </td>
-                  )}
                   {cols.email && (
                   <td>
                     <InlineText value={c.email} onSave={(v) => patch(c.id, { email: v || null })} placeholder="—" />
@@ -390,12 +345,6 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
             <label>
               Name
               <input autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Jane Roe" />
-            </label>
-            <label>
-              Type
-              <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                {CONTACT_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
             </label>
             <label>
               Firm

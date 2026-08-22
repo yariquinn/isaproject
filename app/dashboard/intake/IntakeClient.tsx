@@ -132,7 +132,7 @@ export default function IntakeClient() {
             <span><i style={{ background: "#3fa373" }} /> Converted</span>
             <span><i style={{ background: "#c0392b" }} /> Did not hire</span>
           </div>
-          <svg viewBox={`0 0 ${W} ${H}`} className="lead-chart" role="img" aria-label="Leads over time">
+          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="lead-chart" role="img" aria-label="Leads over time">
             {/* horizontal gridlines + Y-axis numbers */}
             {yTicks.map((v) => (
               <g key={v}>

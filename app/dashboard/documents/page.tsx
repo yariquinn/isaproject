@@ -8,6 +8,15 @@ const PLACEHOLDER_DOCS = [
   { name: "Crescent Center — Title Report.pdf", matter: "Crescent Center Purchase", updated: "1w ago" },
 ];
 
+const FIRM_DOCS = [
+  { name: "Engagement / Retainer Agreement Template.docx", category: "Templates", updated: "1w ago" },
+  { name: "Employee Handbook.pdf", category: "HR / Policy", updated: "3w ago" },
+  { name: "Firm Letterhead.docx", category: "Branding", updated: "1mo ago" },
+  { name: "Trust Account (IOLTA) Reconciliation.xlsx", category: "Accounting", updated: "2d ago" },
+  { name: "Conflict Check Policy.pdf", category: "Compliance", updated: "2mo ago" },
+  { name: "Fee Schedule 2026.pdf", category: "Billing", updated: "5d ago" },
+];
+
 const TEMPLATES = [
   { name: "Residential Purchase Agreement", area: "Real Estate" },
   { name: "Operating Agreement (LLC)", area: "Business Law" },
@@ -45,7 +54,7 @@ function initials(name: string) {
 }
 
 export default function DocumentsPage() {
-  const [tab, setTab] = useState<"documents" | "templates" | "esign">("documents");
+  const [tab, setTab] = useState<"documents" | "firm" | "templates" | "esign">("documents");
   const [esTab, setEsTab] = useState<"all" | "awaiting" | "signed">("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
 
@@ -81,7 +90,14 @@ export default function DocumentsPage() {
           onClick={() => setTab("documents")}
           type="button"
         >
-          Documents
+          Client Documents
+        </button>
+        <button
+          className={tab === "firm" ? "active" : undefined}
+          onClick={() => setTab("firm")}
+          type="button"
+        >
+          Firm Documents
         </button>
         <button
           className={tab === "templates" ? "active" : undefined}
@@ -150,6 +166,30 @@ export default function DocumentsPage() {
           </table>
           <p className="muted-line" style={{ marginTop: "1rem" }}>
             Document storage is a placeholder for this mockup.
+          </p>
+        </div>
+      ) : tab === "firm" ? (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Document</th>
+                <th>Category</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {FIRM_DOCS.map((d) => (
+                <tr key={d.name}>
+                  <td className="strong-cell">{d.name}</td>
+                  <td>{d.category}</td>
+                  <td>{d.updated}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="muted-line" style={{ marginTop: "1rem" }}>
+            Firm-wide documents (policies, templates, accounting) — placeholder for this mockup.
           </p>
         </div>
       ) : (
