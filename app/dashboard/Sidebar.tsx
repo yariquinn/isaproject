@@ -30,6 +30,7 @@ const SECTIONS: Section[] = [
       { href: "/dashboard/reports", label: "Reports" },
       { href: "/dashboard/billing?tab=invoices", label: "Invoices" },
       { href: "/dashboard/billing?tab=time", label: "Time Entries" },
+      { href: "/dashboard/expenses", label: "Expenses" },
       { href: "/dashboard/intake", label: "Intake" },
     ],
   },
@@ -50,6 +51,7 @@ const DESTINATIONS: { href: string; label: string }[] = [
   { href: "/dashboard/todo", label: "Tasks" },
   { href: "/dashboard/reports", label: "Reports" },
   { href: "/dashboard/billing", label: "Billing" },
+  { href: "/dashboard/expenses", label: "Expenses" },
   { href: "/dashboard/intake", label: "Intake" },
   { href: "/dashboard/deadlines", label: "Deadlines" },
   { href: "/dashboard/documents", label: "Documents" },
@@ -225,7 +227,7 @@ function SidebarInner({ userName }: { userName: string }) {
                 {open && (
                   <>
                     {s.items
-                      .filter((it) => canManageBilling || it.href !== "/dashboard/billing?tab=invoices")
+                      .filter((it) => canManageBilling || (it.href !== "/dashboard/billing?tab=invoices" && it.href !== "/dashboard/expenses"))
                       .map(renderItem)}
                     {customItems.map((c) => (
                       <div className="nav-item" key={c.id}>

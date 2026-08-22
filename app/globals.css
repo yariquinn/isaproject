@@ -9684,3 +9684,48 @@ a.activity-row:hover .act-desc {
 .tb-lv-sortable:hover {
   color: var(--dash-fg);
 }
+
+/* ---- Reports: horizontal bar chart (Payments by Practice Area) ---- */
+.bar-report { display: flex; flex-direction: column; gap: 1.25rem; }
+.bar-report-total { display: flex; flex-direction: column; gap: 0.15rem; }
+.bar-report-total-num { font-size: 1.6rem; font-weight: 700; color: var(--dash-fg); font-variant-numeric: tabular-nums; }
+.bar-report-total-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dash-muted); }
+.bar-rows { display: flex; flex-direction: column; gap: 0.85rem; }
+.bar-row { display: flex; flex-direction: column; gap: 0.35rem; }
+.bar-row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.bar-row-name { font-size: 0.9rem; font-weight: 600; color: var(--dash-fg); }
+.bar-row-val { font-size: 0.9rem; font-weight: 700; color: var(--dash-fg); font-variant-numeric: tabular-nums; }
+.bar-row-pct { font-size: 0.78rem; font-weight: 600; color: var(--dash-muted); margin-left: 0.5rem; }
+.bar-track { height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--dash-fg) 7%, transparent); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 999px; min-width: 3px; transition: width 0.3s ease; }
+
+/* ---- Reports: searchable client picker ---- */
+.rp-search { position: relative; }
+.rp-menu {
+  position: absolute;
+  z-index: 6;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+.rp-item {
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  background: transparent;
+  color: var(--dash-fg);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.rp-item:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.rp-empty { padding: 0.5rem 0.55rem; color: var(--dash-muted); font-size: 0.85rem; }

@@ -38,6 +38,8 @@ export default function ReportsClient() {
   const [matters, setMatters] = useState<Matter[]>([]);
   const [loading, setLoading] = useState(true);
   const [stmtClient, setStmtClient] = useState<string>("");
+  const [stmtQuery, setStmtQuery] = useState("");
+  const [stmtOpen, setStmtOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -117,15 +119,10 @@ export default function ReportsClient() {
   }, [invoices, matters]);
   const areaTotal = byArea.reduce((s, r) => s + r.amount, 0);
 
-  // Build donut stroke-dasharray segments (circumference-based).
-  const R = 60, C = 2 * Math.PI * 60;
-  let acc = 0;
-  const segments = byArea.map((r) => {
-    const frac = areaTotal > 0 ? r.amount / areaTotal : 0;
-    const seg = { ...r, dash: frac * C, offset: -acc * C };
-    acc += frac;
-    return seg;
-  });
+  const areaMax = Math.max(1, ...byArea.map((r) => r.amount));
+
+  // Searchable client list for the Statement of Account.
+  const stmtClientName = clients.find((c) => c.id === stmtClient)?.name ?? "";
 
   if (loading) return <p className="muted-line">Loading…</p>;
 
@@ -171,10 +168,29 @@ export default function ReportsClient() {
               <div className="filter-search-row" style={{ marginBottom: "0.4rem" }}>
                 <label className="report-client-pick">
                   Client
-                  <select value={stmtClient} onChange={(e) => { setStmtClient(e.target.value); setRan(false); }}>
-                    <option value="">Select a client…</option>
-                    {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <div className="rp-search">
+                    <input
+                      type="search"
+                      placeholder="Search client…"
+                      value={stmtOpen ? stmtQuery : stmtClientName}
+                      onChange={(e) => { setStmtQuery(e.target.value); setStmtOpen(true); }}
+                      onFocus={() => { setStmtQuery(""); setStmtOpen(true); }}
+                      onBlur={() => setTimeout(() => setStmtOpen(false), 150)}
+                    />
+                    {stmtOpen && (() => {
+                      const hits = clients.filter((c) => c.name.toLowerCase().includes(stmtQuery.trim().toLowerCase())).slice(0, 12);
+                      return (
+                        <div className="rp-menu">
+                          {hits.map((c) => (
+                            <button key={c.id} type="button" className="rp-item" onMouseDown={() => { setStmtClient(c.id); setStmtOpen(false); setRan(false); }}>
+                              {c.name}
+                            </button>
+                          ))}
+                          {hits.length === 0 && <span className="rp-empty">No matches</span>}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </label>
               </div>
             )}
@@ -288,31 +304,24 @@ export default function ReportsClient() {
                 {areaTotal === 0 ? (
                   <p className="muted-line">No paid invoices yet — collected revenue will break down here by practice area.</p>
                 ) : (
-                  <div className="pie-report">
-                    <svg viewBox="0 0 160 160" className="pie-svg" role="img" aria-label="Payments by practice area">
-                      <g transform="rotate(-90 80 80)">
-                        {segments.map((s) => (
-                          <circle
-                            key={s.area}
-                            cx="80" cy="80" r={R}
-                            fill="none"
-                            stroke={s.color}
-                            strokeWidth="28"
-                            strokeDasharray={`${s.dash} ${C - s.dash}`}
-                            strokeDashoffset={s.offset}
-                          />
-                        ))}
-                      </g>
-                      <text x="80" y="76" textAnchor="middle" className="pie-center-num">{money(areaTotal)}</text>
-                      <text x="80" y="92" textAnchor="middle" className="pie-center-label">Collected</text>
-                    </svg>
-                    <div className="pie-legend">
+                  <div className="bar-report">
+                    <div className="bar-report-total">
+                      <span className="bar-report-total-num">{money(areaTotal)}</span>
+                      <span className="bar-report-total-label">Total collected</span>
+                    </div>
+                    <div className="bar-rows">
                       {byArea.map((r) => (
-                        <div className="pie-legend-row" key={r.area}>
-                          <span className="pie-swatch" style={{ background: r.color }} />
-                          <span className="pie-legend-name">{r.area}</span>
-                          <span className="pie-legend-val">{money(r.amount)}</span>
-                          <span className="pie-legend-pct">{areaTotal > 0 ? Math.round((r.amount / areaTotal) * 100) : 0}%</span>
+                        <div className="bar-row" key={r.area}>
+                          <div className="bar-row-head">
+                            <span className="bar-row-name">{r.area}</span>
+                            <span className="bar-row-val">
+                              {money(r.amount)}
+                              <span className="bar-row-pct">{areaTotal > 0 ? Math.round((r.amount / areaTotal) * 100) : 0}%</span>
+                            </span>
+                          </div>
+                          <div className="bar-track">
+                            <div className="bar-fill" style={{ width: `${(r.amount / areaMax) * 100}%`, background: r.color }} />
+                          </div>
                         </div>
                       ))}
                     </div>
