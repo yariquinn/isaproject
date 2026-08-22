@@ -6264,10 +6264,18 @@ a.activity-row:hover .act-desc {
 }
 .ts-recents {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.4rem;
   min-width: 0;
+  /* Keep to a single line — chips that don't fit are clipped, not wrapped. */
+  overflow: hidden;
+}
+.ts-recents-label {
+  flex: 0 0 auto;
+}
+.ts-recent-chip {
+  flex: 0 0 auto;
 }
 .ts-recents-label {
   font-size: 0.62rem;
@@ -9499,4 +9507,35 @@ a.activity-row:hover .act-desc {
 .matter-nav-btn:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* ---- Add-contact: "serving as" role picker ---- */
+.mc-rolepick {
+  text-align: center;
+  padding: 0.4rem 0.2rem 0.2rem;
+}
+.mc-rolepick-q {
+  margin: 0 0 0.9rem;
+  color: var(--dash-fg);
+  font-size: 0.95rem;
+}
+.mc-role-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.mc-role-btn {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: var(--dash-bg);
+  color: var(--dash-fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.mc-role-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }

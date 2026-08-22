@@ -151,7 +151,9 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [docQuery, setDocQuery] = useState("");
-  const [matterContacts, setMatterContacts] = useState<{ linkId: string; contact: Contact }[]>([]);
+  const [matterContacts, setMatterContacts] = useState<{ linkId: string; role: string; contact: Contact }[]>([]);
+  // When picking an existing contact, first ask what role it serves on this matter.
+  const [pendingContact, setPendingContact] = useState<Contact | null>(null);
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [previewInvoiceId, setPreviewInvoiceId] = useState<string | null>(null);
   // Prev/Next matter follow the order the Matters overview last rendered
@@ -191,17 +193,18 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
   async function loadMatterContacts() {
     const { data } = await supabase
       .from("matter_contacts")
-      .select("id, contacts(*)")
+      .select("id, role, contacts(*)")
       .eq("matter_id", params.id);
-    const rowsRaw = (data as unknown as { id: string; contacts: Contact | Contact[] | null }[]) ?? [];
+    const rowsRaw = (data as unknown as { id: string; role: string | null; contacts: Contact | Contact[] | null }[]) ?? [];
     const list = rowsRaw
-      .map((r) => ({ linkId: r.id, contact: (Array.isArray(r.contacts) ? r.contacts[0] : r.contacts) as Contact | undefined }))
-      .filter((r): r is { linkId: string; contact: Contact } => !!r.contact);
+      .map((r) => ({ linkId: r.id, role: r.role || "other", contact: (Array.isArray(r.contacts) ? r.contacts[0] : r.contacts) as Contact | undefined }))
+      .filter((r): r is { linkId: string; role: string; contact: Contact } => !!r.contact);
     setMatterContacts(list);
   }
-  async function linkContact(contactId: string) {
-    await supabase.from("matter_contacts").insert({ matter_id: params.id, contact_id: contactId });
+  async function linkContact(contactId: string, role: string) {
+    await supabase.from("matter_contacts").insert({ matter_id: params.id, contact_id: contactId, role });
     setAddContactOpen(false);
+    setPendingContact(null);
     setContactSearch("");
     loadMatterContacts();
   }
@@ -217,7 +220,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
     const nc = data as Contact | null;
     if (nc) {
       setAllContacts((prev) => [...prev, nc]);
-      await supabase.from("matter_contacts").insert({ matter_id: params.id, contact_id: nc.id });
+      await supabase.from("matter_contacts").insert({ matter_id: params.id, contact_id: nc.id, role: acForm.role });
     }
     setAcForm({ name: "", role: CONTACT_ROLES[0].value, organization: "", email: "", phone: "" });
     setAcTab("existing");
@@ -1368,7 +1371,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
         {bodyTab === "contacts" && (
           <>
             <div className="mc-head" style={{ justifyContent: "flex-end" }}>
-              <button type="button" className="ghost sm" onClick={() => setAddContactOpen(true)}>+ Add contact</button>
+              <button type="button" className="ghost sm" onClick={() => { setPendingContact(null); setAcTab("existing"); setAddContactOpen(true); }}>+ Add contact</button>
             </div>
             <div className="mc-cols">
               {/* Left: the client's own people */}
@@ -1414,10 +1417,10 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
               <div className="mc-col">
                 <div className="mc-col-label">Outside parties</div>
                 <ul className="contact-cards">
-                  {matterContacts.map(({ linkId, contact }) => (
+                  {matterContacts.map(({ linkId, role, contact }) => (
                     <li className="contact-card" key={linkId}>
                       <div className="cc-role">
-                        {contactRoleLabel(contact.role)}
+                        {contactRoleLabel(role)}
                         <button type="button" className="mc-unlink" title="Remove from matter" aria-label="Remove from matter" onClick={() => unlinkContact(linkId)}>✕</button>
                       </div>
                       <div className="cc-name-lg">
@@ -1621,14 +1624,27 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
       )}
 
       {addContactOpen && (
-        <div className="modal-backdrop" onClick={() => setAddContactOpen(false)}>
+        <div className="modal-backdrop" onClick={() => { setAddContactOpen(false); setPendingContact(null); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Add a contact to this matter</h3>
-            <div className="doc-tabs" style={{ marginBottom: "0.6rem" }}>
-              <button type="button" className={acTab === "existing" ? "active" : undefined} onClick={() => setAcTab("existing")}>Existing contact</button>
-              <button type="button" className={acTab === "new" ? "active" : undefined} onClick={() => setAcTab("new")}>New contact</button>
+            <h3 style={{ textAlign: "center" }}>Add a contact to this matter</h3>
+            <div className="doc-tabs" style={{ marginBottom: "0.6rem", justifyContent: "center" }}>
+              <button type="button" className={acTab === "existing" ? "active" : undefined} onClick={() => { setAcTab("existing"); setPendingContact(null); }}>Existing contact</button>
+              <button type="button" className={acTab === "new" ? "active" : undefined} onClick={() => { setAcTab("new"); setPendingContact(null); }}>New contact</button>
             </div>
             {acTab === "existing" ? (
+              pendingContact ? (
+              <div className="mc-rolepick">
+                <p className="mc-rolepick-q">What is <strong>{pendingContact.name}</strong> serving as on this matter?</p>
+                <div className="mc-role-options">
+                  {CONTACT_ROLES.map((r) => (
+                    <button key={r.value} type="button" className="mc-role-btn" onClick={() => linkContact(pendingContact.id, r.value)}>
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" className="ghost sm" style={{ marginTop: "0.7rem" }} onClick={() => setPendingContact(null)}>← Back to contacts</button>
+              </div>
+              ) : (
               <>
                 <input
                   className="activity-search"
@@ -1644,13 +1660,13 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                     .filter((c) => !matterContacts.some((mc) => mc.contact.id === c.id))
                     .filter((c) => {
                       const q = contactSearch.trim().toLowerCase();
-                      return q === "" || c.name.toLowerCase().includes(q) || (c.organization || "").toLowerCase().includes(q) || contactRoleLabel(c.role).toLowerCase().includes(q);
+                      return q === "" || c.name.toLowerCase().includes(q) || (c.organization || "").toLowerCase().includes(q);
                     })
                     .slice(0, 20)
                     .map((c) => (
-                      <button key={c.id} type="button" className="mc-pickitem" onClick={() => linkContact(c.id)}>
+                      <button key={c.id} type="button" className="mc-pickitem" onClick={() => setPendingContact(c)}>
                         <span className="mc-pickname">{c.name}</span>
-                        <span className="mc-pickrole">{contactRoleLabel(c.role)}{c.organization ? ` · ${c.organization}` : ""}</span>
+                        <span className="mc-pickrole">{c.organization || "—"}</span>
                       </button>
                     ))}
                 </div>
@@ -1658,6 +1674,7 @@ export default function MatterDetail({ params }: { params: { id: string } }) {
                   Manage the full contacts list on the <Link href="/dashboard/contacts">Contacts</Link> page.
                 </p>
               </>
+              )
             ) : (
               <>
                 <label>Name
