@@ -9752,3 +9752,14 @@ a.activity-row:hover .act-desc {
 /* ---- Tasks list toolbar: chips + search live in the top-right ---- */
 .tb-toolbar-right { flex-wrap: wrap; }
 .tb-list-search { max-width: 190px; }
+
+/* ---- Time Entries: invoiced (locked) rows ---- */
+.te-invoiced {
+  background: color-mix(in srgb, var(--dash-fg) 3%, transparent);
+}
+.te-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dash-muted);
+}

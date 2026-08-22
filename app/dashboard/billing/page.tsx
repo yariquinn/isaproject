@@ -127,6 +127,12 @@ function BillingInner() {
   const [timeMatterOpen, setTimeMatterOpen] = useState(false);
   const [timeUser, setTimeUser] = useState<string>("all");
   const [timeQuery, setTimeQuery] = useState("");
+  const [timeInvoiced, setTimeInvoiced] = useState<"all" | "invoiced" | "uninvoiced">("all");
+  const [timeSort, setTimeSort] = useState<{ key: "date" | "invoiced"; dir: 1 | -1 } | null>(null);
+  const toggleTimeSort = (key: "date" | "invoiced") =>
+    setTimeSort((s) => (s?.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
+  const timeSortArrow = (key: "date" | "invoiced") =>
+    timeSort?.key !== key ? "↕" : timeSort.dir === 1 ? "↑" : "↓";
   const timeUsers = useMemo(
     () => Array.from(new Set(entries.map((e) => e.lawyer).filter(Boolean))).sort() as string[],
     [entries],
@@ -138,9 +144,11 @@ function BillingInner() {
     else if (timePeriod === "week") cutoff.setDate(now.getDate() - 7);
     else if (timePeriod === "month") cutoff.setMonth(now.getMonth() - 1);
     const q = timeQuery.trim().toLowerCase();
-    return entries.filter((e) => {
+    const list = entries.filter((e) => {
       if (timeMatter !== "all" && e.matter_id !== timeMatter) return false;
       if (timeUser !== "all" && e.lawyer !== timeUser) return false;
+      if (timeInvoiced === "invoiced" && !e.invoiced) return false;
+      if (timeInvoiced === "uninvoiced" && e.invoiced) return false;
       if (timePeriod !== "all" && new Date(e.logged_at) < cutoff) return false;
       if (q) {
         const hay = [e.note, e.activity, e.lawyer, matters.find((m) => m.id === e.matter_id)?.name]
@@ -149,8 +157,17 @@ function BillingInner() {
       }
       return true;
     });
+    if (timeSort) {
+      list.sort((a, b) => {
+        let cmp = 0;
+        if (timeSort.key === "date") cmp = new Date(a.logged_at).getTime() - new Date(b.logged_at).getTime();
+        else if (timeSort.key === "invoiced") cmp = (a.invoiced ? 1 : 0) - (b.invoiced ? 1 : 0);
+        return cmp * timeSort.dir;
+      });
+    }
+    return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, matters, timePeriod, timeMatter, timeUser, timeQuery]);
+  }, [entries, matters, timePeriod, timeMatter, timeUser, timeQuery, timeInvoiced, timeSort]);
   const totalSeconds = useMemo(
     () => shownEntries.reduce((s, e) => s + e.duration_seconds, 0),
     [shownEntries],
@@ -341,11 +358,13 @@ function BillingInner() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  const allEntriesSelected = shownEntries.length > 0 && shownEntries.every((e) => selEntries.has(e.id));
+  // Invoiced entries are locked and never selectable for bulk actions.
+  const selectableEntries = shownEntries.filter((e) => !e.invoiced);
+  const allEntriesSelected = selectableEntries.length > 0 && selectableEntries.every((e) => selEntries.has(e.id));
   const toggleAllEntries = () =>
     setSelEntries(() => {
       if (allEntriesSelected) return new Set();
-      return new Set(shownEntries.map((e) => e.id));
+      return new Set(selectableEntries.map((e) => e.id));
     });
   async function bulkEntries(patch: Record<string, unknown>) {
     const ids = [...selEntries];
@@ -379,6 +398,8 @@ function BillingInner() {
     load();
   }
   async function deleteEntry(id: string) {
+    // Invoiced entries are locked until removed from their invoice.
+    if (entries.find((e) => e.id === id)?.invoiced) return;
     if (!(await confirm({ title: "Delete this time entry?", message: "This cannot be undone." }))) return;
     const row = entries.find((e) => e.id === id);
     await supabase.from("time_entries").delete().eq("id", id);
@@ -624,6 +645,11 @@ function BillingInner() {
                 <option value="all">All users</option>
                 {timeUsers.map((u) => <option key={u} value={u}>{u}</option>)}
               </select>
+              <select className="inline-select" value={timeInvoiced} onChange={(e) => setTimeInvoiced(e.target.value as "all" | "invoiced" | "uninvoiced")}>
+                <option value="all">All entries</option>
+                <option value="uninvoiced">Un-invoiced</option>
+                <option value="invoiced">Invoiced</option>
+              </select>
               <div className="ts-matter te-matter-pick">
                 <input
                   value={timeMatterQuery}
@@ -670,20 +696,28 @@ function BillingInner() {
                     <th className="check-col">
                       <input type="checkbox" checked={allEntriesSelected} onChange={toggleAllEntries} aria-label="Select all" />
                     </th>
-                    <th>Date</th>
+                    <th className="sortable" onClick={() => toggleTimeSort("date")}>Date <span className="sort-arrow">{timeSortArrow("date")}</span></th>
                     <th>Matter</th>
                     <th>Activity</th>
                     <th>Description</th>
                     <th style={{ textAlign: "center" }}>User</th>
                     <th>Duration</th>
+                    <th className="sortable" onClick={() => toggleTimeSort("invoiced")}>Status <span className="sort-arrow">{timeSortArrow("invoiced")}</span></th>
                     <th aria-label="Delete"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {shownEntries.map((e) => (
-                    <tr key={e.id} className={selEntries.has(e.id) ? "row-selected" : undefined}>
+                    <tr key={e.id} className={`${selEntries.has(e.id) ? "row-selected" : ""}${e.invoiced ? " te-invoiced" : ""}`.trim() || undefined}>
                       <td className="check-col">
-                        <input type="checkbox" checked={selEntries.has(e.id)} onChange={() => toggleSelEntry(e.id)} aria-label="Select entry" />
+                        <input
+                          type="checkbox"
+                          checked={selEntries.has(e.id)}
+                          onChange={() => toggleSelEntry(e.id)}
+                          disabled={e.invoiced}
+                          title={e.invoiced ? "Invoiced entries are locked — remove from the invoice first" : undefined}
+                          aria-label="Select entry"
+                        />
                       </td>
                       <td>{new Date(e.logged_at).toLocaleDateString()}</td>
                       <td className="strong-cell">
@@ -710,8 +744,21 @@ function BillingInner() {
                         </span>
                       </td>
                       <td>{fmtHm(e.duration_seconds)}</td>
+                      <td>
+                        {e.invoiced
+                          ? <span className="pill inv-paid">Invoiced</span>
+                          : <span className="pill inv-created">Un-invoiced</span>}
+                      </td>
                       <td className="ct-actions">
-                        <button type="button" className="ct-del" title="Delete entry" aria-label="Delete entry" onClick={() => deleteEntry(e.id)}>✕</button>
+                        {e.invoiced ? (
+                          <span className="te-lock" title="Invoiced — remove from the invoice before editing or deleting" aria-label="Locked (invoiced)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          </span>
+                        ) : (
+                          <button type="button" className="ct-del" title="Delete entry" aria-label="Delete entry" onClick={() => deleteEntry(e.id)}>✕</button>
+                        )}
                       </td>
                     </tr>
                   ))}
