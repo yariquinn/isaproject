@@ -9574,3 +9574,23 @@ a.activity-row:hover .act-desc {
   background: color-mix(in srgb, #c0392b 15%, transparent);
   color: #c0392b;
 }
+
+/* ---- Matters table: pending task titles ---- */
+.mt-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.mt-task-line {
+  font-size: 0.8rem;
+  color: var(--dash-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.mt-task-more {
+  font-size: 0.72rem;
+  color: var(--dash-muted);
+}

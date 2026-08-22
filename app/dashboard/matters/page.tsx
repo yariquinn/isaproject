@@ -487,7 +487,7 @@ export default function MattersPage() {
               <col style={{ width: "22%" }} />
               {cols.client && <col style={{ width: "16%" }} />}
               {cols.practice && <col style={{ width: "14%" }} />}
-              {cols.tasks && <col style={{ width: "8%" }} />}
+              {cols.tasks && <col style={{ width: "18%" }} />}
               {cols.rate && <col style={{ width: "11%" }} />}
               {cols.status && <col style={{ width: "15%" }} />}
               <col style={{ width: "44px" }} />
@@ -587,10 +587,15 @@ export default function MattersPage() {
                   )}
                   {cols.tasks && (
                   <td>
-                    {pendingTasks[m.id] ? (
-                      <span className="task-badge" title={`${pendingTasks[m.id]} pending task${pendingTasks[m.id] === 1 ? "" : "s"}`}>
-                        {pendingTasks[m.id]} task{pendingTasks[m.id] === 1 ? "" : "s"}
-                      </span>
+                    {matterTasks[m.id]?.length ? (
+                      <div className="mt-tasks" title={matterTasks[m.id].map((t) => t.title).join("\n")}>
+                        {matterTasks[m.id].slice(0, 2).map((t, i) => (
+                          <span key={i} className="mt-task-line">{t.title}</span>
+                        ))}
+                        {matterTasks[m.id].length > 2 && (
+                          <span className="mt-task-more">+{matterTasks[m.id].length - 2} more</span>
+                        )}
+                      </div>
                     ) : (
                       <span className="inline-placeholder">—</span>
                     )}

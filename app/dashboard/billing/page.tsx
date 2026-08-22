@@ -62,6 +62,12 @@ function BillingInner() {
   const [selInvoiceId, setSelInvoiceId] = useState<string | null>(null);
   const [selEntries, setSelEntries] = useState<Set<string>>(new Set());
   const [addTimeOpen, setAddTimeOpen] = useState(false);
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchMsg, setBatchMsg] = useState("");
+  const firstOfMonth = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10); };
+  const [batchStart, setBatchStart] = useState(firstOfMonth());
+  const [batchEnd, setBatchEnd] = useState(new Date().toISOString().slice(0, 10));
   const [timeForm, setTimeForm] = useState(EMPTY_TIME);
   const [matterQuery, setMatterQuery] = useState("");
   const [matterMenuOpen, setMatterMenuOpen] = useState(false);
@@ -245,6 +251,82 @@ function BillingInner() {
     load();
   }
 
+  // Batch billing: for every matter with un-invoiced billable time in the chosen
+  // date range, generate one draft invoice (line items + mark those entries invoiced).
+  async function runBatchBilling() {
+    setBatchBusy(true);
+    setBatchMsg("");
+    const { data: teData } = await supabase
+      .from("time_entries")
+      .select("*")
+      .eq("invoiced", false)
+      .eq("billable", true)
+      .gte("logged_at", batchStart + "T00:00:00")
+      .lte("logged_at", batchEnd + "T23:59:59");
+    const te = (teData as TimeEntry[]) ?? [];
+    // Group un-invoiced entries by matter.
+    const byMatter = new Map<string, TimeEntry[]>();
+    for (const e of te) {
+      if (!e.matter_id) continue;
+      if (!byMatter.has(e.matter_id)) byMatter.set(e.matter_id, []);
+      byMatter.get(e.matter_id)!.push(e);
+    }
+    if (byMatter.size === 0) {
+      setBatchMsg("No un-invoiced billable time in that range.");
+      setBatchBusy(false);
+      return;
+    }
+    // Next invoice number.
+    const { data: allInv } = await supabase.from("invoices").select("number");
+    let maxNum = 1000;
+    for (const r of (allInv as { number: string | null }[] | null) ?? []) {
+      const mm = /(\d+)/.exec(r.number || "");
+      if (mm) maxNum = Math.max(maxNum, parseInt(mm[1], 10));
+    }
+    const due = new Date();
+    due.setDate(due.getDate() + 30);
+    const dueStr = due.toISOString().slice(0, 10);
+    let created = 0;
+    for (const [matterId, entries] of byMatter) {
+      const m = matters.find((x) => x.id === matterId);
+      const isFlat = m?.rate_type === "flat";
+      const hourly = isFlat ? 0 : (m?.hourly_rate ?? 0);
+      const rows = entries.map((e) => {
+        const hrs = Number((e.duration_seconds / 3600).toFixed(2));
+        const r = isFlat ? 0 : (e.rate ?? hourly);
+        return {
+          item_date: e.logged_at.slice(0, 10),
+          description: [e.activity, e.note].filter(Boolean).join(" — "),
+          quantity: hrs,
+          rate: r,
+          amount: Number((hrs * r).toFixed(2)),
+        };
+      });
+      // Flat-fee matters bill the fee once, separate from the time entries.
+      if (isFlat && (m?.hourly_rate ?? 0) > 0) {
+        rows.push({ item_date: batchEnd, description: "Flat fee", quantity: 1, rate: m!.hourly_rate!, amount: Number((m!.hourly_rate!).toFixed(2)) });
+      }
+      const amount = Number(rows.reduce((s, r) => s + r.amount, 0).toFixed(2));
+      maxNum += 1;
+      const { data: invRow } = await supabase.from("invoices").insert({
+        matter_id: matterId,
+        client_id: m?.client_id ?? null,
+        number: `INV-${maxNum}`,
+        status: "created",
+        due_date: dueStr,
+        amount,
+      }).select("id").single();
+      const invId = (invRow as { id: string } | null)?.id;
+      if (!invId) continue;
+      await supabase.from("invoice_items").insert(rows.map((r, idx) => ({ ...r, invoice_id: invId, sort_order: idx })));
+      await supabase.from("time_entries").update({ invoiced: true }).in("id", entries.map((e) => e.id));
+      created += 1;
+    }
+    setBatchBusy(false);
+    setBatchMsg(`Created ${created} draft invoice${created === 1 ? "" : "s"}.`);
+    load();
+  }
+
   const toggleSelEntry = (id: string) =>
     setSelEntries((prev) => {
       const next = new Set(prev);
@@ -354,6 +436,9 @@ function BillingInner() {
                     <option key={b.key} value={b.key}>{b.label} ({bucketCounts[b.key]})</option>
                   ))}
                 </select>
+                <button type="button" className="ghost sm" onClick={() => { setBatchMsg(""); setBatchOpen(true); }} title="Generate draft invoices from un-invoiced time in a date range">
+                  Batch bill
+                </button>
               </div>
               <input
                 className="activity-search inv-search-below"
@@ -619,6 +704,30 @@ function BillingInner() {
                 <h3>Add Time</h3>
                 {/* Same multi-row quick-entry grid as the header timesheet shortcut. */}
                 <TimesheetTab onSaved={() => { setAddTimeOpen(false); load(); }} />
+              </div>
+            </div>
+          )}
+
+          {batchOpen && (
+            <div className="modal-backdrop" onClick={() => setBatchOpen(false)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <h3>Batch billing</h3>
+                <p className="modal-dur">
+                  Generate a draft invoice for every matter with un-invoiced billable
+                  time in this range. Pulled entries are marked invoiced so they won’t
+                  bill twice.
+                </p>
+                <div className="field-pair">
+                  <label>From<input type="date" value={batchStart} onChange={(e) => setBatchStart(e.target.value)} /></label>
+                  <label>To<input type="date" value={batchEnd} onChange={(e) => setBatchEnd(e.target.value)} /></label>
+                </div>
+                {batchMsg && <p className="field-note" style={{ marginTop: "0.6rem" }}>{batchMsg}</p>}
+                <div className="modal-actions">
+                  <button type="button" className="ghost" onClick={() => setBatchOpen(false)}>Close</button>
+                  <button type="button" className="btn" disabled={batchBusy || !batchStart || !batchEnd || batchStart > batchEnd} onClick={runBatchBilling}>
+                    {batchBusy ? "Generating…" : "Generate invoices"}
+                  </button>
+                </div>
               </div>
             </div>
           )}
