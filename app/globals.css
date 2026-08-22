@@ -2152,6 +2152,7 @@ section.block.alt {
 .inv-sheet-preview .inv-tax-input { width: 2.5rem; }
 
 /* Invoices head: toggle + filter on top, search bar beneath (under the dropdown) */
+.inv-page-head { align-items: flex-start; }
 .inv-head-controls {
   flex-direction: column;
   align-items: flex-end;
@@ -3500,6 +3501,8 @@ th.sortable {
 th.sortable:hover {
   color: var(--accent);
 }
+th.nowrap { white-space: nowrap; }
+.sort-arrow { opacity: 0.5; font-size: 0.85em; }
 .subsection {
   font-size: 0.8rem;
   text-transform: uppercase;

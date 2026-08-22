@@ -51,6 +51,11 @@ function BillingInner() {
   const [invFilter, setInvFilter] = useState<InvoiceBucket | "all">("all");
   const [invView, setInvView] = useState<"preview" | "list">("list");
   const [invQuery, setInvQuery] = useState("");
+  type InvSortKey = "date" | "number" | "client" | "matter" | "amount" | "due" | "status";
+  const [invSort, setInvSort] = useState<{ key: InvSortKey; dir: 1 | -1 }>({ key: "date", dir: -1 });
+  const toggleInvSort = (key: InvSortKey) =>
+    setInvSort((s) => (s.key === key ? { key, dir: (s.dir === 1 ? -1 : 1) as 1 | -1 } : { key, dir: 1 }));
+  const invSortArrow = (key: InvSortKey) => (invSort.key !== key ? "↕" : invSort.dir === 1 ? "↑" : "↓");
   const [selInvoiceId, setSelInvoiceId] = useState<string | null>(null);
   const [selEntries, setSelEntries] = useState<Set<string>>(new Set());
   const [addTimeOpen, setAddTimeOpen] = useState(false);
@@ -159,6 +164,28 @@ function BillingInner() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoices, invFilter, invQuery, clients, matters]);
+
+  const sortedInvoices = useMemo(() => {
+    const dir = invSort.dir;
+    const val = (i: Invoice): string | number => {
+      switch (invSort.key) {
+        case "date": return i.created_at ? new Date(i.created_at).getTime() : 0;
+        case "number": return (i.number || "").toLowerCase();
+        case "client": return clientName(i.client_id).toLowerCase();
+        case "matter": return matterName(i.matter_id).toLowerCase();
+        case "amount": return i.amount ?? 0;
+        case "due": return i.due_date ? new Date(i.due_date).getTime() : 0;
+        case "status": return invoiceBucket(i);
+      }
+    };
+    return [...shownInvoices].sort((a, b) => {
+      const va = val(a), vb = val(b);
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shownInvoices, invSort, clients, matters]);
 
   // Summary figures for the list view's three panels.
   const invSummary = useMemo(() => {
@@ -302,7 +329,7 @@ function BillingInner() {
 
       {tab === "invoices" && canManageBilling && (
         <>
-          <div className="page-head">
+          <div className="page-head inv-page-head">
             <h1 className="page-title">Invoices</h1>
             <div className="head-controls inv-head-controls">
               <div className="inv-head-controls-row">
@@ -364,18 +391,18 @@ function BillingInner() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Invoice #</th>
-                    <th>Client</th>
-                    <th>Matter</th>
-                    <th>Amount</th>
-                    <th>Due</th>
-                    <th>Status</th>
+                    <th className="sortable" onClick={() => toggleInvSort("date")}>Date <span className="sort-arrow">{invSortArrow("date")}</span></th>
+                    <th className="sortable nowrap" onClick={() => toggleInvSort("number")}>Invoice #&nbsp;<span className="sort-arrow">{invSortArrow("number")}</span></th>
+                    <th className="sortable" onClick={() => toggleInvSort("client")}>Client <span className="sort-arrow">{invSortArrow("client")}</span></th>
+                    <th className="sortable" onClick={() => toggleInvSort("matter")}>Matter <span className="sort-arrow">{invSortArrow("matter")}</span></th>
+                    <th className="sortable" onClick={() => toggleInvSort("amount")}>Amount <span className="sort-arrow">{invSortArrow("amount")}</span></th>
+                    <th className="sortable" onClick={() => toggleInvSort("due")}>Due <span className="sort-arrow">{invSortArrow("due")}</span></th>
+                    <th className="sortable" onClick={() => toggleInvSort("status")}>Status <span className="sort-arrow">{invSortArrow("status")}</span></th>
                     <th aria-label="Delete"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {shownInvoices.map((i) => {
+                  {sortedInvoices.map((i) => {
                     const bucket = invoiceBucket(i);
                     return (
                       <tr key={i.id}>
