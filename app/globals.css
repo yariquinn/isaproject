@@ -9539,3 +9539,38 @@ a.activity-row:hover .act-desc {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
+
+/* ---- Task modal: tidy field alignment + breathing room ---- */
+.tm-fields .field-pair {
+  align-items: end;
+}
+.tm-fields .mp-input,
+.tm-fields .field-pair > label > select {
+  height: 40px;
+}
+.tm-fields .todo-modal-check {
+  margin-top: 0.75rem;
+}
+
+/* ---- Deadlines & Calendar: kind + user filters ---- */
+.dl-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.dl-chip-kind {
+  text-transform: capitalize;
+}
+.dl-user-select {
+  margin-left: auto;
+}
+.event-date.overdue {
+  color: #c0392b;
+  font-weight: 700;
+}
+.event-kind.ev-overdue {
+  background: color-mix(in srgb, #c0392b 15%, transparent);
+  color: #c0392b;
+}

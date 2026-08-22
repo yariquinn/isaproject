@@ -768,7 +768,7 @@ function TaskModal({
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3>{title}</h3>
         <label>
-          Task
+          Title
           <input autoFocus value={draft.title} onChange={(e) => set("title", e.target.value)} placeholder="What needs doing?" />
         </label>
         <div className="field-pair">
@@ -957,7 +957,7 @@ function EditModal({
         <div className="tm-fields">
         <h3>Task</h3>
         <label>
-          Task
+          Title
           <textarea rows={2} value={t.title} onChange={(e) => set("title", e.target.value)} />
         </label>
         <div className="field-pair">
