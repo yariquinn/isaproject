@@ -47,7 +47,7 @@ function BillingInner() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"dashboard" | "invoices" | "time">("dashboard");
   const [invFilter, setInvFilter] = useState<InvoiceBucket | "all">("all");
-  const [invView, setInvView] = useState<"preview" | "list">("preview");
+  const [invView, setInvView] = useState<"preview" | "list">("list");
   const [invQuery, setInvQuery] = useState("");
   const [selInvoiceId, setSelInvoiceId] = useState<string | null>(null);
   const [selEntries, setSelEntries] = useState<Set<string>>(new Set());
@@ -299,11 +299,11 @@ function BillingInner() {
                 onChange={(e) => setInvQuery(e.target.value)}
               />
               <div className="seg seg-view" role="tablist" aria-label="Invoice view">
-                <button type="button" className={invView === "preview" ? "active" : undefined} onClick={() => changeInvView("preview")} title="Preview view" aria-label="Preview view">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="18" rx="1" /><rect x="13" y="3" width="8" height="18" rx="1" /></svg>
-                </button>
                 <button type="button" className={invView === "list" ? "active" : undefined} onClick={() => changeInvView("list")} title="List view" aria-label="List view">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+                </button>
+                <button type="button" className={invView === "preview" ? "active" : undefined} onClick={() => changeInvView("preview")} title="Preview view" aria-label="Preview view">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="18" rx="1" /><rect x="13" y="3" width="8" height="18" rx="1" /></svg>
                 </button>
               </div>
               <select

@@ -191,11 +191,24 @@ export default function InvoiceEditor({
       <div className={`inv-sheet printable${editing ? "" : " inv-sheet-preview"}`}>
         {/* Header */}
         <div className="inv-head">
-          <div className="inv-firm">
-            <div className="inv-firm-name">{FIRM.name}</div>
-            <div className="inv-firm-line">{FIRM.line1}</div>
-            <div className="inv-firm-line">{FIRM.line2}</div>
-            <div className="inv-firm-line">{FIRM.email} · {FIRM.phone}</div>
+          <div className="inv-head-left">
+            <div className="inv-firm">
+              <div className="inv-firm-name">{FIRM.name}</div>
+              <div className="inv-firm-line">{FIRM.line1}</div>
+              <div className="inv-firm-line">{FIRM.line2}</div>
+              <div className="inv-firm-line">{FIRM.email} · {FIRM.phone}</div>
+            </div>
+            <div className="inv-billto">
+              <div className="inv-billto-label">Bill To</div>
+              <textarea
+                className="inv-billto-box"
+                rows={3}
+                placeholder={clientName || "Client name & address"}
+                value={inv.bill_to ?? ""}
+                onChange={(e) => patchInv({ bill_to: e.target.value })}
+              />
+              {matterName && <div className="inv-matter-ref">Re: {matterName}</div>}
+            </div>
           </div>
           <div className="inv-meta">
             <div className="inv-word">INVOICE</div>
@@ -215,19 +228,6 @@ export default function InvoiceEditor({
               </select>
             </div>
           </div>
-        </div>
-
-        {/* Bill to */}
-        <div className="inv-billto">
-          <div className="inv-billto-label">Bill To</div>
-          <textarea
-            className="inv-billto-box"
-            rows={3}
-            placeholder={clientName || "Client name & address"}
-            value={inv.bill_to ?? ""}
-            onChange={(e) => patchInv({ bill_to: e.target.value })}
-          />
-          {matterName && <div className="inv-matter-ref">Re: {matterName}</div>}
         </div>
 
         {/* Line items */}

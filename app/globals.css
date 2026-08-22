@@ -2196,10 +2196,13 @@ section.block.alt {
   .inv-panels { grid-template-columns: 1fr; }
 }
 
-/* Invoice sheet header: tighten the meta column and the Bill To box */
-.inv-meta { min-width: 210px; max-width: 250px; }
-.inv-meta-row { gap: 1.25rem; }
-.inv-billto-box { max-width: 320px; }
+/* Invoice sheet header: Bill To rides up in the left column beside the meta,
+   and each meta value sits right next to its label (right-aligned column). */
+.inv-head-left { flex: 1 1 auto; min-width: 0; }
+.inv-head-left .inv-billto { margin-top: 1.5rem; margin-bottom: 0; }
+.inv-meta { min-width: 200px; max-width: 250px; }
+.inv-meta-row { justify-content: flex-end; gap: 1rem; }
+.inv-billto-box { max-width: 340px; }
 
 /* Searchable matter filter on the Time Entries list (styled like inline-select) */
 .te-matter-pick { width: 200px; }
