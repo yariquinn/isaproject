@@ -6215,6 +6215,8 @@ a.activity-row:hover .act-desc {
   position: absolute;
   left: 0;
   top: 0;
+  width: 300px;
+  max-width: 34%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -6229,7 +6231,7 @@ a.activity-row:hover .act-desc {
   color: var(--dash-muted);
 }
 .ts-recent-chip {
-  max-width: 180px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
