@@ -9626,3 +9626,10 @@ a.activity-row:hover .act-desc {
   flex: 0 0 auto;
   margin-right: 0;
 }
+
+/* ---- Required-field asterisk ---- */
+.req-star {
+  color: #c0392b;
+  font-weight: 700;
+  margin-left: 0.15rem;
+}

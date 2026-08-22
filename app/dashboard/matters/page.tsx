@@ -327,12 +327,17 @@ export default function MattersPage() {
   }
 
   async function addMatter() {
-    if (!form.name.trim()) return;
+    if (!form.name.trim() || !form.client_id) return;
     setSaving(true);
+    // Compose the "<Client> · <Title>" name so the overview shows the full name
+    // and the client record can strip the prefix back to just the title.
+    const clientName = clients.find((c) => c.id === form.client_id)?.name ?? "";
+    const title = form.name.trim();
+    const fullName = clientName && !title.startsWith(`${clientName} · `) ? `${clientName} · ${title}` : title;
     const { data: created } = await supabase
       .from("matters")
       .insert({
-        name: form.name.trim(),
+        name: fullName,
         client_id: form.client_id || null,
         practice_area: form.practice_area,
         assigned_to: form.assigned_to || null,
@@ -348,7 +353,7 @@ export default function MattersPage() {
       kind: "matter_created",
       matter_id: created?.id ?? null,
       client_id: form.client_id || null,
-      description: `${userName} opened matter ${form.name.trim()}`,
+      description: `${userName} opened matter ${fullName}`,
     });
     setForm(EMPTY);
     setOpen(false);
@@ -649,14 +654,7 @@ export default function MattersPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Add Matter</h3>
             <label>
-              Matter Name
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </label>
-            <label>
-              Client
+              Client <span className="req-star">*</span>
               <select
                 value={ncOpen ? "__new__" : form.client_id}
                 onChange={(e) => {
@@ -721,6 +719,24 @@ export default function MattersPage() {
                 </div>
               </div>
             )}
+            <label>
+              Matter Name
+              {(() => {
+                const cn = clients.find((c) => c.id === form.client_id)?.name;
+                return (
+                  <div className="matter-name-compose">
+                    {cn && <span className="matter-name-prefix" title={cn}>{cn} ·</span>}
+                    <input
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder={cn ? "e.g. 2025 Refinance" : "Select a client first"}
+                      disabled={!form.client_id}
+                    />
+                  </div>
+                );
+              })()}
+              <span className="field-note">Pick the client first — the matter is saved as “Client · Title”.</span>
+            </label>
             <label>
               Practice Area
               <select
@@ -813,7 +829,7 @@ export default function MattersPage() {
                 type="button"
                 className="btn"
                 onClick={addMatter}
-                disabled={saving || !form.name.trim()}
+                disabled={saving || !form.name.trim() || !form.client_id}
               >
                 {saving ? "Saving…" : "Save Matter"}
               </button>
