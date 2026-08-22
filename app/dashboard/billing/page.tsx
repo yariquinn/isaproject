@@ -47,11 +47,27 @@ function BillingInner() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"dashboard" | "invoices" | "time">("dashboard");
   const [invFilter, setInvFilter] = useState<InvoiceBucket | "all">("all");
+  const [invView, setInvView] = useState<"preview" | "list">("preview");
+  const [invQuery, setInvQuery] = useState("");
   const [selInvoiceId, setSelInvoiceId] = useState<string | null>(null);
   const [selEntries, setSelEntries] = useState<Set<string>>(new Set());
   const [addTimeOpen, setAddTimeOpen] = useState(false);
   const [timeForm, setTimeForm] = useState(EMPTY_TIME);
+  const [matterQuery, setMatterQuery] = useState("");
+  const [matterMenuOpen, setMatterMenuOpen] = useState(false);
   const [savingTime, setSavingTime] = useState(false);
+  const openAddTime = () => { setTimeForm(EMPTY_TIME); setMatterQuery(""); setAddTimeOpen(true); };
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("invView");
+      if (v === "list" || v === "preview") setInvView(v);
+    } catch { /* ignore */ }
+  }, []);
+  const changeInvView = (v: "preview" | "list") => {
+    setInvView(v);
+    try { localStorage.setItem("invView", v); } catch { /* ignore */ }
+  };
 
   async function load() {
     const [{ data: inv }, { data: e }, { data: m }, { data: c }] =
@@ -91,6 +107,8 @@ function BillingInner() {
   // Time-entries filters: period + matter + user (shows everyone by default).
   const [timePeriod, setTimePeriod] = useState<"all" | "day" | "week" | "month">("all");
   const [timeMatter, setTimeMatter] = useState<string>("all");
+  const [timeMatterQuery, setTimeMatterQuery] = useState("");
+  const [timeMatterOpen, setTimeMatterOpen] = useState(false);
   const [timeUser, setTimeUser] = useState<string>("all");
   const timeUsers = useMemo(
     () => Array.from(new Set(entries.map((e) => e.lawyer).filter(Boolean))).sort() as string[],
@@ -122,10 +140,44 @@ function BillingInner() {
     return c;
   }, [invoices]);
 
-  const shownInvoices = useMemo(
-    () => (invFilter === "all" ? invoices : invoices.filter((i) => invoiceBucket(i) === invFilter)),
-    [invoices, invFilter],
-  );
+  const shownInvoices = useMemo(() => {
+    const q = invQuery.trim().toLowerCase();
+    return invoices.filter((i) => {
+      if (invFilter !== "all" && invoiceBucket(i) !== invFilter) return false;
+      if (q) {
+        const hay = [i.number, clientName(i.client_id), matterName(i.matter_id)].filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoices, invFilter, invQuery, clients, matters]);
+
+  // Summary figures for the list view's three panels.
+  const invSummary = useMemo(() => {
+    let openAmt = 0, openN = 0, overdueAmt = 0, overdueN = 0, paidAmt = 0, paidN = 0;
+    for (const i of invoices) {
+      const amt = i.amount ?? 0;
+      const b = invoiceBucket(i);
+      if (b === "paid") { paidAmt += amt; paidN++; }
+      else { openAmt += amt; openN++; }
+      if (b === "overdue") { overdueAmt += amt; overdueN++; }
+    }
+    return { openAmt, openN, overdueAmt, overdueN, paidAmt, paidN };
+  }, [invoices]);
+
+  // Matter picker (searchable) for the Add Time Entry modal.
+  const matterHits = useMemo(() => {
+    const q = matterQuery.trim().toLowerCase();
+    const list = q === "" ? matters : matters.filter((m) => m.name.toLowerCase().includes(q));
+    return list.slice(0, 10);
+  }, [matters, matterQuery]);
+  // Searchable matter filter for the Time Entries list.
+  const timeMatterHits = useMemo(() => {
+    const q = timeMatterQuery.trim().toLowerCase();
+    const list = q === "" ? matters : matters.filter((m) => m.name.toLowerCase().includes(q));
+    return list.slice(0, 12);
+  }, [matters, timeMatterQuery]);
 
   // Keep a valid selection whenever the visible invoice list changes.
   useEffect(() => {
@@ -152,6 +204,7 @@ function BillingInner() {
     setSavingTime(false);
     setAddTimeOpen(false);
     setTimeForm(EMPTY_TIME);
+    setMatterQuery("");
     load();
   }
 
@@ -238,6 +291,21 @@ function BillingInner() {
           <div className="page-head">
             <h1 className="page-title">Invoices</h1>
             <div className="head-controls">
+              <input
+                className="activity-search"
+                type="search"
+                placeholder="Search invoices…"
+                value={invQuery}
+                onChange={(e) => setInvQuery(e.target.value)}
+              />
+              <div className="seg seg-view" role="tablist" aria-label="Invoice view">
+                <button type="button" className={invView === "preview" ? "active" : undefined} onClick={() => changeInvView("preview")} title="Preview view" aria-label="Preview view">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="18" rx="1" /><rect x="13" y="3" width="8" height="18" rx="1" /></svg>
+                </button>
+                <button type="button" className={invView === "list" ? "active" : undefined} onClick={() => changeInvView("list")} title="List view" aria-label="List view">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+                </button>
+              </div>
               <select
                 className="inline-select inv-filter-select"
                 value={invFilter}
@@ -251,10 +319,66 @@ function BillingInner() {
             </div>
           </div>
 
+          {invView === "list" && (
+            <div className="inv-panels">
+              <div className="inv-panel">
+                <span className="inv-panel-label">Total Open</span>
+                <span className="inv-panel-amt">{usd(invSummary.openAmt, 0)}</span>
+                <span className="inv-panel-sub">{invSummary.openN} invoice{invSummary.openN === 1 ? "" : "s"}</span>
+              </div>
+              <div className="inv-panel">
+                <span className="inv-panel-label">Overdue</span>
+                <span className="inv-panel-amt">{usd(invSummary.overdueAmt, 0)}</span>
+                <span className="inv-panel-sub">{invSummary.overdueN} invoice{invSummary.overdueN === 1 ? "" : "s"}</span>
+              </div>
+              <div className="inv-panel">
+                <span className="inv-panel-label">Paid</span>
+                <span className="inv-panel-amt">{usd(invSummary.paidAmt, 0)}</span>
+                <span className="inv-panel-sub">{invSummary.paidN} invoice{invSummary.paidN === 1 ? "" : "s"}</span>
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <p className="muted-line">Loading…</p>
           ) : shownInvoices.length === 0 ? (
-            <p className="muted-line">{invoices.length === 0 ? "No invoices yet." : "No invoices in this status."}</p>
+            <p className="muted-line">{invoices.length === 0 ? "No invoices yet." : "No invoices match this view."}</p>
+          ) : invView === "list" ? (
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Due date</th>
+                    <th>Client</th>
+                    <th>Matter</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Invoice #</th>
+                    <th aria-label="Delete"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shownInvoices.map((i) => {
+                    const bucket = invoiceBucket(i);
+                    return (
+                      <tr key={i.id}>
+                        <td>{i.due_date ? new Date(i.due_date).toLocaleDateString() : "—"}</td>
+                        <td className="strong-cell">
+                          <Link href={`/dashboard/invoices/${i.id}`} className="row-link">{clientName(i.client_id)}</Link>
+                        </td>
+                        <td>{i.matter_id ? matterName(i.matter_id) : "—"}</td>
+                        <td><span className={`pill inv-${bucket}`}>{bucket}</span></td>
+                        <td>{i.amount != null ? usd(i.amount) : "—"}</td>
+                        <td>{i.number || "—"}</td>
+                        <td className="ct-actions">
+                          <button type="button" className="ct-del" title="Delete invoice" aria-label="Delete invoice" onClick={() => deleteInvoice(i.id, i.number)}>✕</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="inv-split">
               <div className="inv-list">
@@ -309,7 +433,7 @@ function BillingInner() {
           <div className="page-head">
             <h1 className="page-title">Time Entries</h1>
             <div className="head-controls">
-              <button className="btn icon-plus-btn" onClick={() => setAddTimeOpen(true)} type="button" title="Add time" aria-label="Add time">
+              <button className="btn icon-plus-btn" onClick={openAddTime} type="button" title="Add time" aria-label="Add time">
                 +
               </button>
             </div>
@@ -337,10 +461,27 @@ function BillingInner() {
                 <option value="all">All users</option>
                 {timeUsers.map((u) => <option key={u} value={u}>{u}</option>)}
               </select>
-              <select className="inline-select" value={timeMatter} onChange={(e) => setTimeMatter(e.target.value)}>
-                <option value="all">All matters</option>
-                {matters.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
+              <div className="ts-matter te-matter-pick">
+                <input
+                  value={timeMatterQuery}
+                  placeholder="All matters"
+                  onFocus={() => setTimeMatterOpen(true)}
+                  onBlur={() => setTimeout(() => setTimeMatterOpen(false), 150)}
+                  onChange={(e) => { setTimeMatterQuery(e.target.value); setTimeMatter("all"); setTimeMatterOpen(true); }}
+                />
+                {timeMatterOpen && (
+                  <div className="ts-matter-menu">
+                    <button type="button" className="ts-matter-hit" onClick={() => { setTimeMatter("all"); setTimeMatterQuery(""); setTimeMatterOpen(false); }}>
+                      All matters
+                    </button>
+                    {timeMatterHits.map((m) => (
+                      <button key={m.id} type="button" className="ts-matter-hit" onClick={() => { setTimeMatter(m.id); setTimeMatterQuery(m.name); setTimeMatterOpen(false); }}>
+                        {m.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -414,10 +555,29 @@ function BillingInner() {
                 <h3>Add Time Entry</h3>
                 <label>
                   Matter
-                  <select value={timeForm.matter_id} onChange={(e) => setTimeForm({ ...timeForm, matter_id: e.target.value })}>
-                    <option value="">— Select matter —</option>
-                    {matters.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
+                  <div className="ts-matter">
+                    <input
+                      value={matterQuery}
+                      placeholder="Search matter…"
+                      onFocus={() => setMatterMenuOpen(true)}
+                      onBlur={() => setTimeout(() => setMatterMenuOpen(false), 150)}
+                      onChange={(e) => { setMatterQuery(e.target.value); setTimeForm({ ...timeForm, matter_id: "" }); setMatterMenuOpen(true); }}
+                    />
+                    {matterMenuOpen && matterHits.length > 0 && (
+                      <div className="ts-matter-menu">
+                        {matterHits.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            className="ts-matter-hit"
+                            onClick={() => { setTimeForm({ ...timeForm, matter_id: m.id }); setMatterQuery(m.name); setMatterMenuOpen(false); }}
+                          >
+                            {m.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </label>
                 <div className="field-pair">
                   <label>

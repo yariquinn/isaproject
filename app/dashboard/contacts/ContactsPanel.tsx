@@ -179,7 +179,7 @@ export default function ContactsPanel({ headTabs }: { headTabs?: React.ReactNode
     <>
       <div className="page-head">
         <div className="head-name">
-          <h1 className="page-title upper">Contacts</h1>
+          <h1 className="page-title upper">External Contacts</h1>
         </div>
         <div className="head-controls">
           {headTabs}

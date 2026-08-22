@@ -120,7 +120,7 @@ export default function TimesheetTab({ onSaved }: { onSaved: () => void }) {
   const [compare, setCompare] = useState<Compare>("none");
   const [recentMatters, setRecentMatters] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
-    setRecentMatters(getRecents().filter((r) => r.kind === "matter").slice(0, 4).map((r) => ({ id: r.id, name: r.name })));
+    setRecentMatters(getRecents().filter((r) => r.kind === "matter").slice(0, 3).map((r) => ({ id: r.id, name: r.name })));
   }, []);
   // Drop a recent matter into the first empty grid row.
   const fillRecent = (id: string, name: string) =>

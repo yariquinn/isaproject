@@ -478,7 +478,7 @@ export default function ClientsPage() {
         Clients
       </button>
       <button type="button" className={mainTab === "contacts" ? "active" : undefined} onClick={() => setMainTab("contacts")}>
-        Contacts
+        External Contacts
       </button>
     </div>
   );
