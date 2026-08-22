@@ -64,6 +64,9 @@ export default function InvoiceEditor({
   const [matterName, setMatterName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
+  // Always-present blank row at the bottom of the line items for adding inline.
+  const emptyDraft = { item_date: new Date().toISOString().slice(0, 10), description: "", quantity: "", rate: "" };
+  const [draft, setDraft] = useState(emptyDraft);
 
   const load = useCallback(async () => {
     const { data: i } = await supabase.from("invoices").select("*").eq("id", invoiceId).single();
@@ -112,6 +115,27 @@ export default function InvoiceEditor({
       .select().single();
     if (data) setItems((prev) => [...prev, data as Item]);
   };
+  // Commit the inline draft row into a real line item, then reset it.
+  const commitDraft = async () => {
+    if (!inv) return;
+    const qty = Number(draft.quantity) || 0;
+    const rate = Number(draft.rate) || 0;
+    if (!draft.description.trim() && !qty && !rate) return;
+    const { data } = await supabase
+      .from("invoice_items")
+      .insert({
+        invoice_id: inv.id,
+        item_date: draft.item_date || null,
+        description: draft.description.trim(),
+        quantity: qty,
+        rate: rate,
+        amount: Number((qty * rate).toFixed(2)),
+        sort_order: items.length,
+      })
+      .select().single();
+    if (data) setItems((prev) => [...prev, data as Item]);
+    setDraft({ ...emptyDraft });
+  };
   const patchItem = async (id: string, changes: Partial<Item>) => {
     setItems((prev) => prev.map((it) => {
       if (it.id !== id) return it;
@@ -137,14 +161,31 @@ export default function InvoiceEditor({
     await supabase.from("invoice_items").delete().eq("id", id);
   };
 
-  // Pull this matter's time entries in as line items (one-time helper).
-  const seedFromTime = async () => {
-    if (!inv?.matter_id) return;
-    const { data: te } = await supabase.from("time_entries").select("*").eq("matter_id", inv.matter_id);
+  // Pull this matter's UN-invoiced time entries within a date range as line
+  // items, then mark them invoiced so they can't land on another invoice.
+  const [pullFrom, setPullFrom] = useState("");
+  const [pullTo, setPullTo] = useState("");
+  const [pulling, setPulling] = useState(false);
+  const [pullMsg, setPullMsg] = useState("");
+  const pullRange = async () => {
+    if (!inv?.matter_id || pulling) return;
+    setPulling(true);
+    setPullMsg("");
+    let q = supabase.from("time_entries").select("*").eq("matter_id", inv.matter_id).eq("invoiced", false);
+    if (pullFrom) q = q.gte("logged_at", pullFrom);
+    if (pullTo) q = q.lte("logged_at", pullTo + "T23:59:59");
+    const { data: te } = await q.order("logged_at");
+    const entries = (te as { id: string; activity: string | null; note: string | null; duration_seconds: number; logged_at: string; rate: number | null }[]) ?? [];
+    if (entries.length === 0) {
+      setPulling(false);
+      setPullMsg("No un-invoiced entries in that range.");
+      setTimeout(() => setPullMsg(""), 4000);
+      return;
+    }
     const { data: m } = await supabase.from("matters").select("hourly_rate,rate_type").eq("id", inv.matter_id).single();
     const rate = (m as { hourly_rate: number | null; rate_type: string | null } | null);
     const hourly = rate?.rate_type === "flat" ? 0 : (rate?.hourly_rate ?? 0);
-    const rows = ((te as { activity: string | null; note: string | null; duration_seconds: number; logged_at: string; rate: number | null }[]) ?? []).map((e, idx) => {
+    const rows = entries.map((e, idx) => {
       const hrs = Number((e.duration_seconds / 3600).toFixed(2));
       const r = e.rate ?? hourly;
       return {
@@ -157,19 +198,32 @@ export default function InvoiceEditor({
         sort_order: items.length + idx,
       };
     });
-    if (rows.length === 0) return;
     const { data } = await supabase.from("invoice_items").insert(rows).select();
     if (data) setItems((prev) => [...prev, ...(data as Item[])]);
+    await supabase.from("time_entries").update({ invoiced: true }).in("id", entries.map((e) => e.id));
+    setPulling(false);
+    setPullMsg(`Pulled ${entries.length} entr${entries.length === 1 ? "y" : "ies"}.`);
+    setTimeout(() => setPullMsg(""), 4000);
   };
 
   if (loading) return <p className="muted-line" style={{ padding: "2rem" }}>Loading invoice…</p>;
   if (!inv) return <p className="muted-line" style={{ padding: "2rem" }}>Invoice not found.</p>;
 
+  // Status is derived, never hand-edited: paid > overdue > viewed > sent > created.
+  const derivedStatus: string = (() => {
+    if (inv.status === "paid") return "paid";
+    const overdue = inv.due_date != null && inv.due_date.slice(0, 10) < new Date().toISOString().slice(0, 10);
+    if (overdue) return "overdue";
+    if (inv.viewed_at || inv.status === "viewed") return "viewed";
+    if (inv.sent_at || inv.status === "sent") return "sent";
+    return "created";
+  })();
+
   return (
     <div className={`inv-editor${fullPage ? " inv-editor-full" : ""}`}>
       <div className="inv-toolbar">
         <div className="inv-toolbar-left">
-          <span className={`pill inv-${inv.status}`}>{inv.status}</span>
+          <span className={`pill inv-${derivedStatus}`}>{derivedStatus}</span>
           <span className="inv-save-state">{saving === "saving" ? "Saving…" : saving === "saved" ? "Saved" : ""}</span>
         </div>
         <div className="inv-toolbar-right">
@@ -213,22 +267,24 @@ export default function InvoiceEditor({
           <div className="inv-meta">
             <div className="inv-word">INVOICE</div>
             <div className="inv-meta-row"><span>Invoice #</span><input value={inv.number ?? ""} onChange={(e) => patchInv({ number: e.target.value })} /></div>
-            <div className="inv-meta-row"><span>Created</span><span className="inv-meta-static">{fmtDate(inv.created_at)}</span></div>
-            <div className="inv-meta-row"><span>Date</span><input type="date" value={inv.issued_date?.slice(0, 10) ?? ""} onChange={(e) => patchInv({ issued_date: e.target.value || null })} /></div>
+            <div className="inv-meta-row"><span>Created</span><input type="date" value={inv.created_at?.slice(0, 10) ?? ""} onChange={(e) => patchInv({ created_at: e.target.value || null })} /></div>
             <div className="inv-meta-row"><span>Due</span><input type="date" value={inv.due_date?.slice(0, 10) ?? ""} onChange={(e) => patchInv({ due_date: e.target.value || null })} /></div>
-            <div className="inv-meta-row"><span>Status</span>
-              <select value={inv.status ?? "created"} onChange={(e) => {
-                const s = e.target.value;
-                const extra: Partial<Invoice> = { status: s };
-                if (s === "sent" && !inv.sent_at) extra.sent_at = new Date().toISOString();
-                if (s === "viewed" && !inv.viewed_at) extra.viewed_at = new Date().toISOString();
-                patchInv(extra);
-              }}>
-                {["created", "sent", "viewed", "overdue", "paid"].map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
+            <div className="inv-meta-row"><span>Status</span><span className="inv-meta-static">{derivedStatus}</span></div>
           </div>
         </div>
+
+        {/* Pull time entries by date range (marks them invoiced) */}
+        {editing && inv.matter_id && (
+          <div className="inv-pull-range">
+            <span className="inv-pull-label">Pull time entries</span>
+            <label>From<input type="date" value={pullFrom} onChange={(e) => setPullFrom(e.target.value)} /></label>
+            <label>To<input type="date" value={pullTo} onChange={(e) => setPullTo(e.target.value)} /></label>
+            <button type="button" className="ghost sm" onClick={pullRange} disabled={pulling}>
+              {pulling ? "Pulling…" : "Pull"}
+            </button>
+            {pullMsg && <span className="inv-pull-msg">{pullMsg}</span>}
+          </div>
+        )}
 
         {/* Line items */}
         <table className="inv-items">
@@ -256,12 +312,18 @@ export default function InvoiceEditor({
                 <td><button type="button" className="ct-del" aria-label="Remove line" onClick={() => removeItem(it.id)}>✕</button></td>
               </tr>
             ))}
+            {editing && (
+              <tr className="ii-draft-row" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commitDraft(); } }}>
+                <td><input type="date" value={draft.item_date} onChange={(e) => setDraft({ ...draft, item_date: e.target.value })} /></td>
+                <td><input className="ii-desc-input" value={draft.description} placeholder="Add a line…" onChange={(e) => setDraft({ ...draft, description: e.target.value })} onBlur={commitDraft} /></td>
+                <td><input type="number" step="0.01" value={draft.quantity} placeholder="0" onChange={(e) => setDraft({ ...draft, quantity: e.target.value })} onBlur={commitDraft} /></td>
+                <td><input type="number" step="1" value={draft.rate} placeholder="0" onChange={(e) => setDraft({ ...draft, rate: e.target.value })} onBlur={commitDraft} /></td>
+                <td className="ii-amt-cell">{money((Number(draft.quantity) || 0) * (Number(draft.rate) || 0))}</td>
+                <td aria-hidden="true" />
+              </tr>
+            )}
           </tbody>
         </table>
-        <div className="inv-items-actions">
-          <button type="button" className="ghost sm" onClick={addItem}>+ Add line</button>
-          {inv.matter_id && <button type="button" className="ghost sm" onClick={seedFromTime}>Pull time entries</button>}
-        </div>
 
         {/* Totals */}
         <div className="inv-totals">

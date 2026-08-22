@@ -2335,6 +2335,24 @@ section.block.alt {
   border: 1px solid var(--dash-border); border-radius: 8px; background: var(--dash-bg); color: var(--dash-fg); resize: vertical;
 }
 .inv-matter-ref { margin-top: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--dash-fg); }
+.inv-pull-range {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px dashed var(--dash-border);
+  border-radius: 8px;
+  background: var(--dash-bg);
+}
+.inv-pull-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dash-muted); }
+.inv-pull-range label { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--dash-muted); }
+.inv-pull-range input[type="date"] {
+  font-family: inherit; font-size: 0.82rem; padding: 0.25rem 0.4rem;
+  border: 1px solid var(--dash-border); border-radius: 6px; background: var(--dash-surface); color: var(--dash-fg);
+}
+.inv-pull-msg { font-size: 0.78rem; color: var(--dash-muted); }
 .inv-items { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; }
 .inv-items th { text-align: left; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dash-muted); padding: 0.4rem 0.5rem; border-bottom: 2px solid var(--dash-border); }
 .inv-items td { padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--dash-border); vertical-align: middle; }
